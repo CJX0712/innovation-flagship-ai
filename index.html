@@ -66,6 +66,7 @@
   <script src="src/loss-act-norm-forge.js" onerror="window.__forgeLoadErrors['ForgeLossActNorm']=true"></script>
   <script src="src/attention-forge.js" onerror="window.__forgeLoadErrors['ForgeAttention']=true"></script>
   <script src="src/rope-forge.js" onerror="window.__forgeLoadErrors['ForgeRoPE']=true"></script>
+  <script src="src/retrieval-forge.js" onerror="window.__forgeLoadErrors['ForgeRetrieval']=true"></script>
 
   <script>
   (function () {
@@ -83,7 +84,8 @@
       { key: 'ForgeAutoDiff',label: 'autodiff-forge (L3 自动微分)' },
       { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' },
       { key: 'ForgeAttention', label: 'attention-forge (L4 注意力/GQA)' },
-      { key: 'ForgeRoPE', label: 'rope-forge (L4 旋转位置编码)' }
+      { key: 'ForgeRoPE', label: 'rope-forge (L4 旋转位置编码)' },
+      { key: 'ForgeRetrieval', label: 'retrieval-forge (L5 向量检索)' }
     ];
 
     function row(pass, id, name, actual, tol) {
