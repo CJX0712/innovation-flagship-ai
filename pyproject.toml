@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ifai"
+version = "0.1.0"
+description = "创新旗舰 AI · Innovation Flagship AI — 十层架构、零重写集大成、CPU 可运行可复现可验证的旗舰级 AI 系统"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "晨星 (Morningstar)", email = "ifai@morningstar.dev" }]
+keywords = ["ai", "llm", "transformer", "inference", "agent", "retrieval", "flagship"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "torch>=2.0"]
+serve = ["aiohttp>=3.8"]
+
+[project.scripts]
+ifai = "ifai.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/CJX0712/innovation-flagship-ai"
+Repository = "https://github.com/CJX0712/innovation-flagship-ai"
+Documentation = "https://github.com/CJX0712/innovation-flagship-ai/blob/main/docs/ARCHITECTURE.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ifai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

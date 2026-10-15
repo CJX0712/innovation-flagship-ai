@@ -1,0 +1,28 @@
+# 构建 / 包产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# 测试 / 缓存
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 训练产物（由 ifai train 生成, 非源码）
+ifai_model/
+*.npz
+manifest.json
+tokenizer.json
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# 虚拟环境
+.venv/
+venv/
