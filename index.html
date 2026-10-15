@@ -61,6 +61,9 @@
   <script src="src/attn-forge.js" onerror="window.__forgeLoadErrors['ForgeAttn']=true"></script>
   <script src="src/linalg-forge.js" onerror="window.__forgeLoadErrors['ForgeLinalg']=true"></script>
   <script src="src/stable-forge.js" onerror="window.__forgeLoadErrors['ForgeStable']=true"></script>
+  <script src="src/optim-forge.js" onerror="window.__forgeLoadErrors['ForgeOptim']=true"></script>
+  <script src="src/autodiff-forge.js" onerror="window.__forgeLoadErrors['ForgeAutoDiff']=true"></script>
+  <script src="src/loss-act-norm-forge.js" onerror="window.__forgeLoadErrors['ForgeLossActNorm']=true"></script>
 
   <script>
   (function () {
@@ -73,7 +76,10 @@
       { key: 'ForgeNN',      label: 'nn-forge (神经网络)' },
       { key: 'ForgeAttn',    label: 'attn-forge (注意力)' },
       { key: 'ForgeLinalg',  label: 'linalg-forge (L2 线代分解)' },
-      { key: 'ForgeStable',  label: 'stable-forge (L2 数值稳定)' }
+      { key: 'ForgeStable',  label: 'stable-forge (L2 数值稳定)' },
+      { key: 'ForgeOptim',   label: 'optim-forge (L3 优化器)' },
+      { key: 'ForgeAutoDiff',label: 'autodiff-forge (L3 自动微分)' },
+      { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' }
     ];
 
     function row(pass, id, name, actual, tol) {

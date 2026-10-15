@@ -111,7 +111,8 @@ function globalNameFor(modPath) {
   const map = {
     'core-numeric': 'ForgeNumeric', 'core-verify': 'ForgeVerify',
     'linalg-forge': 'ForgeLinalg', 'stable-forge': 'ForgeStable',
-    'pca-forge': 'ForgePCA', 'gmm-forge': 'ForgeGMM', 'nn-forge': 'ForgeNN', 'attn-forge': 'ForgeAttn'
+    'pca-forge': 'ForgePCA', 'gmm-forge': 'ForgeGMM', 'nn-forge': 'ForgeNN', 'attn-forge': 'ForgeAttn',
+    'optim-forge': 'ForgeOptim', 'autodiff-forge': 'ForgeAutoDiff', 'loss-act-norm-forge': 'ForgeLossActNorm'
   };
   return map[base] || null;
 }
