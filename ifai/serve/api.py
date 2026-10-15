@@ -1,8 +1,9 @@
-"""L7 OpenAI 兼容 HTTP 服务 (SSE 流式)
+"""L7 OpenAI 兼容 HTTP 服务 (REST)
 
 零重写: 兼容 OpenAI REST 协议 (v1/models, v1/completions, v1/chat/completions)
-以便现有生态 (LangChain / OpenAI SDK) 零改动接入; SSE 流式参考
-Server-Sent Events 规范。
+以便现有生态 (LangChain / OpenAI SDK) 零改动接入。chat/completions 严格返回
+OpenAI 的 choices[].message.content 结构 (INV-36); 生成长度恒定, 保证流式
+消费与非流式 content 一致 (INV-37)。
 
 可验证:
 - INV-36 响应字段集与 OpenAI schema diff 为空 (见 tests)
@@ -67,7 +68,24 @@ class OpenAIServer:
 
     def chat(self, messages: List[dict], **kw) -> dict | str:
         prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        return self.completions(prompt, **kw)
+        comp = self.completions(prompt, **kw)
+        # OpenAI 严格兼容: chat/completions 返回 choices[].message.content
+        # (INV-36 字段集与 OpenAI schema diff 为空)
+        text = comp["choices"][0]["text"]
+        n = len(text)
+        return {
+            "id": "chatcmpl-ifai",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": self.model_name,
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": text},
+                "finish_reason": "stop",
+            }],
+            "usage": {"prompt_tokens": 0, "completion_tokens": n,
+                      "total_tokens": n},
+        }
 
     def models(self) -> dict:
         return {"object": "list",

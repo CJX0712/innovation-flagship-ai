@@ -10,7 +10,7 @@ import ifai.cli as cli
 
 EXPECTED_COMMANDS = [
     "train", "demo", "generate", "chat", "serve", "eval",
-    "search", "agent", "tokenize", "version", "doctor",
+    "search", "agent", "tokenize", "version", "doctor", "selftest",
 ]
 
 

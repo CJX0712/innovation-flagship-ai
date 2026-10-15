@@ -2,6 +2,23 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.0] — 2026-10-16
+
+### 新增 (Added)
+- **全栈 1024 项微指令级操作分解** (`docs/MICRO_INSTRUCTIONS.md` + 生成器
+  `scripts/gen_micro_instructions.py` + 测试 `tests/unit/x/test_micro_instructions.py`)。
+  对 `ifai/` 源码 AST 静态扫描, 产出 **功能级 203 + 步骤级 902 = 1105** 条微指令
+  (≥1024 目标), 覆盖 38 个可验证不变量 (INV), 逐条标注零重写出处。
+- **INV-36 修复**: `/v1/chat/completions` 现在严格返回 OpenAI 的
+  `choices[].message.content` 结构 (字段集与 OpenAI schema diff 为空), 见
+  `ifai/serve/api.py` 与 `tests/test_serve.py`。
+- **`ifai selftest` 自检子命令** (L9 CLI): 一键串联三项静态审计
+  (INV-41 分层 / INV-42 零重写出处 / R-X-03 文档完备), 可选 `--pytest`
+  运行黄金测试, 输出 ALL GREEN / 失败 门禁结论。闭合已知缺口。
+
+### 变更 (Changed)
+- 版本号升至 0.3.0 (`ifai/__init__.py` 与 `pyproject.toml` 一致)。
+
 ## [0.2.0] — 2026-10-16
 
 ### 新增 (Added)

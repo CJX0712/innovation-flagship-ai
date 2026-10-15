@@ -34,3 +34,20 @@ def test_streaming_equals_nonstreaming(server):
                                           top_p=1.0, stream=True))
     nonstream = server.completions("人工智能", temperature=0, max_tokens=8)["choices"][0]["text"]
     assert streamed == nonstream
+
+
+def test_chat_message_content_schema(server):
+    # INV-36: chat/completions 严格返回 OpenAI 的 choices[].message.content
+    st, chat = server.route(
+        "POST", "/v1/chat/completions",
+        {"messages": [{"role": "user", "content": "人工智能"}],
+         "max_tokens": 4, "temperature": 0},
+    )
+    assert st == 200
+    assert chat["object"] == "chat.completion"
+    msg = chat["choices"][0]["message"]
+    assert msg["role"] == "assistant"
+    assert isinstance(msg["content"], str) and "usage" in chat
+    # 与非流式 completions 文本一致 (INV-37)
+    comp = server.completions("人工智能", temperature=0, max_tokens=4)["choices"][0]["text"]
+    assert msg["content"] == comp

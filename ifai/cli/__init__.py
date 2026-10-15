@@ -1,7 +1,7 @@
 """L9 命令行接口 (CLI) — `ifai`
 
 子命令 (≥10): train, demo, generate, chat, serve, eval, search, agent,
-tokenize, version, doctor。覆盖 R-L9-01。
+tokenize, version, doctor, selftest。覆盖 R-L9-01。
 """
 from __future__ import annotations
 
@@ -190,6 +190,38 @@ def cmd_doctor(_):
     print("GPU: 否 (CPU 推理路径, 100% numpy)")
 
 
+def cmd_selftest(args):
+    """零重写自验证: 运行三项静态审计 + (可选) pytest 黄金测试。
+
+    INV-41 (分层零反向依赖) / INV-42 (≥25 处世界顶级出处) / R-X-03 (文档完备)。
+    """
+    import subprocess
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    audits = [
+        ("分层审计 (INV-41)", "scripts/check_layering.py"),
+        ("零重写出处审计 (INV-42)", "scripts/audit_no_reinvention.py"),
+        ("文档完备审计 (R-X-03)", "scripts/check_docs.py"),
+    ]
+    all_ok = True
+    print("=== ifai selftest (零重写自验证) ===")
+    for label, rel in audits:
+        path = os.path.join(repo, rel)
+        if not os.path.exists(path):
+            print(f"[跳过] {label}: 脚本缺失 {rel}")
+            continue
+        rc = subprocess.run([sys.executable, path], cwd=repo).returncode
+        ok = rc == 0
+        all_ok &= ok
+        print(f"[{'通过' if ok else '失败'}] {label}")
+    if getattr(args, "pytest", False):
+        rc = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=repo).returncode
+        ok = rc == 0
+        all_ok &= ok
+        print(f"[{'通过' if ok else '失败'}] 黄金测试 (pytest)")
+    print("=== 结论:", "ALL GREEN ✅" if all_ok else "存在失败 ❌", "===")
+    sys.exit(0 if all_ok else 1)
+
+
 def _exists(p):
     import os
     return os.path.exists(p)
@@ -202,9 +234,11 @@ def main():
                      ("chat", cmd_chat), ("serve", cmd_serve), ("eval", cmd_eval),
                      ("search", cmd_search), ("agent", cmd_agent),
                      ("tokenize", cmd_tokenize), ("version", cmd_version),
-                     ("doctor", cmd_doctor)]:
+                     ("doctor", cmd_doctor), ("selftest", cmd_selftest)]:
         p = sub.add_parser(name)
         p.set_defaults(func=fn)
+    sub.choices["selftest"].add_argument("--pytest", action="store_true",
+                                        help="额外运行 pytest 黄金测试")
     # 通用参数
     for name in ["train"]:
         sub.choices[name].add_argument("--seed", type=int, default=0)
