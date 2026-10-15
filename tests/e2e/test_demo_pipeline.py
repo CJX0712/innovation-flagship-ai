@@ -67,3 +67,24 @@ def test_model_load_and_forward(tmp_path):
     ids = tok.encode("人工智能") or [0]
     logits = model.forward(np.array([ids]))
     assert logits.shape == (1, len(ids), VOCAB), "输出维度应等于模型词表大小"
+
+
+def test_sdk_chat_completion_openai_schema(tmp_path):
+    # INV-36: SDK chat_completion 返回 OpenAI 严格 schema; 与服务端单一实现一致 (INV-37)
+    from ifai.serve.api import OpenAIServer
+
+    model_dir = _tiny_model_dir(str(tmp_path / "m3"))
+    ai = IFAI(model_dir=model_dir, seed=0)
+    msgs = [{"role": "user", "content": "人工智能"}]
+    comp = ai.chat_completion(msgs, max_new=8, temperature=0)
+
+    assert comp["object"] == "chat.completion"
+    assert comp["model"] == "ifai"
+    msg = comp["choices"][0]["message"]
+    assert msg["role"] == "assistant" and isinstance(msg["content"], str)
+    assert comp["choices"][0]["finish_reason"] == "stop"
+    assert comp["usage"]["total_tokens"] == len(msg["content"])
+    # 单一实现: SDK 与 L7 服务端对同一 messages (同 prompt / 同贪心) 输出逐字一致
+    srv = OpenAIServer(ai.model, ai.tok, seed=0)
+    srv_msg = srv.chat(msgs, temperature=0, max_tokens=8)["choices"][0]["message"]
+    assert msg["content"] == srv_msg["content"] and srv_msg["role"] == "assistant"

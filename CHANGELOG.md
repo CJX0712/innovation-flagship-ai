@@ -2,6 +2,29 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.4.0] — 2026-10-16
+
+### 新增 (Added)
+- **SDK OpenAI 严格兼容接口 `IFAI.chat_completion(messages)`** (L9): 返回符合
+  OpenAI `chat.completion` schema 的 dict (INV-36)。零重写: 与服务端共用
+  `serve.api.chat_completion` / `format_messages` 单一实现, 保证 SDK 与 HTTP
+  服务输出逐字一致 (INV-37)。
+- **CI `baseline` job** (report-only, `continue-on-error`): 每次 push 在 CPU 上
+  生成性能基线 (`scripts/gen_baseline.py`) 并上传 `BASELINE.md` artifact,
+  提供性能可观测性而不因 CI 跑分波动阻断合并 (R-L8-02/R-L8-05 可观测化)。
+- `serve/api.py` 新增模块级公开函数 `format_messages` / `chat_completion`
+  (单一事实来源, 供服务端与 SDK 共用)。
+
+### 变更 (Changed)
+- `ifai/sdk.py`: 收敛单一生成原语 `_generate`, `chat()` 改为返回续写文本
+  (语义不变, 仍保留 "(空)" 兜底); 与服务端生成语义对齐。
+- 微指令分解随源码更新重生成: 功能级 207 + 步骤级 909 = **1116** 条 (≥1024)。
+
+### 测试 (Tests)
+- 新增 `tests/e2e/test_demo_pipeline.py::test_sdk_chat_completion_openai_schema`
+  (INV-36 schema + 与服务端逐字一致)。
+- `tests/unit/l9/test_sdk.py` 公开 API docstring 清单纳入 `chat_completion`。
+
 ## [0.3.0] — 2026-10-16
 
 ### 新增 (Added)

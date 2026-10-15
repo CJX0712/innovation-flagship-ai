@@ -25,6 +25,51 @@ from ..models.transformer import Transformer
 from ..models.tokenizer import Tokenizer
 
 
+def format_messages(messages: List[dict]) -> str:
+    """将 OpenAI chat messages 拼接为单条 prompt (逐行 "role: content")。
+
+    零重写: 与 OpenAI chat 语义一致, 供服务端与 L9 SDK 共用单一实现。
+
+    Args:
+        messages: [{"role": "system"|"user"|"assistant", "content": str}, ...]
+
+    Returns:
+        拼接后的单条 prompt 字符串。
+    """
+    return "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+
+
+def chat_completion(text: str, model_name: str) -> dict:
+    """构造 OpenAI 严格的 ``chat.completion`` 响应体 (INV-36)。
+
+    零重写: 字段集与 OpenAI ``/v1/chat/completions`` schema 完全一致 (diff 为空),
+    且 ``choices[].message.content`` 与 ``/v1/completions`` 的 ``choices[].text``
+    逐字一致 (INV-37)。服务端 ``OpenAIServer.chat`` 与 L9 SDK ``IFAI.chat_completion``
+    共用本函数, 保证单一事实来源。
+
+    Args:
+        text: 已生成的续写文本。
+        model_name: 模型标识, 回填至响应 ``model`` 字段。
+
+    Returns:
+        符合 OpenAI schema 的 dict。
+    """
+    n = len(text)
+    return {
+        "id": "chatcmpl-ifai",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": model_name,
+        "choices": [{
+            "index": 0,
+            "message": {"role": "assistant", "content": text},
+            "finish_reason": "stop",
+        }],
+        "usage": {"prompt_tokens": 0, "completion_tokens": n,
+                  "total_tokens": n},
+    }
+
+
 class OpenAIServer:
     def __init__(self, model: Transformer, tokenizer: Tokenizer,
                  max_new_tokens: int = 64, seed: int = 0):
@@ -67,25 +112,11 @@ class OpenAIServer:
         return obj
 
     def chat(self, messages: List[dict], **kw) -> dict | str:
-        prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+        prompt = format_messages(messages)
         comp = self.completions(prompt, **kw)
         # OpenAI 严格兼容: chat/completions 返回 choices[].message.content
-        # (INV-36 字段集与 OpenAI schema diff 为空)
-        text = comp["choices"][0]["text"]
-        n = len(text)
-        return {
-            "id": "chatcmpl-ifai",
-            "object": "chat.completion",
-            "created": int(time.time()),
-            "model": self.model_name,
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "content": text},
-                "finish_reason": "stop",
-            }],
-            "usage": {"prompt_tokens": 0, "completion_tokens": n,
-                      "total_tokens": n},
-        }
+        # (INV-36 字段集与 OpenAI schema diff 为空; 与 completions 的 text 一致, INV-37)
+        return chat_completion(comp["choices"][0]["text"], self.model_name)
 
     def models(self) -> dict:
         return {"object": "list",

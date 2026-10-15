@@ -40,3 +40,29 @@ jobs:
 
       - name: Docs check (R-X-03)
         run: python scripts/check_docs.py
+
+  baseline:
+    name: performance baseline (report-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install (editable, numpy-only)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Generate baseline (CPU)
+        run: python scripts/gen_baseline.py
+
+      - name: Upload BASELINE.md artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-report
+          path: BASELINE.md

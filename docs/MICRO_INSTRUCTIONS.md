@@ -3,7 +3,7 @@
 > 由 `scripts/gen_micro_instructions.py` 对 `ifai/` 源码 AST 静态扫描自动生成。
 > 零重写 · 集大成: 每条微指令标注其复用的世界顶级来源与所服务的可验证不变量 (INV)。
 
-**总计**: 功能级微指令 203 条 + 步骤级微指令 902 条 = **1105** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28, 29, 30, 33, 34, 36, 37, 39, 40]。
+**总计**: 功能级微指令 207 条 + 步骤级微指令 909 条 = **1116** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28, 29, 30, 33, 34, 36, 37, 39, 40]。
 
 ## 分层汇总
 
@@ -16,9 +16,9 @@
 | L4 | L4 训练/微调 (Training/Finetune) | 52 | 254 | 306 |
 | L5 | L5 检索/记忆 (Retrieval/Memory) | 28 | 126 | 154 |
 | L6 | L6 智能体 (Agent) | 32 | 97 | 129 |
-| L7 | L7 服务/编排 (Service/Orchestration) | 9 | 32 | 41 |
+| L7 | L7 服务/编排 (Service/Orchestration) | 11 | 33 | 44 |
 | L8 | L8 评估/对齐 (Evaluation/Alignment) | 10 | 38 | 48 |
-| L9 | L9 应用/接口 (Application/Interface) | 5 | 17 | 22 |
+| L9 | L9 应用/接口 (Application/Interface) | 7 | 23 | 30 |
 
 ## L0 算子/内核 (Operator/Kernel)
 
@@ -1764,7 +1764,20 @@
 
 ## L7 服务/编排 (Service/Orchestration)
 
-### MI-0180 【类】OpenAIServer.OpenAIServer(类)
+### MI-0180 format_messages(messages)
+- 模块: `serve\api.py`
+- 用途: 将 OpenAI chat messages 拼接为单条 prompt (逐行 "role: content")。  ·  INV 36,37  ·  复用 OpenAI
+- 微指令步骤 (1):
+  - 返回 Constant.join(…)
+
+### MI-0181 chat_completion(text, model_name)
+- 模块: `serve\api.py`
+- 用途: 构造 OpenAI 严格的 ``chat.completion`` 响应体 (INV-36)。  ·  INV 36,37  ·  复用 OpenAI
+- 微指令步骤 (2):
+  - 赋值 n ← len(…)
+  - 返回 Dict
+
+### MI-0182 【类】OpenAIServer.OpenAIServer(类)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (6):
@@ -1775,7 +1788,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0181 OpenAIServer.__init__(self, model, tokenizer, max_new_tokens, seed)
+### MI-0183 OpenAIServer.__init__(self, model, tokenizer, max_new_tokens, seed)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (5):
@@ -1785,7 +1798,7 @@
   - 赋值 self.sampler ← Sampler(…)
   - 赋值 self.model_name ← "ifai-flagship"
 
-### MI-0182 OpenAIServer._gen_tokens(self, prompt, max_new, temperature, top_p, stream)
+### MI-0184 OpenAIServer._gen_tokens(self, prompt, max_new, temperature, top_p, stream)
 - 模块: `serve\api.py`
 - 用途: 生成 token 迭代器。stream 仅决定调用方是否增量消费;  ·  INV 37
 - 微指令步骤 (3):
@@ -1793,7 +1806,7 @@
   - 判断 UnaryOp
   - 遍历 _ ∈ range(…)
 
-### MI-0183 OpenAIServer.completions(self, prompt, temperature, top_p, max_tokens, stream)
+### MI-0185 OpenAIServer.completions(self, prompt, temperature, top_p, max_tokens, stream)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (4):
@@ -1802,23 +1815,21 @@
   - 赋值 obj ← Dict
   - 返回 obj
 
-### MI-0184 OpenAIServer.chat(self, messages, **kw)
+### MI-0186 OpenAIServer.chat(self, messages, **kw)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
-- 微指令步骤 (5):
-  - 赋值 prompt ← Constant.join(…)
+- 微指令步骤 (3):
+  - 赋值 prompt ← format_messages(…)
   - 赋值 comp ← self.completions(…)
-  - 赋值 text ← comp[…][…][…]
-  - 赋值 n ← len(…)
-  - 返回 Dict
+  - 返回 chat_completion(…)
 
-### MI-0185 OpenAIServer.models(self)
+### MI-0187 OpenAIServer.models(self)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (1):
   - 返回 Dict
 
-### MI-0186 OpenAIServer.route(self, method, path, body)
+### MI-0188 OpenAIServer.route(self, method, path, body)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (4):
@@ -1827,14 +1838,14 @@
   - 判断 BoolOp
   - 返回 [404, Dict]
 
-### MI-0187 create_handler(server)
+### MI-0189 create_handler(server)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (2):
   - ClassDef
   - 返回 Handler
 
-### MI-0188 serve(server, host, port)
+### MI-0190 serve(server, host, port)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (2):
@@ -1843,7 +1854,7 @@
 
 ## L8 评估/对齐 (Evaluation/Alignment)
 
-### MI-0189 benchmark_generation(generate_fn, prompt, max_new_tokens, runs)
+### MI-0191 benchmark_generation(generate_fn, prompt, max_new_tokens, runs)
 - 模块: `eval\benchmark.py`
 - 用途: generate_fn(prompt, n) -> 生成的 token 数; 返回吞吐统计。
 - 微指令步骤 (6):
@@ -1854,14 +1865,14 @@
   - 赋值 cv ← IfExp
   - 返回 Dict
 
-### MI-0190 write_baseline(path, stats)
+### MI-0192 write_baseline(path, stats)
 - 模块: `eval\benchmark.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 赋值 lines ← ["# 性能基线 (BASELINE…", "", JoinedStr]
   - 上下文管理 (with)
 
-### MI-0191 【类】GSM8K_Mini.GSM8K_Mini(类)
+### MI-0193 【类】GSM8K_Mini.GSM8K_Mini(类)
 - 模块: `eval\harness.py`
 - 用途: 内置 20 道极简算术题 (离线, 不随仓下载)。
 - 微指令步骤 (3):
@@ -1869,7 +1880,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0192 GSM8K_Mini.extract_number(text)
+### MI-0194 GSM8K_Mini.extract_number(text)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1877,7 +1888,7 @@
   - 赋值 nums ← re.findall(…)
   - 返回 IfExp
 
-### MI-0193 GSM8K_Mini.evaluate(self, answer_fn)
+### MI-0195 GSM8K_Mini.evaluate(self, answer_fn)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1886,14 +1897,14 @@
   - 遍历 (q, gold) ∈ self.DATA
   - 返回 Dict
 
-### MI-0194 【类】RegressionBaseline.RegressionBaseline(类)
+### MI-0196 【类】RegressionBaseline.RegressionBaseline(类)
 - 模块: `eval\harness.py`
 - 用途: 回归门禁: 当前吞吐相对 BASELINE.md 掉落 >15% ⇒ 红灯。
 - 微指令步骤 (2):
   - FunctionDef
   - FunctionDef
 
-### MI-0195 RegressionBaseline.parse_baseline(path)
+### MI-0197 RegressionBaseline.parse_baseline(path)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1902,7 +1913,7 @@
   - 异常保护 (try/except)
   - 返回 out
 
-### MI-0196 RegressionBaseline.check(current, baseline_path, threshold)
+### MI-0198 RegressionBaseline.check(current, baseline_path, threshold)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1913,7 +1924,7 @@
   - 赋值 status ← IfExp
   - 返回 Dict
 
-### MI-0197 perplexity(model, token_ids)
+### MI-0199 perplexity(model, token_ids)
 - 模块: `eval\perplexity.py`
 - 用途: 给定 token 序列计算困惑度 (逐 token 用 logits_next, 因果)。  ·  INV 39
 - 微指令步骤 (6):
@@ -1924,7 +1935,7 @@
   - 赋值 mean_nll ← total_nll div max(…)
   - 返回 float(…)
 
-### MI-0198 perplexity_manual(model, token_ids)
+### MI-0200 perplexity_manual(model, token_ids)
 - 模块: `eval\perplexity.py`
 - 用途: 纯手工 exp(mean NLL) 参考 (INV-39 对照)。  ·  INV 39
 - 微指令步骤 (5):
@@ -1936,16 +1947,18 @@
 
 ## L9 应用/接口 (Application/Interface)
 
-### MI-0199 【类】IFAI.IFAI(类)
+### MI-0201 【类】IFAI.IFAI(类)
 - 模块: `sdk.py`
 - 用途: 旗舰 AI 高层客户端。
-- 微指令步骤 (4):
+- 微指令步骤 (6):
+  - FunctionDef
+  - FunctionDef
   - FunctionDef
   - FunctionDef
   - FunctionDef
   - FunctionDef
 
-### MI-0200 IFAI.__init__(self, model_dir, seed)
+### MI-0202 IFAI.__init__(self, model_dir, seed)
 - 模块: `sdk.py`
 - 用途: 载入模型与分词器。
 - 微指令步骤 (5):
@@ -1955,22 +1968,36 @@
   - 赋值 self.model ← load_model(…)
   - 赋值 self.sampler ← Sampler(…)
 
-### MI-0201 IFAI.chat(self, prompt, max_new, temperature)
+### MI-0203 IFAI._generate(self, prompt, max_new, temperature)
 - 模块: `sdk.py`
-- 用途: 生成续写文本 (贪心/采样)。
-- 微指令步骤 (3):
+- 用途: 内部单一生成原语: 逐 token 前向 + 贪心/采样, 返回续写文本。  ·  复用 OpenAI
+- 微指令步骤 (4):
   - 赋值 ids ← BoolOp
+  - 赋值 out ← []
   - 遍历 _ ∈ range(…)
+  - 返回 Constant.join(…)
+
+### MI-0204 IFAI.chat(self, prompt, max_new, temperature)
+- 模块: `sdk.py`
+- 用途: 生成续写文本 (贪心/采样)。temperature=0 走贪心 (可复现)。
+- 微指令步骤 (1):
   - 返回 BoolOp
 
-### MI-0202 IFAI.search(self, query, corpus, top_k)
+### MI-0205 IFAI.chat_completion(self, messages, max_new, temperature)
+- 模块: `sdk.py`
+- 用途: OpenAI 严格兼容的 chat 接口, 返回 ``chat.completion`` dict (INV-36)。  ·  INV 36,37  ·  复用 OpenAI
+- 微指令步骤 (2):
+  - 赋值 text ← self._generate(…)
+  - 返回 chat_completion(…)
+
+### MI-0206 IFAI.search(self, query, corpus, top_k)
 - 模块: `sdk.py`
 - 用途: BM25 检索, 返回 [(doc_idx, score)...]。  ·  复用 BM25
 - 微指令步骤 (2):
   - 赋值 bm25 ← Call.fit(…)
   - 返回 bm25.search(…)
 
-### MI-0203 IFAI.run(self, question, max_steps)
+### MI-0207 IFAI.run(self, question, max_steps)
 - 模块: `sdk.py`
 - 用途: 运行 ReAct 智能体 (内置计算器工具)。  ·  复用 ReAct
 - 微指令步骤 (3):
