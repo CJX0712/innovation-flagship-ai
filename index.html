@@ -67,6 +67,9 @@
   <script src="src/attention-forge.js" onerror="window.__forgeLoadErrors['ForgeAttention']=true"></script>
   <script src="src/rope-forge.js" onerror="window.__forgeLoadErrors['ForgeRoPE']=true"></script>
   <script src="src/retrieval-forge.js" onerror="window.__forgeLoadErrors['ForgeRetrieval']=true"></script>
+  <script src="src/prob-forge.js" onerror="window.__forgeLoadErrors['ForgeProb']=true"></script>
+  <script src="src/graph-forge.js" onerror="window.__forgeLoadErrors['ForgeGraph']=true"></script>
+  <script src="src/rl-forge.js" onerror="window.__forgeLoadErrors['ForgeRL']=true"></script>
 
   <script>
   (function () {
@@ -85,7 +88,10 @@
       { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' },
       { key: 'ForgeAttention', label: 'attention-forge (L4 注意力/GQA)' },
       { key: 'ForgeRoPE', label: 'rope-forge (L4 旋转位置编码)' },
-      { key: 'ForgeRetrieval', label: 'retrieval-forge (L5 向量检索)' }
+      { key: 'ForgeRetrieval', label: 'retrieval-forge (L5 向量检索)' },
+      { key: 'ForgeProb', label: 'prob-forge (L5 概率分布/信息论)' },
+      { key: 'ForgeGraph', label: 'graph-forge (L5 图算法/BFS/Dijkstra)' },
+      { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' }
     ];
 
     function row(pass, id, name, actual, tol) {

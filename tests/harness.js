@@ -113,7 +113,8 @@ function globalNameFor(modPath) {
     'linalg-forge': 'ForgeLinalg', 'stable-forge': 'ForgeStable',
     'pca-forge': 'ForgePCA', 'gmm-forge': 'ForgeGMM', 'nn-forge': 'ForgeNN', 'attn-forge': 'ForgeAttn',
     'optim-forge': 'ForgeOptim', 'autodiff-forge': 'ForgeAutoDiff', 'loss-act-norm-forge': 'ForgeLossActNorm',
-    'attention-forge': 'ForgeAttention', 'rope-forge': 'ForgeRoPE', 'retrieval-forge': 'ForgeRetrieval'
+    'attention-forge': 'ForgeAttention', 'rope-forge': 'ForgeRoPE', 'retrieval-forge': 'ForgeRetrieval',
+    'prob-forge': 'ForgeProb', 'graph-forge': 'ForgeGraph', 'rl-forge': 'ForgeRL'
   };
   return map[base] || null;
 }
