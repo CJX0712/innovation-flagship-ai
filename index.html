@@ -64,6 +64,8 @@
   <script src="src/optim-forge.js" onerror="window.__forgeLoadErrors['ForgeOptim']=true"></script>
   <script src="src/autodiff-forge.js" onerror="window.__forgeLoadErrors['ForgeAutoDiff']=true"></script>
   <script src="src/loss-act-norm-forge.js" onerror="window.__forgeLoadErrors['ForgeLossActNorm']=true"></script>
+  <script src="src/attention-forge.js" onerror="window.__forgeLoadErrors['ForgeAttention']=true"></script>
+  <script src="src/rope-forge.js" onerror="window.__forgeLoadErrors['ForgeRoPE']=true"></script>
 
   <script>
   (function () {
@@ -79,7 +81,9 @@
       { key: 'ForgeStable',  label: 'stable-forge (L2 数值稳定)' },
       { key: 'ForgeOptim',   label: 'optim-forge (L3 优化器)' },
       { key: 'ForgeAutoDiff',label: 'autodiff-forge (L3 自动微分)' },
-      { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' }
+      { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' },
+      { key: 'ForgeAttention', label: 'attention-forge (L4 注意力/GQA)' },
+      { key: 'ForgeRoPE', label: 'rope-forge (L4 旋转位置编码)' }
     ];
 
     function row(pass, id, name, actual, tol) {
