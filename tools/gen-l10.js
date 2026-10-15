@@ -4,8 +4,9 @@
  * 十层架构：L1(2)+L2(4)+L3(8)+L4(16)+L5(32)+L6(64)+L7(128)+L8(256)+L9(512)+L10(1024)=2046
  * L10 = 8 族(F0-F7) × 8 组(G0-G7) × 16 微指令(O0-O15) = 1024
  *
- * 设计原则（零重写 · 集大成）：每条微指令标注 @reuse 世界顶级参照，
- * 并映射 status：done=已有 forge 模块覆盖；planned=W3-W5/W7 后续实现。
+ * 设计原则（零重写 · 集大成）：REUSE 表把每条已覆盖的微指令映射到其实现模块
+ *（@reuse 世界顶级参照）；status 由「被引用的模块文件是否真实存在于 src/」推导：
+ * done=对应模块已实现；planned=W3-W7 后续实现（模块尚未落地）。
  *
  * 用法：node tools/gen-l10.js  →  生成 docs/L10-taxonomy.md + docs/L10-index.json
  * 作者：晨星 · MIT
@@ -17,38 +18,55 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const OUT_MD = path.join(ROOT, 'docs', 'L10-taxonomy.md');
 const OUT_JSON = path.join(ROOT, 'docs', 'L10-index.json');
+const SRC_DIR = path.join(ROOT, 'src');
+
+/**
+ * 由 REUSE 引用串解析实现模块名（首 token），判断对应 src/<module>.js 是否真实存在。
+ * 用于推导 L10 微指令 status：被引用模块已实现 => done，否则 planned。
+ * 这样 status 永远与 src/ 中真实落地的模块保持一致，避免「硬编码 done 但模块未实现」的漂移。
+ */
+function moduleImplemented(ref) {
+  const mod = String(ref || '').trim().split(/\s+/)[0];
+  if (!mod) return false;
+  return fs.existsSync(path.join(SRC_DIR, mod + '.js'));
+}
 
 const REUSE = {
-  'L10-F0-G1-O0': { ref: 'core-numeric Kahan/Neumaier', status: 'done' },
-  'L10-F0-G1-O1': { ref: 'core-numeric Neumaier', status: 'done' },
-  'L10-F0-G1-O2': { ref: 'stable-forge logsumexp', status: 'planned' },
-  'L10-F0-G1-O3': { ref: 'stable-forge 稳定 softmax', status: 'planned' },
-  'L10-F0-G0-O0': { ref: 'core-numeric sfc32', status: 'done' },
-  'L10-F0-G0-O1': { ref: 'core-numeric splitmix32', status: 'done' },
-  'L10-F0-G0-O6': { ref: 'core-numeric normInv(Acklam JSS2003)', status: 'done' },
-  'L10-F0-G2-O0': { ref: 'core-numeric sha256(FIPS180-4)', status: 'done' },
-  'L10-F0-G2-O4': { ref: 'core-verify 双端一致 hash', status: 'done' },
-  'L10-F0-G6-O0': { ref: 'core-verify gradCheck', status: 'done' },
-  'L10-F0-G6-O1': { ref: 'core-verify 不变量断言', status: 'done' },
-  'L10-F0-G7-O0': { ref: 'core-verify forge-selfcheck/1.0', status: 'done' },
-  'L10-F0-G7-O1': { ref: 'core-verify formatTableSafe', status: 'done' },
-  'L10-F1-G0-O5': { ref: 'linalg-forge lu(Doolittle 部分主元)', status: 'done' },
-  'L10-F1-G0-O6': { ref: 'linalg-forge chol', status: 'done' },
-  'L10-F1-G0-O7': { ref: 'linalg-forge qr(Householder)', status: 'done' },
-  'L10-F1-G0-O8': { ref: 'linalg-forge svd(one-sided Jacobi)', status: 'done' },
-  'L10-F1-G0-O9': { ref: 'linalg-forge eigSym(Jacobi)', status: 'done' },
-  'L10-F1-G0-O10': { ref: 'linalg-forge solveLU', status: 'done' },
-  'L10-F1-G0-O11': { ref: 'linalg-forge lstsq(QR/正规方程)', status: 'done' },
-  'L10-F1-G0-O0': { ref: 'core-numeric gemm', status: 'done' },
-  'L10-F2-G0-O6': { ref: 'optim-forge Adam', status: 'planned' },
-  'L10-F2-G0-O7': { ref: 'optim-forge AdamW', status: 'planned' },
-  'L10-F3-G0-O7': { ref: 'autodiff-forge 雅可比', status: 'planned' },
-  'L10-F3-G1-O0': { ref: 'autodiff-forge 反向累积', status: 'planned' },
-  'L10-F3-G6-O0': { ref: 'core-verify gradCheck', status: 'done' },
-  'L10-F4-G0-O0': { ref: 'attn-forge attention', status: 'done' },
-  'L10-F4-G0-O1': { ref: 'attn-forge causalMask', status: 'done' },
-  'L10-F4-G2-O0': { ref: 'loss-act-norm-forge RMSNorm', status: 'planned' },
-  'L10-F4-G3-O0': { ref: 'loss-act-norm-forge SwiGLU', status: 'planned' },
+  // F0 数值基础
+  'L10-F0-G1-O00': 'core-numeric Kahan/Neumaier',
+  'L10-F0-G1-O01': 'core-numeric Neumaier',
+  'L10-F0-G1-O02': 'stable-forge logsumexp',
+  'L10-F0-G1-O03': 'stable-forge 稳定 softmax',
+  'L10-F0-G0-O00': 'core-numeric sfc32',
+  'L10-F0-G0-O01': 'core-numeric splitmix32',
+  'L10-F0-G0-O06': 'core-numeric normInv(Acklam JSS2003)',
+  'L10-F0-G2-O00': 'core-numeric sha256(FIPS180-4)',
+  'L10-F0-G2-O04': 'core-verify 双端一致 hash',
+  'L10-F0-G6-O00': 'core-verify gradCheck',
+  'L10-F0-G6-O01': 'core-verify 不变量断言',
+  'L10-F0-G7-O00': 'core-verify forge-selfcheck/1.0',
+  'L10-F0-G7-O01': 'core-verify formatTableSafe',
+  // F1 线性代数
+  'L10-F1-G0-O00': 'core-numeric gemm',
+  'L10-F1-G0-O05': 'linalg-forge lu(Doolittle 部分主元)',
+  'L10-F1-G0-O06': 'linalg-forge chol',
+  'L10-F1-G0-O07': 'linalg-forge qr(Householder)',
+  'L10-F1-G0-O08': 'linalg-forge svd(one-sided Jacobi)',
+  'L10-F1-G0-O09': 'linalg-forge eigSym(Jacobi)',
+  'L10-F1-G0-O10': 'linalg-forge solveLU',
+  'L10-F1-G0-O11': 'linalg-forge lstsq(QR/正规方程)',
+  // F2 优化
+  'L10-F2-G0-O06': 'optim-forge Adam',
+  'L10-F2-G0-O07': 'optim-forge AdamW',
+  // F3 自动微分
+  'L10-F3-G0-O07': 'autodiff-forge 雅可比',
+  'L10-F3-G1-O00': 'autodiff-forge 反向累积',
+  'L10-F3-G6-O00': 'core-verify gradCheck',
+  // F4 注意力与 Transformer
+  'L10-F4-G0-O00': 'attn-forge attention',
+  'L10-F4-G0-O01': 'attn-forge causalMask',
+  'L10-F4-G2-O00': 'loss-act-norm-forge RMSNorm',
+  'L10-F4-G3-O00': 'loss-act-norm-forge SwiGLU',
 };
 
 const FAM = [
@@ -123,14 +141,14 @@ const FAM = [
     { g: 'G7', name: '应用', ops: ['推荐系统 RL', '对话策略', '机器人控制', '组合优化 RL', '元 RL', '分层 RL', '离线 RL', '安全 RL', '自动驾驶 RL', '游戏 RL', '金融 RL', '健康 RL', 'RL 推荐', '持续学习 RL', '多任务 RL', '鲁棒 RL'] },
   ]},
   { f: 'F7', name: '检索/图/系统', layer: 'L7', groups: [
-    { g: 'G0', name: '向量检索', ops: ['余弦相似', '内积检索', 'L2 检索', '近似近邻 ANN', '穷举检索', '量化检索', '分层导航 HNSW', '倒排文件'] },
-    { g: 'G1', name: '索引结构', ops: ['KD 树', '球树', 'LSH', 'Annoy 树', '倒排索引', '乘积量化 PQ', 'IVFPQ', '局部敏感哈希'] },
-    { g: 'G2', name: '图算法', ops: ['BFS', 'DFS', 'Dijkstra', 'A*', '最短路径', 'PageRank', '连通分量', '最小生成树'] },
-    { g: 'G3', name: '图神经网络', ops: ['图卷积 GCN', 'GraphSAGE', '注意力图网络 GAT', '消息传递', '节点分类', '图池化', '边预测', '图采样'] },
-    { g: 'G4', name: '稀疏与压缩', ops: ['稀疏矩阵乘', '稀疏格式转换', '压缩稀疏行', '压缩存储', '低秩压缩', '剪枝', '稀疏注意力', '稀疏梯度'] },
-    { g: 'G5', name: '序列化与存储', ops: ['JSON 序列化', '二进制序列化', '列式存储', '内存映射', '增量写入', '校验持久化', '版本化存储', '快照'] },
-    { g: 'G6', name: '系统与部署', ops: ['推理批处理', '算子融合', '内核调度', '内存池', '零拷贝', '流式管线', '负载均衡', '容错'] },
-    { g: 'G7', name: '评测与监控', ops: ['精度评测', '延迟评测', '吞吐量评测', '召回率评测', '一致性评测', '资源监控', '漂移检测', '回归监控'] },
+    { g: 'G0', name: '向量检索', ops: ['余弦相似', '内积检索', 'L2 检索', '近似近邻 ANN', '穷举检索', '量化检索', '分层导航 HNSW', '倒排文件', '最大内积检索', '检索重排', '检索融合', '候选生成', '相似度阈值', '批量检索', '近邻图构建', '近邻图搜索'] },
+    { g: 'G1', name: '索引结构', ops: ['KD 树', '球树', 'LSH', 'Annoy 树', '倒排索引', '乘积量化 PQ', 'IVFPQ', '局部敏感哈希', 'ScaNN', '旋转不变 LSH', '多索引 HNSW', '图索引', '树索引', '哈希索引', '粗量化', '细量化'] },
+    { g: 'G2', name: '图算法', ops: ['BFS', 'DFS', 'Dijkstra', 'A*', '最短路径', 'PageRank', '连通分量', '最小生成树', '拓扑排序', '强连通分量', '二分图匹配', '最大流', '社区发现', '三角计数', '图着色', '中心性度量'] },
+    { g: 'G3', name: '图神经网络', ops: ['图卷积 GCN', 'GraphSAGE', '注意力图网络 GAT', '消息传递', '节点分类', '图池化', '边预测', '图采样', '图回归', '图自编码器', '图注意力池化', '图同构网络', '边分类', '子图匹配', '图生成', '图预训练'] },
+    { g: 'G4', name: '稀疏与压缩', ops: ['稀疏矩阵乘', '稀疏格式转换', '压缩稀疏行', '压缩存储', '低秩压缩', '剪枝', '稀疏注意力', '稀疏梯度', '稀疏向量', '稀疏卷积', '量化压缩', '哈夫曼编码', '游程编码', '字典压缩', '增量压缩', '列式压缩'] },
+    { g: 'G5', name: '序列化与存储', ops: ['JSON 序列化', '二进制序列化', '列式存储', '内存映射', '增量写入', '校验持久化', '版本化存储', '快照', '协议缓冲区', '分区存储', '对象存储', '本地缓存', '远端缓存', '事务写入', '灾难恢复', '数据校验和'] },
+    { g: 'G6', name: '系统与部署', ops: ['推理批处理', '算子融合', '内核调度', '内存池', '零拷贝', '流式管线', '负载均衡', '容错', '自动扩缩容', '请求队列', '预热缓存', '降级策略', '限流', '监控埋点', '灰度发布', '回滚'] },
+    { g: 'G7', name: '评测与监控', ops: ['精度评测', '延迟评测', '吞吐量评测', '召回率评测', '一致性评测', '资源监控', '漂移检测', '回归监控', 'F1 评测', 'AUC 评测', '困惑度评测', 'BLEU 评测', '人工评测', '对抗评测', '公平性评测', '可解释评测'] },
   ]},
 ];
 
@@ -146,8 +164,8 @@ function main() {
         const o = 'O' + ('0' + i).slice(-2);
         const id = 'L10-' + fa.f + '-' + gp.g + '-' + o;
         const reuse = REUSE[id] || null;
-        const status = reuse ? reuse.status : 'planned';
-        const ref = reuse ? reuse.ref : '规划：W3-W7 后续实现（含 @reuse 顶级参照）';
+        const ref = reuse ? reuse : '规划：W3-W7 后续实现（含 @reuse 顶级参照）';
+        const status = reuse ? (moduleImplemented(reuse) ? 'done' : 'planned') : 'planned';
         leaves.push({ id, family: fa.f, group: gp.g, op: o, name, layer: fa.layer, status, reuse: ref });
       });
     }

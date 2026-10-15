@@ -1,6 +1,9 @@
 /*
  * attn-forge.js — 纯 JS 单文件 · 零依赖 · 世界级缩放点积注意力 (Scaled Dot-Product Attention)
  *
+ * @reuse Vaswani et al. Attention Is All You Need|https://arxiv.org/abs/1706.03762|公有域|D|SDPA 定义 Attention(Q,K,V)=softmax(QKᵀ/√d_k)V
+ * @reuse Rumelhart-Hinton-Williams Backpropagation 1986|https://doi.org/10.1038/323533a0|公有域|D|解析梯度链式法则（softmax-jacobian）
+ *
  * 算法来源（集大成，零重写）：
  *   - Attention(Q,K,V)=softmax(QKᵀ/√d_k)V：Vaswani et al. 2017 (Attention Is All You Need)
  *   - 反向传播：链式法则解析梯度（softmax-jacobian 技巧：ds = p⊙(dp - Σ(p⊙dp))）

@@ -1,6 +1,10 @@
 /*
  * nn-forge.js — 纯 JS 单文件 · 零依赖 · 世界级多层感知机 (MLP / 反向传播)
  *
+ * @reuse Rumelhart-Hinton-Williams Backpropagation 1986|https://doi.org/10.1038/323533a0|公有域|D|反向传播（误差逆传播）
+ * @reuse Nair-Hinton ReLU 2010|https://doi.org/10.5555/3104322.3104425|公有域|D|ReLU 激活
+ * @reuse Glorot-Xavier 初始化|http://proceedings.mlr.press/v9/glorot10a.html|公有域|D|Xavier/He 权重初始化
+ *
  * 算法来源（集大成，零重写）：
  *   - 反向传播：Rumelhart, Hinton & Williams 1986（Learning representations by back-propagating errors）
  *   - 梯度数值检验：中心差分 (f(x+ε)-f(x-ε))/(2ε)，参照数值微分标准

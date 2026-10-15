@@ -6,7 +6,7 @@
  * @reuse     OpenBLAS|https://github.com/OpenMathLib/OpenBLAS|BSD-3|B|GEMM 分块与 B 面板打包策略
  * @reuse     LAPACK|https://github.com/Reference-LAPACK/lapack|BSD-3|B|BLAS axpy/dot/nrm2/gemv 参考口径
  * @reuse     @stdlib/stdlib|https://github.com/stdlib-js/stdlib|Apache-2.0|D|BLAS 风格 stride 约定
- * @reuse     Higham《Accuracy and Stability》|https://doi.org/10.1137/1.9780898718027|D|Kahan/Neumaier 补偿求和误差界
+ * @reuse     Higham《Accuracy and Stability》|https://doi.org/10.1137/1.9780898718027|未声明|D|Kahan/Neumaier 补偿求和误差界
  * @reuse     Acklam 逆正态 CDF|https://www.jstatsoft.org/v05/i08|未声明|D|无状态正态分位数算法（常数公开）
  * @beyond    单文件纯 JS 零构建零依赖；自写纯 JS SHA-256 使 Node 与浏览器 file:// 双端 hash 逐位一致；确定性 PRNG 与补偿求和内置于内核层
  * @invariant INV-NUM-001|分块 GEMM vs 朴素 GEMM 相对误差 ≤ 1e-15|1e-15|分块仅改变求和结合序，理论相对界 O(ε·√n)

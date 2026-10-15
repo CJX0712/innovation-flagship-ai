@@ -11,7 +11,8 @@
     "selfcheck": "node run-all.js",
     "harness": "node tests/harness.js",
     "verify": "node run-all.js && node tests/harness.js",
-    "l10": "node tools/gen-l10.js && node tools/verify-l10.js"
+    "l10": "node tools/gen-l10.js && node tools/verify-l10.js",
+    "check:reuse": "node tools/check-reuse.js"
   },
   "dependencies": {},
   "devDependencies": {}

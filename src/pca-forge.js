@@ -1,6 +1,9 @@
 /*
  * pca-forge.js — 纯 JS 单文件 · 零依赖 · 世界级 PCA
  *
+ * @reuse Pearson 1901 / Hotelling 1933 PCA|https://doi.org/10.1080/14786440109462720|公有域|D|主成分分析（协方差+投影）
+ * @reuse Golub-Van Loan Jacobi EVD|https://doi.org/10.1137/1.9780898719574|未声明|D|对称矩阵特征分解（Jacobi 旋转）
+ *
  * 算法来源（集大成，零重写）：
  *   - 协方差矩阵 + 主成分投影：Pearson 1901 / Hotelling 1933
  *   - 对称矩阵特征分解：Jacobi 旋转法（Jacobi 1846；Golub & Van Loan, Matrix Computations）

@@ -1,6 +1,9 @@
 /*
  * gmm-forge.js — 纯 JS 单文件 · 零依赖 · 世界级高斯混合模型 (GMM / EM)
  *
+ * @reuse Dempster-Laird-Rubin EM 1977|https://doi.org/10.1111/j.2517-6161.1977.tb01600.x|公有域|D|EM 算法（A Maximization-Maximization Algorithm）
+ * @reuse scipy.special.logsumexp|https://github.com/scipy/scipy|BSD-3|B|logsumexp 防溢出基线
+ *
  * 算法来源（集大成，零重写）：
  *   - EM 算法：Dempster, Laird & Rubin 1977（A Maximization-Maximization Algorithm）
  *   - 数值稳定：logsumexp 防溢出（§信息论标准技术）；协方差求逆用特征分解 Σ⁻¹=VΛ⁻¹Vᵀ
