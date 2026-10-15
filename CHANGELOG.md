@@ -2,6 +2,30 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.0] — 2026-10-16
+
+### 新增 (Added)
+- 横切工程闭环（W7）：三项静态审计脚本全部落地并接入 CI 门禁。
+  - `scripts/check_layering.py`（INV-41：0 反向 import，十层单向依赖）。
+  - `scripts/audit_no_reinvention.py`（INV-42：十层覆盖 + ≥25 处世界顶级出处，实测 75 处）。
+  - `scripts/check_docs.py`（R-X-03：必备文件 / 内部链接 / 关键章节）。
+- 新增 8 个可运行示例（`examples/`）：quickstart / demo_cli / quantize_int8 /
+  lora_finetune / agent_tools / rag_local / serve_client，以及 `examples/README.md`。
+- 性能基线工具 `scripts/gen_baseline.py` 与 `BASELINE.md`（prefill 2.08ms、
+  TPOT 3.55ms、281 tok/s，含 ±15% 回归门禁）。
+- 逐层设计文档 `docs/design/L0..L8`（共 55 条零重写出处标注）。
+- 端到端测试 `tests/e2e/*` 与 L9 单元测试 `tests/unit/l9/*`。
+- `.github/workflows/ci.yml`：Python 3.9/3.11/3.13 × ubuntu/windows 矩阵，
+  运行 pytest + 三项审计。
+
+### 变更 (Changed)
+- 版本号升至 0.2.0（`ifai/__init__.py` 与 `pyproject.toml` 一致）。
+- `pyproject.toml` 增加 `[tool.coverage.*]` 配置（按需启用 `pytest --cov`）。
+
+### 文档 (Docs)
+- `README.md`、`CITATION.md`、`CONTRIBUTING.md`、`CHANGELOG.md` 署名统一为
+  晨星 (Morningstar) / CJX0712。
+
 ## [0.1.0] — 2026-10-16
 
 ### 新增 (Added)

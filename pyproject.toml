@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ifai"
-version = "0.1.0"
+version = "0.2.0"
 description = "创新旗舰 AI · Innovation Flagship AI — 十层架构、零重写集大成、CPU 可运行可复现可验证的旗舰级 AI 系统"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -39,3 +39,11 @@ include = ["ifai*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.coverage.run]
+source = ["ifai"]
+omit = ["ifai/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

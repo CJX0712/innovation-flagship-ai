@@ -1,16 +1,19 @@
 #!/usr/bin/env python
-"""零重写审计 (Zero-Rewrite Audit) — 集大成原则的可验证门禁。
+"""零重写审计 (No-Reinvention Audit) — 集大成原则的可验证门禁 (INV-42)。
 
-设计目标: 证明旗舰 AI 的每一层 (L0–L9) 都"站在世界顶级成果之上",
-而非从零造轮子。脚本扫描 ``ifai/`` 全部源码, 逐文件检测是否存在对
-公认论文/算法/系统的"零重写"引用标记 (作者、年份、经典方法名), 并按
-十层架构汇总覆盖率。
+设计目标: 证明旗舰 AI 的每一层 (L0–L9) 都"站在世界顶级成果之上", 而非从
+零造轮子。脚本扫描 ``ifai/`` 全部源码, 完成两项校验:
 
-退出码: 0 = 全部分层均有引用覆盖; 1 = 存在未覆盖分层 (CI 中应中断)。
+1. **分层引用覆盖率**: 十层架构每一层都至少存在一个"零重写"引用标记
+   (作者 / 年份 / 经典方法名)。
+2. **出处总数门槛**: 全代码库命中的不同引用标记数 >= 25 (INV-42 要求
+   >= 25 条出处)。
+
+两项全部通过才退出 0; 否则退出 1 (CI 应中断)。
 
 用法:
-    python scripts/audit_zero_rewrite.py
-    python scripts/audit_zero_rewrite.py --root ifai
+    python scripts/audit_no_reinvention.py
+    python scripts/audit_no_reinvention.py --root ifai
 """
 from __future__ import annotations
 
@@ -40,13 +43,13 @@ MARKERS = [
     r"Vaswani", r"Su et al", r"RoPE", r"Shazeer", r"SwiGLU", r"RMSNorm", r"Zhang et al",
     r"GQA", r"Ainslie", r"MoE", r"Fedus", r"Switch", r"LoRA", r"Hu et al", r"Press", r"weight[- ]?tying",
     # 算子 / 内核
-    r"FlashAttention", r"Dao", r"online softmax", r"NTK",
+    r"FlashAttention", r"Dao", r"online softmax", r"NTK", r"Dettmers", r"GPTQ", r"AWQ",
     # 推理系统
     r"PagedAttention", r"vLLM", r"Kwon", r"Orca", r"Yu et al", r"continuous batching",
     r"Speculative", r"Leviathan", r"Medusa", r"EAGLE",
     # 训练
     r"AdamW", r"Loshchilov", r"cosine", r"nanogpt", r"Karpathy", r"Griewank", r"Walther",
-    r"reverse-?mode", r"backprop", r"autodiff", r"reverse mode",
+    r"reverse-?mode", r"backprop", r"autodiff", r"reverse mode", r"Kingma",
     # 检索
     r"BM25", r"Robertson", r"HNSW", r"Malkov", r"RRF", r"Cormack", r"cross-?encoder",
     r"Nogueira", r"dense", r"embedding",
@@ -55,14 +58,17 @@ MARKERS = [
     # 服务
     r"OpenAI", r"SSE", r"REST",
     # 评估
-    r"Jelinek", r"perplexity", r"MLPerf", r"GSM8K", r"benchmark",
+    r"Jelinek", r"perplexity", r"MLPerf", r"GSM8K", r"benchmark", r"Cobbe",
     # 量化
     r"int8", r"int4", r"fp16", r"quantiz",
     # 分词
-    r"BPE", r"Sennrich", r"byte-?level", r"byte level",
+    r"BPE", r"Sennrich", r"byte-?level", r"byte level", r"Radford",
 ]
 
 _COMPILED = [re.compile(m, re.IGNORECASE) for m in MARKERS]
+
+# INV-42 要求的最低不同出处数
+MIN_CITATIONS = 25
 
 
 def file_has_citation(path: str) -> bool:
@@ -75,7 +81,6 @@ def file_has_citation(path: str) -> bool:
 
 
 def resolve_files(root: str, pattern: str) -> list[str]:
-    # pattern 形如 "models/" (目录) 或 "rng.py" (精确文件, 相对 root)
     out = []
     if pattern.endswith("/"):
         d = os.path.join(root, pattern.rstrip("/"))
@@ -91,8 +96,27 @@ def resolve_files(root: str, pattern: str) -> list[str]:
     return out
 
 
+def collect_citations(root: str) -> set[str]:
+    """返回全代码库命中到的不同引用标记名集合。"""
+    hit: set[str] = set()
+    for base, _, files in os.walk(root):
+        for fn in files:
+            if not fn.endswith(".py"):
+                continue
+            path = os.path.join(base, fn)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    text = f.read()
+            except (OSError, UnicodeDecodeError):
+                continue
+            for m in MARKERS:
+                if re.search(m, text, re.IGNORECASE):
+                    hit.add(m)
+    return hit
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description="零重写审计")
+    ap = argparse.ArgumentParser(description="零重写审计 (INV-42)")
     ap.add_argument("--root", default="ifai", help="待审计的源码根目录 (默认 ifai)")
     args = ap.parse_args()
 
@@ -104,33 +128,40 @@ def main() -> int:
         return 1
 
     print("=" * 70)
-    print("零重写审计 · 集大成原则验证 (L0–L9)")
+    print("零重写审计 · 集大成原则验证 (L0–L9)  ·  INV-42")
     print("=" * 70)
 
-    all_ok = True
+    # 1) 分层引用覆盖率
+    layer_ok = True
     for lid, name, patterns in LAYERS:
         files: list[str] = []
         for pat in patterns:
             files.extend(resolve_files(root, pat))
         files = sorted(set(files))
         cited = [f for f in files if file_has_citation(f)]
-        n_files, n_cited = len(files), len(cited)
-        covered = n_cited > 0
-        all_ok = all_ok and covered
+        covered = len(cited) > 0
+        layer_ok = layer_ok and covered
         status = "✅ 已覆盖" if covered else "❌ 未覆盖"
-        print(f"\n[{lid}] {name}  ({n_cited}/{n_files} 文件含引用)  {status}")
+        print(f"\n[{lid}] {name}  ({len(cited)}/{len(files)} 文件含引用)  {status}")
         for f in files:
             mark = "✔" if f in cited else "✘"
-            rel = os.path.relpath(f, root)
-            print(f"      {mark} {rel}")
+            print(f"      {mark} {os.path.relpath(f, root)}")
         if not covered:
-            print(f"      ⚠ 该层没有任何零重写引用 — 请补充对公认方案/论文的标注")
+            print("      ⚠ 该层没有任何零重写引用 — 请补充对公认方案/论文的标注")
 
-    print("\n" + "=" * 70)
-    if all_ok:
+    # 2) 出处总数门槛
+    hits = collect_citations(root)
+    citation_ok = len(hits) >= MIN_CITATIONS
+
+    print("\n" + "-" * 70)
+    print(f"不同出处标记命中数: {len(hits)}  (INV-42 门槛 >= {MIN_CITATIONS})  "
+          + ("✅" if citation_ok else "❌"))
+
+    print("=" * 70)
+    if layer_ok and citation_ok:
         print("审计通过: 十层架构均站在世界顶级成果之上 (零重写 / 集大成)。")
         return 0
-    print("审计失败: 存在未覆盖分层, 违反零重写原则。")
+    print("审计失败: 存在未覆盖分层或出处不足, 违反零重写原则。")
     return 1
 
 

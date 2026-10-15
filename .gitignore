@@ -26,3 +26,8 @@ tokenizer.json
 # 虚拟环境
 .venv/
 venv/
+
+# 基准生成的中间产物（机器相关, 不入库）
+_baseline_model/
+BASELINE.json
+
