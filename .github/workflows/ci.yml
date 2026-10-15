@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: 旗舰自检 · 17 模块 / 129 不变量
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 环境信息
+        run: |
+          node --version
+          npm --version
+
+      - name: 聚合自检 + 契约自检 (npm run verify)
+        run: npm run verify
+
+      - name: L10 分类法生成与校验 (npm run l10)
+        run: npm run l10
+
+      - name: 复用合规校验 (npm run check:reuse)
+        run: npm run check:reuse
+
+      - name: 失败即非零退出
+        if: failure()
+        run: exit 1
