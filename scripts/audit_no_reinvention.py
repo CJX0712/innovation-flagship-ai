@@ -22,6 +22,11 @@ import os
 import re
 import sys
 
+# Windows 默认控制台编码 (cp1252/cp936) 无法编码中文输出, 统一强制 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # 十层架构 → (层名, 目录模式)
 LAYERS = [
     ("L0", "算子/内核 (Operator/Kernel)", ["core/numeric.py", "core/ops.py", "core/quant.py"]),

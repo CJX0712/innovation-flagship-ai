@@ -10,6 +10,10 @@ jobs:
   test:
     name: py${{ matrix.python }} · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      # Windows runner 默认 cp1252, 中文审计输出会 UnicodeEncodeError; 全局 UTF-8。
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     strategy:
       fail-fast: false
       matrix:

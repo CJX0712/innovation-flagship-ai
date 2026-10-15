@@ -18,6 +18,11 @@ import ast
 import os
 import sys
 
+# Windows 默认控制台编码 (cp1252/cp936) 无法编码中文输出, 统一强制 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # 十层架构的层序 (数值越大越靠"应用端"); 仅允许 低层→高层 的单向依赖,
 # 禁止 高层→低层 (反向)。秩越小越基础。
 PACKAGE_RANK = {

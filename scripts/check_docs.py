@@ -20,6 +20,11 @@ import os
 import re
 import sys
 
+# Windows 默认控制台编码 (cp1252/cp936) 无法编码中文输出, 统一强制 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 REQUIRED_FILES = [
     "README.md",
     "LICENSE",
