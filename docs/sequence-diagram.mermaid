@@ -1,0 +1,154 @@
+%% 创新旗舰 AI · 三张核心时序图
+%% 来源：docs/ARCHITECTURE.md §6.1 / §6.2 / §6.3
+
+%% ========== (a) run-all.js 聚合自检流程 ==========
+sequenceDiagram
+    autonumber
+    actor U as 用户/CI
+    participant R as run-all.js
+    participant E as tools/env-check.js
+    participant FS as fs/path
+    participant CP as child_process.spawnSync
+    participant M as src/<mod>.js
+    participant V as core-verify
+    participant OUT as stdout / reports/
+
+    U->>R: node run-all.js [--json --filter X --timeout 10]
+    R->>E: checkEnv()
+    E-->>R: ok | FE-4001 + 修复命令
+    alt 环境不满足
+        R-->>U: 打印修复命令, exit 66
+    end
+    R->>FS: readdirSync('src') 过滤 *-forge.js + core-*.js
+    FS-->>R: modules[16]
+    R->>R: 按依赖序排序 + 预算分派
+    loop 每个模块 m (串行, 硬超时 10s)
+        R->>CP: spawnSync('node', [m, '--self-check', '--json'])
+        CP->>M: 进程启动
+        M->>V: Verify.beginSession(module, version)
+        V-->>M: session
+        loop 每个用例 c
+            M->>M: 主实现 vs naive 参照实现 双路计算
+            M->>V: assertInvariant(INV-XXX, actual, tol)
+            V-->>M: CaseResult{status, abs_err, rel_err}
+        end
+        M->>V: finalize(session)
+        V->>V: 统计 passed/failed/skipped, 计算 worst, 生成 hash
+        V-->>M: Report
+        M->>M: process.stdout.write(JSON) / process.exit(failed===0?0:1)
+        M-->>CP: { stdout, status }
+        CP-->>R: 解析 stdout JSON -> Report
+        alt 解析失败或超时
+            R->>R: 记为 failed, 错误码 FE-3001 / FE-0004
+        end
+    end
+    R->>R: 聚合: sum(passed/failed), 收集最差残差, 总耗时
+    R->>OUT: 写 reports/report-<ISO>.json
+    alt --json
+        R-->>U: 纯 JSON + exit(allFailed===0 ? 0 : 1)
+    else 默认
+        R-->>U: 人类可读汇总表 + exit(...)
+    end
+
+
+%% ========== (b) 一次 Attention 前向 + 反向 ==========
+sequenceDiagram
+    autonumber
+    actor CL as 调用方(测试/面板)
+    participant A as attention-forge
+    participant N as core-numeric
+    participant S as stable-forge
+    participant D as autodiff-forge
+    participant V as core-verify
+
+    CL->>A: attentionForward(Q[ B,H,S,Dh ], K, V, {causal, scale, blockSize})
+    A->>N: gemm(Q, Kᵀ, {ld,packed}) -> Scores[ B,H,S,S ]
+    N-->>A: Scores
+    A->>A: scale = 1/√Dh ; Scores *= scale
+    alt causal
+        A->>A: 置上三角为 -Inf (逻辑 mask, 不写 NaN)
+    end
+    loop 以 blockSize 分块遍历列维 j (online-softmax)
+        A->>S: 取块 scores[:, j0:j1]
+        A->>S: mNew = max(mOld, max(block))
+        S-->>A: mNew
+        A->>S: corr = exp(mOld - mNew)
+        S->>S: exp(x - mNew)  (max-shift, 防溢出)
+        S-->>A: pBlock
+        A->>A: lNew = lOld*corr + Σ pBlock ; accNew = accOld*corr + pBlock ⊗ V块
+        A->>N: gemm(pBlock, V[j0:j1,:]) -> 累加到 acc
+        N-->>A: acc
+    end
+    A->>A: O = acc / lNew (逐行广播)
+    A-->>CL: { O, stats:{ m, l } }
+
+    Note over CL,V: ---- 反向 ----
+    CL->>A: attentionBackward(dO, Q, K, V, O, stats)
+    A->>D: 从 VJP_REGISTRY 取 'attention' 的 VJP
+    D-->>A: vjpFn
+    A->>A: Dvec = rowSum(dO ⊙ O)
+    A->>S: pBlock = exp(scores - m) (用前向保存的 m, 重算)
+    S-->>A: pBlock
+    A->>A: dScores = pBlock ⊙ (dO@Vᵀ - Dvec)
+    A->>N: gemm(dScores, V) -> dV ; gemm(dScoresᵀ, Q) -> dK ; gemm(dScores, K) -> dQ
+    N-->>A: dQ, dK, dV
+    A-->>CL: { dQ, dK, dV }
+
+    Note over CL,V: ---- 不变量校验 ----
+    CL->>A: selfCheck()
+    A->>A: naiveAttention(朴素 softmax, 不分块)
+    A->>V: assertInvariant(INV-ATN-001, maxAbsDiff(分块, 朴素), 1e-12)
+    A->>D: gradcheck(attnForward, {Q,K,V}, tol=1e-6) 中心差分
+    D-->>A: 相对误差
+    A->>V: assertInvariant(INV-ATN-005, relErr, 1e-6)
+    V-->>A: Report
+    A-->>CL: Report
+
+
+%% ========== (c) L10 清单生成与校验流程 ==========
+sequenceDiagram
+    autonumber
+    actor ENG as 工程师/CI
+    participant G as tools/gen-l10.js
+    participant SPEC as tools/l10-spec.js
+    participant N as core-numeric
+    participant FS as fs
+    participant DOC as docs/L10-taxonomy.md
+    participant VF as tools/verify-l10.js
+    participant V as core-verify
+
+    ENG->>G: node tools/gen-l10.js [--out docs/L10-taxonomy.md]
+    G->>SPEC: import { FAMILIES, GROUPS, OP_RULES }
+    SPEC-->>G: 8 族 × 8 组名称 + 16 条规则后缀 + 每组核心算子名
+    G->>N: rng = Numeric.sfc32(0x9E3779B9) (仅用于稳定排序, 非随机内容)
+    N-->>G: rng
+    loop k = 0..7 (族 F0..F7)
+        loop j = 0..7 (组 G0..G7)
+            loop m = 0..15 (微指令 O0..O15)
+                G->>G: id = `F${k}G${j}O${m}`
+                G->>G: code = `L10-F${k}-G${j}-O${m}`
+                G->>G: name = `${GROUPS[k][j].core}${OP_RULES[m].suffix}`
+                G->>G: rule = OP_RULES[m].category
+                G->>G: status = 已实现? 'implemented' : 'reserved'
+                G->>G: owner = 映射到 src 模块名 (可空)
+                G->>G: invId = 已实现? `INV-XXX-NNN` : '-'
+            end
+        end
+    end
+    G->>G: rows.length 断言 === 1024
+    G->>DOC: 写 8 个族级章节 + 1024 行 Markdown 表格
+    DOC-->>G: written
+    G-->>ENG: "生成 1024 行 -> docs/L10-taxonomy.md"
+
+    ENG->>VF: node tools/verify-l10.js
+    VF->>FS: readFileSync('docs/L10-taxonomy.md')
+    FS-->>VF: text
+    VF->>VF: 正则提取所有编号行 L10-F0-7-G0-7-O0-15 (见 ARCHITECTURE §6.3)
+    VF->>V: assertInvariant('L10-COUNT', rows.length, {eq: 1024})
+    VF->>V: assertInvariant('L10-UNIQUE', uniqueIds.size, {eq: 1024})
+    VF->>V: assertInvariant('L10-PER-FAMILY', countsPerFamily, {allEq: 128})
+    VF->>V: assertInvariant('L10-PER-GROUP', countsPerGroup, {allEq: 16})
+    VF->>V: assertInvariant('L10-GROUP-COVERAGE', nonEmptyGroups, {eq: 64})
+    VF->>V: assertInvariant('L10-REGEX', malformedLines, {eq: 0})
+    V-->>VF: 6 条断言结果
+    VF-->>ENG: exit(failed===0 ? 0 : 1)

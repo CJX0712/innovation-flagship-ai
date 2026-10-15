@@ -1,0 +1,177 @@
+%% 创新旗舰 AI · 核心数据结构与服务类类图
+%% 来源：docs/ARCHITECTURE.md §7
+classDiagram
+    class Mat {
+        +Float64Array data
+        +int rows
+        +int cols
+        +int ld
+        +get(i,j) double
+        +set(i,j,v) void
+        +row(i) Float64Array
+        +block(i0,i1,j0,j1) Mat
+        +normFrobenius() double
+    }
+
+    class Tensor {
+        +Float64Array data
+        +number[] shape
+        +number[] stride
+        +Tape tape
+        +int node
+        +boolean requiresGrad
+        +reshape(s) Tensor
+        +transpose(dims) Tensor
+        +contiguous() Tensor
+        +batchedMatmul(o) Tensor
+    }
+
+    class BlockTable {
+        +int blockSize
+        +int numBlocks
+        +Float64Array[] kPool
+        +Float64Array[] vPool
+        +int[] freeList
+        +Int32Array refCount
+        +Int32Array[] seqBlocks
+        +alloc(seqId) int
+        +free(seqId) void
+        +append(seqId,k,v) void
+        +fork(dst,src) void
+        +gather(seqId,layer,head) Mat
+    }
+
+    class Tape {
+        +Node[] nodes
+        +Float64Array[] values
+        +Float64Array[] grads
+        +record(op,inputs,saved) int
+        +backward(seedNode) void
+    }
+
+    class Node {
+        +string op
+        +int[] inputs
+        +number[] shape
+        +any saved
+    }
+
+    class PRNG {
+        +Uint32Array state
+        +next() double
+        +int32() int
+        +normal() double
+        +gumbel() double
+        +fork(label) PRNG
+    }
+
+    class InvariantDef {
+        +string id
+        +string expr
+        +double tol
+        +string source
+        +string module
+    }
+
+    class CaseResult {
+        +string id
+        +string name
+        +string status
+        +any expected
+        +any actual
+        +double abs_err
+        +double rel_err
+        +double tol
+        +string note
+    }
+
+    class Report {
+        +string schema
+        +string module
+        +int passed
+        +int failed
+        +int skipped
+        +double duration_ms
+        +InvariantDef[] invariants
+        +CaseResult[] cases
+        +object env
+        +string hash
+    }
+
+    class NumericCore {
+        +gemm(A,B,C,opts) Mat
+        +gemv(A,x,y) Float64Array
+        +axpy(alpha,x,y) void
+        +dot(x,y) double
+        +kahanSum(x) double
+        +neumaierSum(x) double
+        +sfc32(seed) PRNG
+        +sha256(bytes) string
+        +stableStringify(o) string
+    }
+
+    class VerifyCore {
+        +TOL tiers
+        +registerInvariant(def) void
+        +assertInvariant(id,actual,tol) CaseResult
+        +beginSession(module,version) Session
+        +finalize(session) Report
+        +propertyScan(fn,gen,n) CaseResult[]
+        +formatTable(report) string
+        +formatRelativeTime(ts) string
+        +round12(x) string
+    }
+
+    class SelfCheckRunner {
+        +discoverModules() string[]
+        +runModule(path,opts) Report
+        +aggregate(reports) Report
+        +exitCode(report) int
+    }
+
+    class L10Generator {
+        +loadSpec() Spec
+        +tripleLoop() Row[]
+        +renderMarkdown(rows) string
+        +write(out) void
+    }
+
+    class L10Verifier {
+        +parse(mdText) Row[]
+        +assertCount() CaseResult
+        +assertUnique() CaseResult
+        +assertPerFamily() CaseResult
+        +assertPerGroup() CaseResult
+        +assertCoverage() CaseResult
+        +assertRegex() CaseResult
+    }
+
+    class ForgeModule {
+        +string name
+        +string version
+        +string layer
+        +string[] deps
+        +selfCheck(opts) Report
+        +InvariantDef[] invariants
+        +object tol
+        +object exports
+    }
+
+    Tensor *-- Mat : 二维退化
+    Mat ..> NumericCore : 依赖 gemm/gemv
+    Tensor --> Tape : 参与微分时持有
+    Tape *-- Node : 组合
+    BlockTable ..> NumericCore : gather 用 gemm
+    PRNG <.. NumericCore : 由 sfc32 产出
+    Report *-- CaseResult : 组合
+    Report *-- InvariantDef : 组合
+    VerifyCore ..> Report : 构造
+    VerifyCore ..> InvariantDef : 注册
+    VerifyCore ..> CaseResult : 产出
+    NumericCore <.. VerifyCore : 依赖 sha256/stableStringify
+    SelfCheckRunner ..> ForgeModule : 子进程调用 selfCheck
+    SelfCheckRunner ..> Report : 聚合
+    ForgeModule ..> VerifyCore : 断言
+    ForgeModule ..> NumericCore : 数值
+    L10Generator ..> L10Verifier : 产出供校验
+    L10Verifier ..> VerifyCore : 断言

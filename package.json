@@ -1,0 +1,18 @@
+{
+  "name": "innovation-flagship-ai",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "晨星 <CJX0712>",
+  "type": "commonjs",
+  "description": "创新旗舰 AI · Innovation Flagship AI — 十层架构、零重写集大成、CPU 可运行可复现可验证的旗舰级 AI 算法内核",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node run-all.js",
+    "selfcheck": "node run-all.js",
+    "harness": "node tests/harness.js",
+    "verify": "node run-all.js && node tests/harness.js",
+    "l10": "node tools/gen-l10.js && node tools/verify-l10.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

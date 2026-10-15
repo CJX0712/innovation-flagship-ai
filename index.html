@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>创新旗舰 AI · 自检面板</title>
+<!--
+  单文件、零构建、零依赖自检面板。
+  经典 <script src> 加载（禁用 ESM / type=module：file:// 下 CORS 会阻断）。
+  模块缺失时 script onerror 容错，不整体崩溃。
+  作者：晨星；许可：MIT。
+-->
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --text: #e6edf3;
+    --muted: #8b949e; --pass: #2ea043; --fail: #f85149; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .banner { padding: 14px 18px; border-radius: 8px; border: 1px solid var(--line);
+    margin-bottom: 18px; font-size: 15px; font-weight: 600; }
+  .banner.ok { background: rgba(46,160,67,.12); border-color: var(--pass); color: var(--pass); }
+  .banner.bad { background: rgba(248,81,73,.12); border-color: var(--fail); color: var(--fail); }
+  .module { background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px; margin-bottom: 16px; }
+  .module h2 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+  .tag.ok { background: rgba(46,160,67,.18); color: var(--pass); }
+  .tag.bad { background: rgba(248,81,73,.18); color: var(--fail); }
+  .tag.warn { background: rgba(210,153,34,.18); color: #d29922; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  td.pass { color: var(--pass); } td.fail { color: var(--fail); }
+  .hash { color: var(--accent); font-size: 11.5px; word-break: break-all; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 24px; }
+  button { background: var(--accent); color: #0d1117; border: 0; border-radius: 6px;
+    padding: 8px 16px; font-weight: 600; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+  <h1>创新旗舰 AI · 自检面板</h1>
+  <div class="sub">零重写 · 集大成 · 十层架构 · CPU 可运行 / 可复现 / 可验证 — 作者：晨星（MIT）</div>
+  <button id="rerun">重新自检</button>
+  <div id="banner" class="banner">自检初始化中…</div>
+  <div id="modules"></div>
+  <footer>双击本文件即可在浏览器离线运行（file://）。等价于命令行 <code>node run-all.js</code>。</footer>
+
+  <!-- 经典脚本加载：浏览器与 Node 双端同构；缺失时 onerror 容错 -->
+  <script>
+    window.__forgeLoadErrors = {};
+  </script>
+  <script src="src/core-numeric.js" onerror="window.__forgeLoadErrors['ForgeNumeric']=true"></script>
+  <script src="src/core-verify.js" onerror="window.__forgeLoadErrors['ForgeVerify']=true"></script>
+  <script src="src/pca-forge.js" onerror="window.__forgeLoadErrors['ForgePCA']=true"></script>
+  <script src="src/gmm-forge.js" onerror="window.__forgeLoadErrors['ForgeGMM']=true"></script>
+  <script src="src/nn-forge.js" onerror="window.__forgeLoadErrors['ForgeNN']=true"></script>
+  <script src="src/attn-forge.js" onerror="window.__forgeLoadErrors['ForgeAttn']=true"></script>
+  <script src="src/linalg-forge.js" onerror="window.__forgeLoadErrors['ForgeLinalg']=true"></script>
+  <script src="src/stable-forge.js" onerror="window.__forgeLoadErrors['ForgeStable']=true"></script>
+
+  <script>
+  (function () {
+    'use strict';
+    var MODULES = [
+      { key: 'ForgeNumeric', label: 'core-numeric (L1 数值内核)' },
+      { key: 'ForgeVerify',  label: 'core-verify (L1 验证内核)' },
+      { key: 'ForgePCA',     label: 'pca-forge (降维)' },
+      { key: 'ForgeGMM',     label: 'gmm-forge (混合高斯)' },
+      { key: 'ForgeNN',      label: 'nn-forge (神经网络)' },
+      { key: 'ForgeAttn',    label: 'attn-forge (注意力)' },
+      { key: 'ForgeLinalg',  label: 'linalg-forge (L2 线代分解)' },
+      { key: 'ForgeStable',  label: 'stable-forge (L2 数值稳定)' }
+    ];
+
+    function row(pass, id, name, actual, tol) {
+      var cls = pass ? 'pass' : 'fail';
+      var mark = pass ? '+OK' : '-XX';
+      var a = (typeof actual === 'number') ? actual.toExponential(3) : String(actual);
+      return '<tr><td class="' + cls + '">' + mark + '</td><td>' + id + '</td><td>' + name +
+        '</td><td>' + a + '</td><td>' + tol + '</td></tr>';
+    }
+
+    function renderModule(m) {
+      var box = document.createElement('div');
+      box.className = 'module';
+      var title = document.createElement('h2');
+      var tag = '';
+      var body = '';
+      try {
+        if (window.__forgeLoadErrors[m.key]) throw new Error('脚本未加载（路径缺失或被拦截）');
+        var api = window[m.key];
+        if (!api || typeof api.selfCheck !== 'function') throw new Error('全局对象缺失或不含 selfCheck');
+        var r = api.selfCheck();
+        var ok = (r.failed === 0);
+        tag = '<span class="tag ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'PASS' : 'FAIL') +
+          ' +' + r.passed + '/-' + r.failed + '</span>';
+        body += '<table><thead><tr><th>状态</th><th>用例ID</th><th>说明</th><th>实测</th><th>容差</th></tr></thead><tbody>';
+        (r.cases || []).forEach(function (c) {
+          body += row(c.status === 'pass', c.id, c.name, c.actual, c.tol);
+        });
+        body += '</tbody></table>';
+        if (r.invariants && r.invariants.length) {
+          body += '<div style="margin-top:10px;color:var(--muted);font-size:12px">不变量 ' +
+            r.invariants.length + ' 条 · ';
+          var ip = r.invariants.filter(function (i) { return i.status === 'pass'; }).length;
+          body += (ip === r.invariants.length ? '全部通过' : (ip + '/' + r.invariants.length + ' 通过'));
+          body += '</div>';
+        }
+        body += '<div class="hash">hash ' + (r.hash || '') + '</div>';
+      } catch (e) {
+        tag = '<span class="tag warn">MISSING</span>';
+        body = '<div style="color:var(--muted)">⚠️ ' + (e && e.message ? e.message : e) +
+          ' — 该模块尚未加入本仓库或路径不正确。</div>';
+      }
+      title.innerHTML = '<span>' + m.label + '</span>' + tag;
+      box.appendChild(title);
+      var d = document.createElement('div');
+      d.innerHTML = body;
+      box.appendChild(d);
+      return box;
+    }
+
+    function run() {
+      var root = document.getElementById('modules');
+      root.innerHTML = '';
+      var banner = document.getElementById('banner');
+      var totalPass = 0, totalFail = 0, missing = 0;
+      MODULES.forEach(function (m) {
+        var box = renderModule(m);
+        root.appendChild(box);
+        // 仅对成功加载的模块统计
+        try {
+          if (!window.__forgeLoadErrors[m.key] && window[m.key] && window[m.key].selfCheck) {
+            var r = window[m.key].selfCheck();
+            totalPass += r.passed; totalFail += r.failed;
+          } else { missing++; }
+        } catch (e) { missing++; }
+      });
+      var allOk = (totalFail === 0 && missing === 0);
+      banner.className = 'banner ' + (allOk ? 'ok' : 'bad');
+      banner.textContent = allOk
+        ? '✅ 全部模块通过：+' + totalPass + ' / -' + totalFail
+        : (missing > 0
+            ? '⚠️ 通过 +' + totalPass + ' / 失败 -' + totalFail + ' · ' + missing + ' 个模块缺失（迁移中）'
+            : '❌ 存在失败：+' + totalPass + ' / -' + totalFail);
+    }
+
+    document.getElementById('rerun').addEventListener('click', run);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else { run(); }
+  })();
+  </script>
+</body>
+</html>

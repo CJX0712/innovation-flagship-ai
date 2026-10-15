@@ -1,0 +1,5 @@
+# 构建/运行产物
+node_modules/
+run-all-report.json
+*.log
+.DS_Store
