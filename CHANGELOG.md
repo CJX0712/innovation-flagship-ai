@@ -2,6 +2,34 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.14] — 2026-10-17
+
+### 修复 (Fixed) — 产品入口接线: L5/L6 卖点从"测试专属"变为用户真实可达
+承接 v0.7.13 全栈审计的 Top 1/2 缺口, 按「模块存在但从未接线」历史同型缺口模式闭合:
+
+- **RAG 管线接入 CLI/SDK (审计缺口 1, PRD US-05 从假变真)**:
+  - 新增 **`ifai index`** 子命令 (PRD 承诺但此前不存在): 构建并落盘混合索引
+    (BM25+Dense+RRF, `PersistentIndex`)。
+  - `ifai search` 升级: 纯 BM25 单路 → **PersistentIndex 双路 RRF 融合**;
+    `--index` 可加载落盘索引, 缺省对内置语料即时构建。
+  - **连带真 bug**: 旧实现按空格分词 (`query.split()` / `doc.split()`) — 中文
+    无空格, **任何查询都匹配不到任何文档, `ifai search` 恒空输出**。改字符级
+    分词后真实命中 (冒烟: "注意力机制" 查询正确置顶两条含"注意力"文档)。
+  - SDK `IFAI.search` 同步升级为混合检索 (返回 API 形状不变)。
+- **agent 入口接线 (审计缺口 2)**:
+  - `default_registry` 注册 **code_exec 工具** (AST 白名单沙箱) — 此前
+    `SafeCodeExecutor` 是 CLI 死导入、注册表只有 calculator。
+  - `cmd_agent` / SDK `run` 真实传入 **MemoryStore 记忆** 与 **reflexion=True** —
+    此前两者从不被入口传入 (L6 卖点触不可达)。
+  - **连带真 bug**: `react.py` Reflexion 重试成功的 Finish 路径**绕过记忆落库**
+    (只有主循环 Finish 记忆) — 反思后最值得记住的答案反而丢失。修复为同语义落库。
+- **新增 `tests/unit/l9/test_entrypoint_wiring.py` 4 用例**: 注册表含 code_exec
+  (可执行 + 危险代码被拒)、字符级混合检索命中 + 落盘往返一致 (INV-32)、
+  记忆+Reflexion 真实激活、CLI e2e (`index` → `search --index` → 命中)。
+- 全量测试 266 → **270** (净 +4), selftest 4 门禁 ALL GREEN, INV 42/42 双侧达成。
+- 审计遗留待后续: SSE 流式落地 (G1, ~150 行)、护栏接入 serve (G2, ~40 行)、
+  L3 五大件接入用户入口 (G3, ~200 行)、回归门禁双轨合一 (~80 行)。
+
 ## [0.7.13] — 2026-10-17
 
 ### 修复 (Fixed) — 全栈真缺口审计驱动: 1 旗舰级算法 bug + 2 可复现性 bug + 1 断言放水

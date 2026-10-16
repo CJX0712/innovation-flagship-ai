@@ -12,6 +12,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from .sandbox import SafeCodeExecutor
+
 
 @dataclass
 class ToolSpec:
@@ -132,4 +134,13 @@ def default_registry() -> ToolRegistry:
                 "properties": {"expression": {"type": "string"}},
                 "required": ["expression"]},
         func=Calculator.run))
+    # v0.7.14 接线 (审计缺口 2): AST 白名单沙箱此前仅测试可达, `ifai agent`
+    # 入口触不可达 — 现注册为 code_exec 工具, L6 卖点「安全沙箱」真实可用。
+    sandbox = SafeCodeExecutor()
+    reg.register(ToolSpec(
+        name="code_exec", description="在 AST 白名单安全沙箱中执行受信任的 Python 代码片段",
+        schema={"type": "object",
+                "properties": {"code": {"type": "string"}},
+                "required": ["code"]},
+        func=lambda code: sandbox.run(code)))
     return reg

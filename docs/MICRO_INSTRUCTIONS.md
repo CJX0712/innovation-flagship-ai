@@ -3,7 +3,7 @@
 > 由 `scripts/gen_micro_instructions.py` 对 `ifai/` (L0–L9) 与 `scripts/` (X 横切层) 源码 AST 静态扫描自动生成。
 > 零重写 · 集大成: 每条微指令标注其复用的世界顶级来源与所服务的可验证不变量 (INV)。
 
-**总计**: 功能级微指令 354 条 + 步骤级微指令 1713 条 = **2067** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]。
+**总计**: 功能级微指令 354 条 + 步骤级微指令 1715 条 = **2069** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]。
 
 ## 分层汇总
 
@@ -15,7 +15,7 @@
 | L3 | L3 推理引擎 (Inference Engine) | 32 | 131 | 163 |
 | L4 | L4 训练/微调 (Training/Finetune) | 72 | 405 | 477 |
 | L5 | L5 检索/记忆 (Retrieval/Memory) | 62 | 273 | 335 |
-| L6 | L6 智能体 (Agent) | 57 | 188 | 245 |
+| L6 | L6 智能体 (Agent) | 57 | 190 | 247 |
 | L7 | L7 服务/编排 (Service/Orchestration) | 29 | 102 | 131 |
 | L8 | L8 评估/对齐 (Evaluation/Alignment) | 10 | 38 | 48 |
 | L9 | L9 应用/接口 (Application/Interface) | 7 | 23 | 30 |
@@ -2574,8 +2574,10 @@
 ### MI-0257 default_registry()
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
-- 微指令步骤 (3):
+- 微指令步骤 (5):
   - 赋值 reg ← ToolRegistry(…)
+  - 调用 reg.register(…)
+  - 赋值 sandbox ← SafeCodeExecutor(…)
   - 调用 reg.register(…)
   - 返回 reg
 
@@ -3190,14 +3192,14 @@
 
 ### MI-0327 IFAI.search(self, query, corpus, top_k)
 - 模块: `sdk.py`
-- 用途: BM25 检索, 返回 [(doc_idx, score)...]。  ·  复用 BM25
+- 用途: 混合检索 (BM25 + 稠密向量 + RRF 融合, Cormack et al. 2009)。  ·  复用 BM25, Cormack, RRF
 - 微指令步骤 (2):
-  - 赋值 bm25 ← Call.fit(…)
-  - 返回 bm25.search(…)
+  - 赋值 idx ← Call.fit(…)
+  - 返回 ListComp
 
 ### MI-0328 IFAI.run(self, question, max_steps)
 - 模块: `sdk.py`
-- 用途: 运行 ReAct 智能体 (内置计算器工具)。  ·  复用 ReAct
+- 用途: 运行 ReAct 智能体 (内置计算器 + 安全沙箱工具, 记忆 + Reflexion)。  ·  复用 ReAct, Reflexion
 - 微指令步骤 (3):
   - FunctionDef
   - 赋值 agent ← ReActAgent(…)

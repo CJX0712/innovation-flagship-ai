@@ -103,5 +103,9 @@ class ReActAgent:
             out = self.llm(self.history)
             kind, name, payload = self._parse_action(out)
             if kind == "finish":
+                # v0.7.14: 反思成功的答案同样落记忆 (与主循环 Finish 同语义 —
+                # 旧实现此路径绕过 memory, 反思后最值得记住的答案反而丢失)
+                if self.memory is not None:
+                    self.memory.remember_event(f"Q:{question} A:{payload}")
                 return payload
         return "未能在步数内完成。"

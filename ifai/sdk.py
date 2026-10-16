@@ -22,7 +22,8 @@ from .models.transformer import load_model
 from .engine.sampler import Sampler
 from .agent.tools import default_registry
 from .agent.react import ReActAgent
-from .retrieval.bm25 import BM25
+from .agent.memory import MemoryStore
+from .retrieval.persist import PersistentIndex
 from .serve.api import chat_completion, format_messages
 
 
@@ -85,17 +86,23 @@ class IFAI:
         return chat_completion(text, "ifai")
 
     def search(self, query: str, corpus: list[str], top_k: int = 5) -> list[tuple[int, float]]:
-        """BM25 检索, 返回 [(doc_idx, score)...]。"""
-        bm25 = BM25().fit([d.split() for d in corpus])
-        return bm25.search(query.split(), top_k=top_k)
+        """混合检索 (BM25 + 稠密向量 + RRF 融合, Cormack et al. 2009)。
+
+        v0.7.14 接线 (审计缺口 1): 此前仅 BM25 单路 — 五组件卖点中 4 个
+        触不可达。中文语料按字符级分词 (无空格分词对中文不可用)。
+        返回 ``[(doc_idx, score)...]`` — score 为 RRF 融合分数。
+        """
+        idx = PersistentIndex().fit([list(d) for d in corpus], texts=corpus)
+        return [(h.doc_id, h.score) for h in idx.search(list(query), top_k=top_k)]
 
     def run(self, question: str, max_steps: int = 4) -> str:
-        """运行 ReAct 智能体 (内置计算器工具)。"""
+        """运行 ReAct 智能体 (内置计算器 + 安全沙箱工具, 记忆 + Reflexion)。"""
         def llm(messages):
             u = messages[-1]["content"]
             if "计算" in u or any(c in u for c in "+-*/"):
                 expr = u.split("计算")[-1].strip()
                 return f'Thought: 调用计算器。\nAction: calculator(expression="{expr}")'
             return "Finish: 已回答 (演示)"
-        agent = ReActAgent(llm, default_registry(), max_steps=max_steps)
-        return agent.run(question)
+        agent = ReActAgent(llm, default_registry(), max_steps=max_steps,
+                           memory=MemoryStore())
+        return agent.run(question, reflexion=True)

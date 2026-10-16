@@ -21,8 +21,8 @@ from ..train.trainer import TinyTrainer
 from ..engine.sampler import Sampler
 from ..agent.tools import default_registry
 from ..agent.react import ReActAgent
-from ..agent.sandbox import SafeCodeExecutor
-from ..retrieval.bm25 import BM25
+from ..agent.memory import MemoryStore
+from ..retrieval.persist import PersistentIndex, load_index
 
 DEFAULT_MODEL_DIR = "./ifai_model"
 MICRO_CORPUS = (
@@ -155,11 +155,32 @@ def cmd_eval(args):
 
 
 def cmd_search(args):
+    """混合检索 (BM25+Dense+RRF, Cormack et al. 2009) — v0.7.14 接线:
+    此前仅 BM25 单路且中文按空格分词永远匹配不到 (审计缺口 1), 现按字符级
+    分词 + PersistentIndex 双路融合, PRD US-05 从假变真。``--index`` 指定
+    ``ifai index`` 产物目录 (落盘索引), 缺省对内置语料即时构建。"""
+    if args.index:
+        idx = load_index(args.index)
+        src = f"混合索引 {args.index}"
+    else:
+        docs = [d.strip() for d in MICRO_CORPUS.split("。") if d.strip()]
+        idx = PersistentIndex().fit([list(d) for d in docs], texts=docs)
+        src = "内置语料 (字符级混合检索)"
+    hits = idx.search(list(args.query), top_k=args.top_k)
+    print(f"[{src}] BM25+Dense+RRF, top-{args.top_k}")
+    if not hits:
+        print("(无命中)")
+    for h in hits:
+        print(f"[{h.score:.3f}] {h.text}")
+
+
+def cmd_index(args):
+    """构建并落盘混合检索索引 (BM25+Dense+RRF) — PRD US-05 承诺的
+    ``ifai index`` 子命令 (v0.7.14 接线, 此前不存在)。"""
     docs = [d.strip() for d in MICRO_CORPUS.split("。") if d.strip()]
-    bm25 = BM25().fit([d.split() for d in docs])
-    res = bm25.search(args.query.split(), top_k=args.top_k)
-    for i, s in res:
-        print(f"[{s:.3f}] {docs[i]}")
+    idx = PersistentIndex(dim=args.dim).fit([list(d) for d in docs], texts=docs)
+    path = idx.save(args.out)
+    print(f"混合索引已构建: {len(docs)} 条文档 (字符级 BM25+Dense+RRF) → {path}")
 
 
 def cmd_agent(args):
@@ -173,8 +194,8 @@ def cmd_agent(args):
             return f'Thought: 需要计算。\nAction: calculator(expression="{expr}")'
         return "Finish: 已回答 (演示智能体)"
     reg = default_registry()
-    agent = ReActAgent(fake_llm, reg, max_steps=4)
-    print(agent.run(args.question))
+    agent = ReActAgent(fake_llm, reg, max_steps=4, memory=MemoryStore())
+    print(agent.run(args.question, reflexion=True))
 
 
 def cmd_tokenize(args):
@@ -298,7 +319,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd")
     for name, fn in [("train", cmd_train), ("demo", cmd_demo), ("generate", cmd_generate),
                      ("chat", cmd_chat), ("serve", cmd_serve), ("eval", cmd_eval),
-                     ("search", cmd_search), ("agent", cmd_agent),
+                     ("search", cmd_search), ("index", cmd_index), ("agent", cmd_agent),
                      ("tokenize", cmd_tokenize), ("version", cmd_version),
                      ("doctor", cmd_doctor), ("selftest", cmd_selftest)]:
         p = sub.add_parser(name)
@@ -336,6 +357,10 @@ def main():
     sub.choices["serve"].add_argument("--port", type=int, default=8000)
     sub.choices["search"].add_argument("--query", default="注意力")
     sub.choices["search"].add_argument("--top-k", type=int, default=5, dest="top_k")
+    sub.choices["search"].add_argument("--index", default=None, dest="index",
+                                       help="已构建的混合索引目录 (ifai index 产物); 缺省用内置语料")
+    sub.choices["index"].add_argument("--out", default="./ifai_index")
+    sub.choices["index"].add_argument("--dim", type=int, default=256)
     sub.choices["agent"].add_argument("--question", default="计算 (3+5)*2")
     sub.choices["tokenize"].add_argument("--text", default="人工智能 模型")
     sub.choices["tokenize"].add_argument("--vocab", type=int, default=512)
