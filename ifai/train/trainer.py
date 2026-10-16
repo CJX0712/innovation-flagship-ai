@@ -161,9 +161,9 @@ class TinyTrainer:
         # RMSNorm
         ms = (x * x).mean(axis=-1, keepdims=True)
         h = x / (ms + c.norm_eps).pow(0.5) * self.params[p + "attn_norm"]
-        q = self._apply_lora(h, p, "q_proj", h.matmul(self.params[p + "q_proj"]))
-        k = self._apply_lora(h, p, "k_proj", h.matmul(self.params[p + "k_proj"]))
-        v = self._apply_lora(h, p, "v_proj", h.matmul(self.params[p + "v_proj"]))
+        q = self._apply_lora(h, p, "q_proj", h.matmul(self._wq(p + "q_proj")))
+        k = self._apply_lora(h, p, "k_proj", h.matmul(self._wq(p + "k_proj")))
+        v = self._apply_lora(h, p, "v_proj", h.matmul(self._wq(p + "v_proj")))
         # RoPE (单节点) + 头重排 (reshape/transpose 元操作)
         q = self._rope(q, pos, d).reshape(B, T, n_h, dh).transpose((0, 2, 1, 3))
         k = self._rope(k, pos, n_kv * dh).reshape(B, T, n_kv, dh).transpose((0, 2, 1, 3))
@@ -175,7 +175,7 @@ class TinyTrainer:
         scale = 1.0 / dh ** 0.5
         ctx = Tensor.attention(q, k, v, scale, bias=self._bias(T))  # [B,H,T,dh]
         ctx = ctx.transpose((0, 2, 1, 3)).reshape(B, T, d)
-        o = ctx.matmul(self.params[p + "o_proj"])
+        o = ctx.matmul(self._wq(p + "o_proj"))
         o = self._apply_lora(ctx, p, "o_proj", o)
         x = x + o
         ms2 = (x * x).mean(axis=-1, keepdims=True)
@@ -183,12 +183,12 @@ class TinyTrainer:
         if c.use_moe:
             x = x + self._moe_forward(h2, layer)
         else:
-            g = h2.matmul(self.params[p + "ffn_gate"])
-            u = h2.matmul(self.params[p + "ffn_up"])
+            g = h2.matmul(self._wq(p + "ffn_gate"))
+            u = h2.matmul(self._wq(p + "ffn_up"))
             # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
             # 默认 "swiglu" 保持 silu 逻辑完全不变; "gelu" 走可微 gelu。
             gate_act = g.gelu() if c.activation == "gelu" else g * g.sigmoid()
-            ff = (gate_act * u).matmul(self.params[p + "ffn_down"])
+            ff = (gate_act * u).matmul(self._wq(p + "ffn_down"))
             x = x + ff
         return x
 
@@ -203,7 +203,7 @@ class TinyTrainer:
         c = self.cfg
         B, T, d = h2.data.shape
         E, K = c.n_experts, c.moe_topk
-        router = self.params[f"layer{layer}.router"]
+        router = self._wq(f"layer{layer}.router")
         router_logits = h2.matmul(router)                     # [B,T,E] Tensor
         rl = router_logits.data
         topk_idx = np.argsort(rl, axis=-1)[:, :, -K:]          # [B,T,K] 离散路由
@@ -214,14 +214,21 @@ class TinyTrainer:
         w = sel.softmax(axis=-1)                              # [B,T,K] 概率和=1
         out = Tensor.zeros(B, T, d)
         for e in range(E):
-            gate = h2.matmul(self.params[f"layer{layer}.e{e}_gate"])
-            up = h2.matmul(self.params[f"layer{layer}.e{e}_up"])
+            gate = h2.matmul(self._wq(f"layer{layer}.e{e}_gate"))
+            up = h2.matmul(self._wq(f"layer{layer}.e{e}_up"))
             gate_act = gate.gelu() if c.activation == "gelu" else gate * gate.sigmoid()
-            ex = (gate_act * up).matmul(self.params[f"layer{layer}.e{e}_down"])  # [B,T,d]
+            ex = (gate_act * up).matmul(self._wq(f"layer{layer}.e{e}_down"))  # [B,T,d]
             mask = (topk_idx == e)                            # [B,T,K] 离散
             coeff = (w * Tensor(mask, requires_grad=False)).sum(axis=-1, keepdims=True)  # [B,T,1]
             out = out + coeff * ex
         return out
+
+    def _wq(self, name: str) -> "Tensor":
+        """QAT 门控 (Jacob et al. 2018): ``use_qat`` 时返回权重的 STE 伪量化
+        节点 (前向 dequant(quant(W)), 反向恒等直通), 否则原样返回 — 默认
+        关闭时训练图与数值逐字节不变。"""
+        w = self.params[name]
+        return w.fake_quant_int8_per_channel() if self.cfg.use_qat else w
 
     def _apply_lora(self, x: "Tensor", pre: str, tgt: str, base_out: "Tensor") -> "Tensor":
         """LoRA 低秩增量 (Hu et al. 2022, INV-24): ``base + (α/r)·(x@Aᵀ)@Bᵀ``。
@@ -232,8 +239,8 @@ class TinyTrainer:
         c = self.cfg
         if not c.use_lora:
             return base_out
-        A = self.params[f"{pre}{tgt}_lora_a"]                   # [r, in]
-        B = self.params[f"{pre}{tgt}_lora_b"]                   # [out, r]
+        A = self._wq(f"{pre}{tgt}_lora_a")                      # [r, in]
+        B = self._wq(f"{pre}{tgt}_lora_b")                      # [out, r]
         scale = c.lora_alpha / c.lora_r
         lora = (x.matmul(A.transpose())).matmul(B.transpose()) * scale
         return base_out + lora
@@ -243,7 +250,7 @@ class TinyTrainer:
         ids = np.asarray(ids)
         if ids.ndim == 1:
             ids = ids[None]
-        x = self.params["embed"][ids]                        # [B,T,d]
+        x = self._wq("embed")[ids]                        # [B,T,d]
         for l in range(c.n_layers):
             if self.gradient_checkpointing:
                 # 按层检查点: 前向丢弃层内激活, 反向时重算 (INV-25)
@@ -252,7 +259,7 @@ class TinyTrainer:
                 x = self._layer_forward(x, l)
         ms3 = (x * x).mean(axis=-1, keepdims=True)
         x = x / (ms3 + c.norm_eps).pow(0.5) * self.params["final_norm"]
-        logits = x.matmul(self.params["lm_head"].transpose())     # [B,T,V]
+        logits = x.matmul(self._wq("lm_head").transpose())     # [B,T,V]
         return logits
 
     def loss(self, ids: np.ndarray, targets: np.ndarray) -> Tensor:

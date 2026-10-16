@@ -2,6 +2,33 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.10] — 2026-10-17
+
+### 新增 (Added) — 训练端 INT8 量化感知训练 (QAT, STE 伪量化)
+- **真缺口 (功能缺口)**: INT8 量化此前**仅推理端可用** (`Transformer.quantize_int8`,
+  LLM.int8 per-channel RTN) — 量化故事残缺: 训练时模型从未"看见"量化扰动,
+  部署时才第一次经历 INT8。QAT (Jacob et al. 2018) 补齐: 训练期前向直接走
+  dequant(quant(W)), 训出的权重天然适配 INT8 部署。
+- **落地 (零重写·集大成)**:
+  - `autodiff.py::Tensor.fake_quant_int8_per_channel` — STE 伪量化算子: 前向 =
+    dequant(quant(W)) (复用推理端同一 `core/quant.py` per-channel RTN 方案, 语义
+    逐字一致), 反向对 W 恒等直通 (straight-through estimator, 忽略 d(scale)/dW);
+    冻结权重 (requires_grad=False) 自动跳过梯度回传。
+  - `config.py` 新增 `use_qat: bool = False` — **默认关闭, 现有训练图与数值逐字节
+    不变**。
+  - `trainer.py::_wq` 门控包裹全部 2D 权重 matmul: q/k/v/o_proj、ffn_gate/up/down、
+    MoE e{e}_gate/up/down + router、LoRA A/B、embed、lm_head (tie 时 embed/lm_head
+    为同一 Tensor, 梯度正确累加); 1D 归一化权重不伪量化 (与推理端仅量化 2D 一致)。
+- **新增 `tests/unit/l4/test_qat.py` 5 用例**: ① STE 前向逐位 == dequant(quant(W));
+  ② INV-07 重建误差界 ≤ scale/2 在 STE 节点成立; ③ STE 反向恒等 (含伪量化图 vs
+  无伪量化图梯度一致 + 解析解二次验证); ④ use_qat=True 确实注入确定性量化扰动 +
+  梯度贯通; ⑤ **核心验收**: QAT 模型 INT8 部署后损失劣化 (int8_loss − fp64_loss,
+  同一评估批内自比较) ≤ 非 QAT 基线 — 原理: QAT 训练优化的正是量化前向, 部署
+  int8 即训练时行为。
+- **坑 (验收口径)**: 输出扰动口径 (max|fp64−int8|) 下 QAT 与基线在噪声内不可分
+  (8.97e-3 vs 8.25e-3, 首版误判失败); 正确口径是**部署后损失劣化**的模型内自比较。
+- 全量测试 256 → **261** (净 +5), selftest 4 门禁 ALL GREEN, INV 42/42 双侧达成。
+
 ## [0.7.9] — 2026-10-17
 
 ### 新增 (Added) — 特征配置端到端可训性 (INV-26 扩展到 MoE/LoRA/组合)

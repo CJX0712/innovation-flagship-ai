@@ -35,6 +35,7 @@ class ModelConfig:
     use_lora: bool = False             # LoRA 低秩适配 (Hu et al. 2022)
     lora_r: int = 4                     # LoRA 秩 r
     lora_alpha: int = 8                 # LoRA 缩放 α (scale = α/r)
+    use_qat: bool = False              # 量化感知训练 (Jacob et al. 2018): 训练期对线性权重做 STE 伪量化
     initializer_range: float = 0.02
 
     def __post_init__(self):

@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from ..core import quant
+
 
 def _unbroadcast(grad, shape):
     """把梯度累加值收缩回 ``shape`` (处理 numpy 广播的反向, INV-22)。"""
@@ -119,6 +121,24 @@ class Tensor:
                 else:
                     db = np.matmul(np.swapaxes(a, -1, -2), out.grad)
                     other.grad += _unbroadcast(db, b.shape)
+        out._backward = _b
+        return out
+
+    def fake_quant_int8_per_channel(self, axis: int = -1) -> "Tensor":
+        """STE 伪量化 (QAT, Jacob et al. 2018): 前向 = dequant(quant(W)),
+        反向对 W 恒等直通 (straight-through estimator, 忽略 d(scale)/dW)。
+
+        零重写: 复用推理端同一 per-channel RTN 方案 (``core/quant.py``,
+        LLM.int8 Dettmers et al. 2022, INV-07) — 训练期与部署期的量化语义
+        逐字一致。冻结权重 (requires_grad=False) 自动跳过梯度回传。
+        """
+        q, scale = quant.quantize_int8_per_channel(self.data, axis=axis)
+        dq = quant.dequantize_int8(q, scale)
+        out = Tensor(dq, (self,), "fake_quant", requires_grad=True)
+
+        def _b():
+            if self.requires_grad:
+                self.grad += out.grad          # STE: 恒等直通
         out._backward = _b
         return out
 
