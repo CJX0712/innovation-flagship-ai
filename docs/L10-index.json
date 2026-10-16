@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-15T20:23:07.302Z",
+  "generated_at": "2026-10-16T15:23:14.262Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 30,
-    "planned": 994
+    "done": 42,
+    "planned": 982
   },
   "leaves": [
     {
@@ -5167,8 +5167,8 @@
       "op": "O03",
       "name": "多头注意力",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "attention-forge 多头注意力"
     },
     {
       "id": "L10-F4-G0-O04",
@@ -5217,8 +5217,8 @@
       "op": "O08",
       "name": "交叉注意力",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "attention-forge 自注意力"
     },
     {
       "id": "L10-F4-G0-O09",
@@ -5297,8 +5297,8 @@
       "op": "O00",
       "name": "RoPE",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "rope-forge RoPE"
     },
     {
       "id": "L10-F4-G1-O01",
@@ -5337,8 +5337,8 @@
       "op": "O04",
       "name": "正弦位置",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 正弦位置编码"
     },
     {
       "id": "L10-F4-G1-O05",
@@ -5577,8 +5577,8 @@
       "op": "O12",
       "name": "层归一预",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 层归一预"
     },
     {
       "id": "L10-F4-G2-O13",
@@ -5837,8 +5837,8 @@
       "op": "O06",
       "name": "分组查询 GQA",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "attention-forge 分组查询 GQA"
     },
     {
       "id": "L10-F4-G4-O07",
@@ -6047,8 +6047,8 @@
       "op": "O11",
       "name": "并行采样",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sampling-forge 并行采样"
     },
     {
       "id": "L10-F4-G5-O12",
@@ -6257,8 +6257,8 @@
       "op": "O00",
       "name": "嵌入层",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 嵌入层"
     },
     {
       "id": "L10-F4-G7-O01",
@@ -6277,8 +6277,8 @@
       "op": "O02",
       "name": "残差连接",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 残差连接"
     },
     {
       "id": "L10-F4-G7-O03",
@@ -6287,8 +6287,8 @@
       "op": "O03",
       "name": "前馈网络",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 前馈网络"
     },
     {
       "id": "L10-F4-G7-O04",
@@ -6297,8 +6297,8 @@
       "op": "O04",
       "name": "预归一化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "transformer-forge 预归一化"
     },
     {
       "id": "L10-F4-G7-O05",
@@ -7537,8 +7537,8 @@
       "op": "O00",
       "name": "自回归生成",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sampling-forge 自回归生成"
     },
     {
       "id": "L10-F5-G7-O01",

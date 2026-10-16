@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 30 |
-| planned | 994 |
+| done | 42 |
+| planned | 982 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -711,12 +711,12 @@
 | `L10-F4-G0-O00` | 缩放点积注意力 | L4 | done | attn-forge attention |
 | `L10-F4-G0-O01` | 因果掩码 | L4 | done | attn-forge causalMask |
 | `L10-F4-G0-O02` | 加性注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G0-O03` | 多头注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G0-O03` | 多头注意力 | L4 | done | attention-forge 多头注意力 |
 | `L10-F4-G0-O04` | 头部拼接 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G0-O05` | 注意力分数 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G0-O06` | softmax 稳定 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G0-O07` | 权重归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G0-O08` | 交叉注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G0-O08` | 交叉注意力 | L4 | done | attention-forge 自注意力 |
 | `L10-F4-G0-O09` | 自注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G0-O10` | 全局注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G0-O11` | 局部注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -729,11 +729,11 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F4-G1-O00` | RoPE | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G1-O00` | RoPE | L4 | done | rope-forge RoPE |
 | `L10-F4-G1-O01` | 绝对位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O02` | 相对位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O03` | ALiBi | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G1-O04` | 正弦位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G1-O04` | 正弦位置 | L4 | done | transformer-forge 正弦位置编码 |
 | `L10-F4-G1-O05` | 可学习位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O06` | 旋转相对 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O07` | 位置插值 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -762,7 +762,7 @@
 | `L10-F4-G2-O09` | 幂归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G2-O10` | 谱归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G2-O11` | 局部响应归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G2-O12` | 层归一预 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G2-O12` | 层归一预 | L4 | done | transformer-forge 层归一预 |
 | `L10-F4-G2-O13` | 后归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G2-O14` | 可学习归一 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G2-O15` | 归一稳定 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -798,7 +798,7 @@
 | `L10-F4-G4-O03` | 低秩注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G4-O04` | 分块注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G4-O05` | 多查询 MQA | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G4-O06` | 分组查询 GQA | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G4-O06` | 分组查询 GQA | L4 | done | attention-forge 分组查询 GQA |
 | `L10-F4-G4-O07` | FlashAttention 风格 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G4-O08` | 滑动窗口 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G4-O09` | 扩张注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -824,7 +824,7 @@
 | `L10-F4-G5-O08` | 缓存预分配 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O09` | 缓存压缩 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O10` | 缓存量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O11` | 并行采样 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O11` | 并行采样 | L4 | done | sampling-forge 并行采样 |
 | `L10-F4-G5-O12` | 树状注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O13` | 连续批处理 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O14` | 前缀缓存 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -855,11 +855,11 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F4-G7-O00` | 嵌入层 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G7-O00` | 嵌入层 | L4 | done | transformer-forge 嵌入层 |
 | `L10-F4-G7-O01` | 词表投影 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O02` | 残差连接 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O03` | 前馈网络 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O04` | 预归一化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G7-O02` | 残差连接 | L4 | done | transformer-forge 残差连接 |
+| `L10-F4-G7-O03` | 前馈网络 | L4 | done | transformer-forge 前馈网络 |
+| `L10-F4-G7-O04` | 预归一化 | L4 | done | transformer-forge 预归一化 |
 | `L10-F4-G7-O05` | 子层缩放 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O06` | 初始化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O07` | 参数绑定 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -1025,7 +1025,7 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F5-G7-O00` | 自回归生成 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G7-O00` | 自回归生成 | L5 | done | sampling-forge 自回归生成 |
 | `L10-F5-G7-O01` | 扩散模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G7-O02` | 流模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G7-O03` | 能量模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

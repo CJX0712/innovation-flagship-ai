@@ -34,16 +34,16 @@
 | L7 | 多模态 / 生成模型 | 128 | 规划中 |
 | L8 | 大模型预训练 / 对齐 | 256 | 规划中 |
 | L9 | 推理优化 / 部署 | 512 | 规划中 |
-| L10 | 微指令级操作（最终层） | **1024** | **done 30 / planned 994** |
+| L10 | 微指令级操作（最终层） | **1024** | **done 42 / planned 982** |
 | **合计** | | **2046** | |
 
 - L1–L10 项数按 2·2ⁿ 增长（L1=2, L2=4, …, L10=1024），合计 ∑ = **2046**。
 - L10 的 1024 项微指令完整分类法见 [`docs/L10-index.json`](docs/L10-index.json) 与 [`docs/L10-taxonomy.md`](docs/L10-taxonomy.md)（8 族 / 64 组 / 每组 16 op）。
-- 当前已落码的 17 个内核模块，覆盖了 L1–L5 的基础与核心算法，并直接支撑 L10 中 **30 项 done** 微指令（其余 994 项标记为 planned，等待后续波次）。
+- 当前已落码的 **19 个内核模块**，覆盖了 L1–L5 的基础与核心算法，并直接支撑 L10 中 **42 项 done** 微指令（其余 982 项标记为 planned，等待后续波次）。
 
 ---
 
-## 三、模块清单（17 个内核 · 129 条不变量 · 0 失败）
+## 三、模块清单（19 个内核 · 145 条不变量 · 0 失败）
 
 所有模块均满足 `@forge-module` 统一契约：`selfCheck()` 返回 `forge-selfcheck/1.0` schema、代码 hash 幂等、不良输入抛错、CLI 退出码规范（0/1/2/3/4/66）。每条不变量都有 **≥1 条可被独立交叉验证的硬标准**（残差界 / 正交归一 / 梯度检验 / 闭式对照 / 参考重实现），阈值常量化于 `TOL`。
 
@@ -62,6 +62,8 @@
 | `src/loss-act-norm-forge.js` | L3 | INV-LAN-001..008 | 8 | RMSNorm / LayerNorm / GELU / SwiGLU / CE-MSE |
 | `src/attention-forge.js` | L4 | INV-ATT-001..008 | 8 | Vaswani SDPA / MHA / GQA / 因果注意力 |
 | `src/rope-forge.js` | L4 | INV-ROPE-001..008 | 8 | Su et al. Rotary Position Embedding |
+| `src/transformer-forge.js` | L4 | INV-TRA-001..008 | 8 | Vaswani 2017 / GPT-2 pre-LN / llama.cpp RMSNorm+SwiGLU |
+| `src/sampling-forge.js` | L5 | INV-SMP-001..008 | 8 | Holtzman 2019 top-p / HF LogitsProcessor / Fan 2018 top-k |
 | `src/retrieval-forge.js` | L5 | INV-RET-001..008 | 8 | FAISS / hnswlib 暴力精确召回（余弦 / L2 / top-k） |
 | `src/prob-forge.js` | L5 | INV-PRB-001..008 | 8 | 高斯 / Bernoulli / KL 散度 / 逆 CDF 采样 |
 | `src/graph-forge.js` | L5 | INV-GRAPH-001..008 | 8 | BFS / Dijkstra（独立重实现校验） |
@@ -147,8 +149,9 @@ innovation-flagship-ai/
 │   ├── linalg-forge.js  pca-forge.js  gmm-forge.js
 │   ├── nn-forge.js  attn-forge.js
 │   ├── optim-forge.js  autodiff-forge.js  loss-act-norm-forge.js
-│   ├── attention-forge.js  rope-forge.js
-│   └── retrieval-forge.js  prob-forge.js  graph-forge.js  rl-forge.js
+│   ├── attention-forge.js  rope-forge.js  transformer-forge.js
+│   └── retrieval-forge.js  prob-forge.js  graph-forge.js
+│   └── rl-forge.js  sampling-forge.js
 ├── tests/
 │   └── harness.js          # @forge-module 契约自检器
 ├── tools/
@@ -171,14 +174,15 @@ innovation-flagship-ai/
 - ✅ **W4**：注意力（SDPA/MHA/GQA/因果）+ 旋转位置编码 RoPE（2 模块 / 16 不变量）全绿
 - ✅ **W5**：向量检索 / 概率分布 / 图算法 / 强化学习（4 模块 / 32 不变量）全绿
 - ✅ **W6**：L10 分类法 done 计数修正 + 复用合规校验 `check-reuse.js`
-- ✅ **W7**：README / INVARIANTS.md / CI / GitHub 闭环交付（本步）
-- 🔜 **W8+**：L6 Transformer 主干、L7 多模态 / 生成、L8 大模型预训练 / 对齐、L9 推理优化 / 部署——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
+- ✅ **W7**：README / INVARIANTS.md / CI / GitHub 闭环交付
+- ✅ **W8**：Transformer 模型组件（嵌入 / 正弦位置编码 / 预归一化残差 / SwiGLU 前馈 / 编码器前向）+ 生成采样内核（温度 / 贪心 / top-k / top-p 核采样 / 重复惩罚 / 批量采样）——2 模块 / 16 不变量全绿
+- 🔜 **W9+**：KV 缓存与增量解码、L7 多模态 / 生成、L8 大模型预训练 / 对齐、L9 推理优化 / 部署——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
 
-**当前验证基线（W7 提交前本地复核）：**
-- `npm run verify` → 17 模块 · 通过 129 · 失败 0
-- `npm run harness` → 17/17 模块满足 `@forge-module` 契约
+**当前验证基线（W8 提交前本地复核）：**
+- `npm run verify` → **19 模块 · 通过 145 · 失败 0**
+- `npm run harness` → 19/19 模块满足 `@forge-module` 契约（含不良输入抛错登记）
 - `npm run check:reuse` → 0 ERROR / 0 ADVISORY
-- `npm run l10` → 1024 项 / done 30 / planned 994 / ID 唯一 / 字段完整
+- `npm run l10` → 1024 项 / done 42 / planned 982 / ID 唯一 / 字段完整
 
 ---
 

@@ -22,7 +22,9 @@ const MOD_RE = /(-forge|core-numeric|core-verify)\.js$/;
 // 文档化“不良输入必须抛错”清单：module 全局名 → [函数名, 危险参数]
 const BAD_INPUTS = {
   ForgeStable: [['logsumexp', [null]], ['softmax', [1, 2, 'x']], ['logSigmoid', [Infinity]]],
-  ForgeLinalg: [['lu', [null]], ['chol', [[1, 2], [3]]], ['qr', [[1, 2], [3]]]]
+  ForgeLinalg: [['lu', [null]], ['chol', [[1, 2], [3]]], ['qr', [[1, 2], [3]]]],
+  ForgeSampling: [['softmaxTemperature', [null]], ['topKFilter', [[1, 2], 0]], ['topPFilter', [[1, 2], 1.5]]],
+  ForgeTransformer: [['tokenEmbedding', [null, [0]]], ['sinusoidalPositionalEncoding', [0, 4]]]
 };
 
 const problems = [];
@@ -114,7 +116,8 @@ function globalNameFor(modPath) {
     'pca-forge': 'ForgePCA', 'gmm-forge': 'ForgeGMM', 'nn-forge': 'ForgeNN', 'attn-forge': 'ForgeAttn',
     'optim-forge': 'ForgeOptim', 'autodiff-forge': 'ForgeAutoDiff', 'loss-act-norm-forge': 'ForgeLossActNorm',
     'attention-forge': 'ForgeAttention', 'rope-forge': 'ForgeRoPE', 'retrieval-forge': 'ForgeRetrieval',
-    'prob-forge': 'ForgeProb', 'graph-forge': 'ForgeGraph', 'rl-forge': 'ForgeRL'
+    'prob-forge': 'ForgeProb', 'graph-forge': 'ForgeGraph', 'rl-forge': 'ForgeRL',
+    'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling'
   };
   return map[base] || null;
 }

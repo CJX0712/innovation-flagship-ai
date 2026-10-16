@@ -1,7 +1,7 @@
 # 不变量总览 · INVARIANTS
 
 > 创新旗舰 AI 的**硬不变量（hard invariant）清单**——每条不变量都有 ≥1 条可被独立交叉验证的金标准。
-> 当前基线：**17 模块 · 129 条不变量 · 0 失败**（`npm run verify` 实测）。
+> 当前基线：**19 模块 · 145 条不变量 · 0 失败**（`npm run verify` 实测）。
 
 ---
 
@@ -199,9 +199,22 @@
 | INV-ROPE-007 | 角度可加：RoPE(RoPE(x,p),p) = RoPE(x,2p) | 1e-12 | 旋转角叠加 |
 | INV-ROPE-008 | 线性：RoPE(−x,p) = −RoPE(x,p) | 1e-12 | 旋转线性 |
 
+### `transformer-forge.js`（INV-TRA-001..008，8 条，Transformer 模型组件）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-TRA-001 | 嵌入查找逐行精确：`tokenEmbedding(E,ids)` 与 `E[ids[i]]` 逐元素相等且为拷贝（越界抛错） | 0 | 查表定义 |
+| INV-TRA-002 | 正弦位置编码闭式：`PE[pos][2i]=sin(pos/10000^(2i/d))`、`PE[pos][2i+1]=cos(...)`，随机 pos/d 采样最大偏差 ≤ 1e-12 | 1e-12 | Vaswani 2017 原式 |
+| INV-TRA-003 | 预归一化残差恒等路径：attnFn/ffnFn 恒零时 `preNormBlock(x)==x` 逐元素 ≤ 1e-12 | 1e-12 | 残差连接保恒等 |
+| INV-TRA-004 | 前向输出形状：`transformerForward.hidden` 形状 == (seq,d)，形状不合法抛错 | 0 | 形状契约 |
+| INV-TRA-005 | 因果性：因果 attnFn 下改动未来 token 嵌入，已生成位置 i 的输出不变（含防空洞化断言：被扰动位置必须确实变化） | 1e-12 | 因果掩码结构 |
+| INV-TRA-006 | SwiGLU 前馈零输入→零输出（无偏置）≤ 1e-12，且形状保持 (seq,d)→(seq,d) | 1e-12 | swish(0)=0 门控归零 |
+| INV-TRA-007 | 0 层堆叠：`transformerEncoder(x,[],finalNorm) == finalNorm(x)` 逐元素 ≤ 1e-12 | 1e-12 | 空堆叠恒等 |
+| INV-TRA-008 | 确定性：同 opts 两次 `transformerForward` 输出逐位相等 | 0 | 纯函数确定性 |
+
 ---
 
-## L5 — 检索 / 概率分布 / 图算法 / 强化学习
+## L5 — 检索 / 概率分布 / 图算法 / 强化学习 / 生成采样
 
 ### `retrieval-forge.js`（INV-RET-001..008，8 条）
 
@@ -255,6 +268,19 @@
 | INV-RL-007 | γ=0.9 收敛(残差<1e-3) 且 γ=1 不收敛(残差>1e-3) | 0 | 收敛条件 |
 | INV-RL-008 | Q=R+γΣPV* 与值迭代 Q 备份一致 | 1e-6 | Q 值定义 |
 
+### `sampling-forge.js`（INV-SMP-001..008，8 条，生成采样内核）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SMP-001 | 温度→0 收敛贪心：唯一最大值 logits，T=1e-8 固定种子抽 500 次全部等于 greedy（不一致计数=0） | 0 | T→0 时 softmax 退化为 one-hot |
+| INV-SMP-002 | top-k 精确性：20 组随机 logits/k，过滤后非 −Inf 候选恰为 k 个且集合等于全排序前 k 名（违例计数=0） | 0 | 定义等价 |
+| INV-SMP-003 | top-p 最小性：20 组随机 logits/p，核集合累积概率 ≥ p 且移除最小概率成员后累积 < p（违例计数=0） | 0 | Holtzman 核采样最小集定义 |
+| INV-SMP-004 | 重复惩罚公式精确：正 logit→logit/coef、负 logit→logit*coef、未出现→不变，与内联参照逐元素偏差 ≤ 1e-12 | 1e-12 | HF 约定参照实现 |
+| INV-SMP-005 | 正缩放不变：logits×3.7（c>0）后 greedy 与 top-1 全序不变（不一致计数=0） | 0 | 正仿射单调性 |
+| INV-SMP-006 | 分布保真：[2,1,1] 偏态分布 N=20000 次抽样，经验频率与 softmax 目标最大偏差 ≤ 0.03（实测 2.78e-3） | 0.03 | MCSE≈0.0035，取 8σ 余量 |
+| INV-SMP-007 | 确定性：同种子两次 sample 逐位相等；不同种子经验频率仍落在目标 ±0.05 内（违例=0） | 0 | sfc32 确定性 + 非塌缩 |
+| INV-SMP-008 | 批量一致：batchSample 第 i 行 == 同一 rng 种子派生对第 i 行单独 sample 的结果（不一致计数=0） | 0 | 逐行共享连续 rng 流 |
+
 ---
 
 ## 统计汇总
@@ -264,20 +290,22 @@
 | L1 | 2 | 12 | 0 |
 | L2 | 4 | 28 | 0 |
 | L3 | 5 | 40 | 0 |
-| L4 | 2 | 16 | 0 |
-| L5 | 4 | 32 | 0 |
-| **合计** | **17** | **129** | **0** |
+| L4 | 3 | 24 | 0 |
+| L5 | 5 | 40 | 0 |
+| **合计** | **19** | **144** | **0** |
 
-> 注：L1 实际 12 条（core-numeric 8 + core-verify 4）；core-numeric 运行时 11 个 case 因 INV-NUM-002/006 含多子用例（a/b/c），不变量 ID 仍为 8 条。L3 含 nn-forge(8)+attn-forge(8)+optim(8)+autodiff(8)+loss-act-norm(8)=40。
+> 注：本表按**不变量 ID 数**统计，合计 **144 条**。运行时 case 数为 **145**（`npm run verify` 实测），差异来自多条子用例：
+> core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）。净 +1。
+> 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
 ---
 
 ## 如何复现
 
 ```bash
-npm run verify          # 17 模块 · 129 不变量 · 0 失败
-node tools/check-reuse.js   # 复用合规 0 ERROR
-node tools/verify-l10.js    # L10 1024 项 / done 30 / planned 994
+npm run verify             # 19 模块 · 145 用例 · 0 失败
+node tools/check-reuse.js  # 复用合规 0 ERROR
+node tools/verify-l10.js   # L10 1024 项 / done 42 / planned 982
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

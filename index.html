@@ -70,6 +70,8 @@
   <script src="src/prob-forge.js" onerror="window.__forgeLoadErrors['ForgeProb']=true"></script>
   <script src="src/graph-forge.js" onerror="window.__forgeLoadErrors['ForgeGraph']=true"></script>
   <script src="src/rl-forge.js" onerror="window.__forgeLoadErrors['ForgeRL']=true"></script>
+  <script src="src/transformer-forge.js" onerror="window.__forgeLoadErrors['ForgeTransformer']=true"></script>
+  <script src="src/sampling-forge.js" onerror="window.__forgeLoadErrors['ForgeSampling']=true"></script>
 
   <script>
   (function () {
@@ -91,7 +93,9 @@
       { key: 'ForgeRetrieval', label: 'retrieval-forge (L5 向量检索)' },
       { key: 'ForgeProb', label: 'prob-forge (L5 概率分布/信息论)' },
       { key: 'ForgeGraph', label: 'graph-forge (L5 图算法/BFS/Dijkstra)' },
-      { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' }
+      { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' },
+      { key: 'ForgeTransformer', label: 'transformer-forge (L4 Transformer组件/预归一化)' },
+      { key: 'ForgeSampling', label: 'sampling-forge (L5 生成采样/top-k/top-p)' }
     ];
 
     function row(pass, id, name, actual, tol) {

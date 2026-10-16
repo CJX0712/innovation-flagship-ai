@@ -65,8 +65,20 @@ const REUSE = {
   // F4 注意力与 Transformer
   'L10-F4-G0-O00': 'attn-forge attention',
   'L10-F4-G0-O01': 'attn-forge causalMask',
+  'L10-F4-G0-O03': 'attention-forge 多头注意力',
+  'L10-F4-G0-O08': 'attention-forge 自注意力',
+  'L10-F4-G1-O00': 'rope-forge RoPE',
+  'L10-F4-G1-O04': 'transformer-forge 正弦位置编码',
   'L10-F4-G2-O00': 'loss-act-norm-forge RMSNorm',
+  'L10-F4-G2-O12': 'transformer-forge 层归一预',
   'L10-F4-G3-O00': 'loss-act-norm-forge SwiGLU',
+  'L10-F4-G4-O06': 'attention-forge 分组查询 GQA',
+  'L10-F4-G7-O00': 'transformer-forge 嵌入层',
+  'L10-F4-G7-O02': 'transformer-forge 残差连接',
+  'L10-F4-G7-O03': 'transformer-forge 前馈网络',
+  'L10-F4-G7-O04': 'transformer-forge 预归一化',
+  'L10-F4-G5-O11': 'sampling-forge 并行采样',
+  'L10-F5-G7-O00': 'sampling-forge 自回归生成',
 };
 
 const FAM = [
