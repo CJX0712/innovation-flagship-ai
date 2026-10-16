@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T16:40:44.641Z",
+  "generated_at": "2026-10-16T17:24:59.617Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 55,
-    "planned": 969
+    "done": 70,
+    "planned": 954
   },
   "leaves": [
     {
@@ -5967,8 +5967,8 @@
       "op": "O03",
       "name": "推测解码",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "speculative-forge 推测解码"
     },
     {
       "id": "L10-F4-G5-O04",
@@ -6007,8 +6007,8 @@
       "op": "O07",
       "name": "流式生成",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "generation-forge 流式生成"
     },
     {
       "id": "L10-F4-G5-O08",
@@ -6067,8 +6067,8 @@
       "op": "O13",
       "name": "连续批处理",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "generation-forge 连续批处理"
     },
     {
       "id": "L10-F4-G5-O14",
@@ -6077,8 +6077,8 @@
       "op": "O14",
       "name": "前缀缓存",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "generation-forge 前缀缓存"
     },
     {
       "id": "L10-F4-G5-O15",
@@ -6097,8 +6097,8 @@
       "op": "O00",
       "name": "int8 量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge int8量化(对称/非对称)"
     },
     {
       "id": "L10-F4-G6-O01",
@@ -6107,8 +6107,8 @@
       "op": "O01",
       "name": "int4 量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge int4量化(位压缩excess码)"
     },
     {
       "id": "L10-F4-G6-O02",
@@ -6117,8 +6117,8 @@
       "op": "O02",
       "name": "k-quants",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge k-quants超块/子块二级scale"
     },
     {
       "id": "L10-F4-G6-O03",
@@ -6127,8 +6127,8 @@
       "op": "O03",
       "name": "权重量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 权重量化(逐通道)"
     },
     {
       "id": "L10-F4-G6-O04",
@@ -6137,8 +6137,8 @@
       "op": "O04",
       "name": "激活量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 激活量化(通用张量校准)"
     },
     {
       "id": "L10-F4-G6-O05",
@@ -6177,8 +6177,8 @@
       "op": "O08",
       "name": "仅权重量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 仅权重量化"
     },
     {
       "id": "L10-F4-G6-O09",
@@ -6187,8 +6187,8 @@
       "op": "O09",
       "name": "组量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 组量化(超块共享scale)"
     },
     {
       "id": "L10-F4-G6-O10",
@@ -6197,8 +6197,8 @@
       "op": "O10",
       "name": "逐通道量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 逐通道量化"
     },
     {
       "id": "L10-F4-G6-O11",
@@ -6207,8 +6207,8 @@
       "op": "O11",
       "name": "逐张量量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 逐张量量化"
     },
     {
       "id": "L10-F4-G6-O12",
@@ -6237,8 +6237,8 @@
       "op": "O14",
       "name": "量化反量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 量化反量化(往返/SNR)"
     },
     {
       "id": "L10-F4-G6-O15",
@@ -6247,8 +6247,8 @@
       "op": "O15",
       "name": "校准量化",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "quant-forge 校准量化(absmax/affine)"
     },
     {
       "id": "L10-F4-G7-O00",

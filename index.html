@@ -75,6 +75,9 @@
   <script src="src/kv-cache-forge.js" onerror="window.__forgeLoadErrors['ForgeKVCache']=true"></script>
   <script src="src/position-encoding-forge.js" onerror="window.__forgeLoadErrors['ForgePosEnc']=true"></script>
   <script src="src/moe-forge.js" onerror="window.__forgeLoadErrors['ForgeMoE']=true"></script>
+  <script src="src/quant-forge.js" onerror="window.__forgeLoadErrors['ForgeQuant']=true"></script>
+  <script src="src/speculative-forge.js" onerror="window.__forgeLoadErrors['ForgeSpeculative']=true"></script>
+  <script src="src/generation-forge.js" onerror="window.__forgeLoadErrors['ForgeGeneration']=true"></script>
 
   <script>
   (function () {
@@ -101,7 +104,10 @@
       { key: 'ForgeSampling', label: 'sampling-forge (L5 生成采样/top-k/top-p)' },
       { key: 'ForgeKVCache', label: 'kv-cache-forge (L4 KV缓存/增量解码)' },
       { key: 'ForgePosEnc', label: 'position-encoding-forge (L4 ALiBi/T5桶/插值)' },
-      { key: 'ForgeMoE', label: 'moe-forge (L4 MoE门控/路由/负载均衡)' }
+      { key: 'ForgeMoE', label: 'moe-forge (L4 MoE门控/路由/负载均衡)' },
+      { key: 'ForgeQuant', label: 'quant-forge (L4 量化int8/int4/k-quants)' },
+      { key: 'ForgeSpeculative', label: 'speculative-forge (L4 推测解码/分布等价)' },
+      { key: 'ForgeGeneration', label: 'generation-forge (L4 端到端生成闭环)' }
     ];
 
     function row(pass, id, name, actual, tol) {

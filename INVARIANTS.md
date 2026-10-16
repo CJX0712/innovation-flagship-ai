@@ -1,7 +1,7 @@
 # 不变量总览 · INVARIANTS
 
 > 创新旗舰 AI 的**硬不变量（hard invariant）清单**——每条不变量都有 ≥1 条可被独立交叉验证的金标准。
-> 当前基线：**22 模块 · 169 用例 · 0 失败**（`npm run verify` 实测）。
+> 当前基线：**25 模块 · 194 用例 · 0 失败**（`npm run verify` 实测）。
 
 ---
 
@@ -251,6 +251,49 @@
 | INV-MOE-007 | 向量化 vs 独立重实现：moeForward 与逐 token 朴素双重循环输出逐元素一致 | 1e-12 | 参照实现 vs 主实现 |
 | INV-MOE-008 | 确定性：同输入两次 moeForward、同 rng 种子两次 noisyGate 输出逐位相等 | 0 | 纯函数确定性定义 |
 
+### `quant-forge.js`（INV-QNT-001..008，9 用例，模型量化）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-QNT-001 | 可表示值精确往返：bits=8 对称，整数网格值 x=k·scale（k∈[-127,127]）经 quantize→dequantize 逐元素误差 ≤ 1e-12 | 1e-12 | 网格点往返 |
+| INV-QNT-002 | 量化误差有界：随机 20 组张量（bits=8/4 × 对称/非对称 × 逐张量/逐通道），max\|deq(quant(x))−x\| ≤ scale/2 | 1e-12 | round-to-nearest 半步长界 |
+| INV-QNT-003 | 对称量化零点：symmetric 时 zeroPoint==0（所有通道，精确）；asymmetric 时 zeroPoint 为整数且在 [0,2^bits−1] | 0 | 零点定义校验 |
+| INV-QNT-004 | 逐通道优于逐张量：32 通道 absmax 对数均匀 1e-2..1e2 的矩阵，perChannel SNR ≥ perTensor SNR | 0 | 同输入对照违例计数 |
+| INV-QNT-005 | int4 范围与端点：bits=4 两种 scheme 存储码 ∈ [-8,7]；对称量化网格覆盖 [min,max]；端点重建误差 ≤ 1 步长 | 1e-12 | 范围+网格覆盖+端点断言 |
+| INV-QNT-006 | 量化矩阵乘保真：非负随机权重矩阵（逐通道非对称），`quantMatvec` 与浮点 matvec 对 16 组激活汇总相对误差：int8 ≤ 1e-2、int4 ≤ 5e-2 且 int8 ≤ int4 | 1e-2 | 同输入对照+单调性 |
+| INV-QNT-007 | 超块细化：4 段块间 scale 相差 100 倍级的张量，kQuantSuperBlocks 的 SNR ≥ 整张 per-tensor 量化的 SNR，块数 == ceil(n/blockSize) | 0 | 同输入对照+块数精确 |
+| INV-QNT-008 | 确定性与 pack 往返：同张量两次 calibrate+quantize 参数与结果逐位相等；`unpackInt4(packInt4(v))==v` | 0 | 确定性定义+位压缩逆运算 |
+
+> 独立复算：1024 元素 int4 打包恰为 **512 字节**（真位压缩，每字节 2 个）；误差界两种位宽下**恰好等于** scale/2（紧界）；逐通道 SNR 高出逐张量 **+5.44dB / +5.59dB**。
+
+### `speculative-forge.js`（INV-SPC-001..008，8 条，推测解码）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SPC-001 | **分布等价（皇冠明珠）**：draft≠target 双分布场景 N=20000 次，speculativeDecode 与 target-only 采样的首 token 经验分布各自与目标分布最大偏差 ≤ 0.03 | 0.03 | 两侧独立大样本 MC；MCSE≈0.0035，8σ≈0.028 |
+| INV-SPC-002 | 贪心路径全接受：draft 每步 argmax==target argmax 时 greedyVerifyChunk 返回 k 且无拒绝；argmax 分歧位置 j 时返回 j | 0 | argmax 一致性定义（正温度缩放不变） |
+| INV-SPC-003 | 每步产出上界：20 组随机场景 1 ≤ tokensAccepted+bonus ≤ k+1，且 ctx' 长度=ctx+产出、tokensAccepted 为草稿前缀、targetCalls=1/draftCalls=k | 0 | 拒绝早停 + bonus 恒存在 |
+| INV-SPC-004 | 拒绝采样无偏：固定 q/p 单 token N=20000 次经验频率与 q 最大偏差 ≤ 0.03 | 0.03 | 恒等式 min(p,q)+(q−p)₊=q |
+| INV-SPC-005 | 接受率单调：draft==target 时接受率==1（精确）；3 档差异增大（解析 Σmin(p,q)≈0.91/0.74/0.48）经验接受率单调不增 | 0 | Σmin(p,q)=1−TV(p,q) 随差异单调降 |
+| INV-SPC-006 | 单 token 退化：k=1 时 speculativeDecode 与 target-only 独立重实现在 L=3 个位置的经验分布各自与目标分布一致 | 0.03 | k=1 拒绝采样边际=目标分布 |
+| INV-SPC-007 | 目标调用有界：生成 n token，targetCalls ≤ n 且 ≤ draftCalls/k+n；draft==target 时 targetCalls==ceil(n/(k+1))（精确，证明确有加速） | 0 | 每步≥1 token + 全接受每步 k+1 token |
+| INV-SPC-008 | 确定性：同种子两次 speculativeDecode 输出 token 序列与统计量逐位相等 | 0 | sfc32 确定性 + 纯函数式管线 |
+
+> 独立复算（主代理自建测试）：目标 q=[0.5,0.25,0.15,0.10] vs 均匀草稿，N=20000，推测解码首 token 经验分布偏差 **0.0062**、目标单独采样 **0.0032**，两路径互差 0.0093（MCSE≈0.0033 的 2σ 内）→ 端到端分布等价成立。
+
+### `generation-forge.js`（INV-GEN-001..008，8 条，端到端生成闭环 · 集成封顶）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-GEN-001 | 流式等价批量：同模型同 prompt 同种子，generateStream 回调 token 序列与 generate 返回 tokens 逐位一致（回调抛错向上传播） | 0 | 双路径逐元素比对 |
+| INV-GEN-002 | **增量等价全量（核心）**：generate（KV 缓存增量路径）每步 logits 与 generateNoCache（每步全序列前向）对应位置逐元素一致 ≤ 1e-12 | 1e-12 | 黄金参照逐元素比对 |
+| INV-GEN-003 | 前缀缓存等价：共享长度 L 前缀的 prompts 经 batchGenerate 复用前缀缓存的结果，与各自独立 generate 逐位一致（池命中计数防空洞化） | 0 | 批量 vs 独立逐位比对 |
+| INV-GEN-004 | 停止条件精确：eosId 为模型第 3 步（0 基）必产 token 时输出长度==3 且不含 eosId；maxTokens=5 时长度<=5；两者同时设置取先到者 | 0 | 精确整数断言 |
+| INV-GEN-005 | 确定性：同种子两次 generate 输出 tokens 逐位相等；不同种子贪心模式仍逐位相等；采样模式跨种子须有差异（防空洞化） | 0 | 逐位比对 |
+| INV-GEN-006 | 与采样内核一致：generate（采样模式）产出的 token 序列 == sampling-forge 的 sample 对同一条 logits 序列逐次采样的结果（rng 种子派生一致） | 0 | 独立重放逐位比对 |
+| INV-GEN-007 | 贪心确定性路径：temperature=1e-8、topK=1 时 generate 输出 == 每步 argmax 构成的确定性序列 | 0 | 独立 argmax 重实现逐位比对 |
+| INV-GEN-008 | 不良输入抛错：prompt 为空数组 / maxTokens=0 / eosId 为负数 / 缺 sampling 且缺 rng（贪心除外）等，generate 抛错且合法输入不抛 | 0 | 异常契约漏抛计数 |
+
 ---
 
 ## L5 — 检索 / 概率分布 / 图算法 / 强化学习 / 生成采样
@@ -329,12 +372,12 @@
 | L1 | 2 | 12 | 0 |
 | L2 | 4 | 28 | 0 |
 | L3 | 5 | 40 | 0 |
-| L4 | 6 | 48 | 0 |
+| L4 | 9 | 72 | 0 |
 | L5 | 5 | 40 | 0 |
-| **合计** | **22** | **168** | **0** |
+| **合计** | **25** | **192** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **168 条**。运行时 case 数为 **169**（`npm run verify` 实测），差异来自多条子用例：
-> core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）。净 +1。
+> 注：本表按**不变量 ID 数**统计，合计 **192 条**。运行时 case 数为 **194**（`npm run verify` 实测），差异来自多条子用例：
+> core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）。净 +2。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
 ---
@@ -342,9 +385,9 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 22 模块 · 169 用例 · 0 失败
+npm run verify             # 25 模块 · 194 用例 · 0 失败
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 55 / planned 969
+node tools/verify-l10.js   # L10 1024 项 / done 70 / planned 954
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

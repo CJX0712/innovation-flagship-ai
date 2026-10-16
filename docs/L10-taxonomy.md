@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 55 |
-| planned | 969 |
+| done | 70 |
+| planned | 954 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -816,40 +816,40 @@
 | `L10-F4-G5-O00` | KV 缓存 | L4 | done | kv-cache-forge KV缓存 |
 | `L10-F4-G5-O01` | 分页注意力 | L4 | done | kv-cache-forge 分页注意力 |
 | `L10-F4-G5-O02` | 增量解码 | L4 | done | kv-cache-forge 增量解码 |
-| `L10-F4-G5-O03` | 推测解码 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O03` | 推测解码 | L4 | done | speculative-forge 推测解码 |
 | `L10-F4-G5-O04` | 并行解码 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O05` | 缓存复用 | L4 | done | kv-cache-forge 缓存复用 |
 | `L10-F4-G5-O06` | 缓存逐出 | L4 | done | kv-cache-forge 缓存逐出 |
-| `L10-F4-G5-O07` | 流式生成 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O07` | 流式生成 | L4 | done | generation-forge 流式生成 |
 | `L10-F4-G5-O08` | 缓存预分配 | L4 | done | kv-cache-forge 缓存预分配 |
 | `L10-F4-G5-O09` | 缓存压缩 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O10` | 缓存量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O11` | 并行采样 | L4 | done | sampling-forge 并行采样 |
 | `L10-F4-G5-O12` | 树状注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O13` | 连续批处理 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O14` | 前缀缓存 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O13` | 连续批处理 | L4 | done | generation-forge 连续批处理 |
+| `L10-F4-G5-O14` | 前缀缓存 | L4 | done | generation-forge 前缀缓存 |
 | `L10-F4-G5-O15` | 注意力下沉 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 
 ### G6 · 量化与压缩
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F4-G6-O00` | int8 量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O01` | int4 量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O02` | k-quants | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O03` | 权重量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O04` | 激活量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G6-O00` | int8 量化 | L4 | done | quant-forge int8量化(对称/非对称) |
+| `L10-F4-G6-O01` | int4 量化 | L4 | done | quant-forge int4量化(位压缩excess码) |
+| `L10-F4-G6-O02` | k-quants | L4 | done | quant-forge k-quants超块/子块二级scale |
+| `L10-F4-G6-O03` | 权重量化 | L4 | done | quant-forge 权重量化(逐通道) |
+| `L10-F4-G6-O04` | 激活量化 | L4 | done | quant-forge 激活量化(通用张量校准) |
 | `L10-F4-G6-O05` | 混合精度 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G6-O06` | 平滑量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G6-O07` | 量化感知训练 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O08` | 仅权重量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O09` | 组量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O10` | 逐通道量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O11` | 逐张量量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G6-O08` | 仅权重量化 | L4 | done | quant-forge 仅权重量化 |
+| `L10-F4-G6-O09` | 组量化 | L4 | done | quant-forge 组量化(超块共享scale) |
+| `L10-F4-G6-O10` | 逐通道量化 | L4 | done | quant-forge 逐通道量化 |
+| `L10-F4-G6-O11` | 逐张量量化 | L4 | done | quant-forge 逐张量量化 |
 | `L10-F4-G6-O12` | 稀疏量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G6-O13` | 旋转量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O14` | 量化反量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G6-O15` | 校准量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G6-O14` | 量化反量化 | L4 | done | quant-forge 量化反量化(往返/SNR) |
+| `L10-F4-G6-O15` | 校准量化 | L4 | done | quant-forge 校准量化(absmax/affine) |
 
 ### G7 · 模型组件
 
