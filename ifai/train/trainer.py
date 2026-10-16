@@ -158,8 +158,10 @@ class TinyTrainer:
         h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
         g = h2.matmul(self.params[p + "ffn_gate"])
         u = h2.matmul(self.params[p + "ffn_up"])
-        silu = g * g.sigmoid()                          # SwiGLU 门控
-        ff = (silu * u).matmul(self.params[p + "ffn_down"])
+        # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
+        # 默认 "swiglu" 保持 silu 逻辑完全不变; "gelu" 走可微 gelu。
+        gate_act = g.gelu() if c.activation == "gelu" else g * g.sigmoid()
+        ff = (gate_act * u).matmul(self.params[p + "ffn_down"])
         x = x + ff
         return x
 

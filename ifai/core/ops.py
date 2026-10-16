@@ -96,6 +96,20 @@ def swiglu(x: np.ndarray, w1: np.ndarray, w2: np.ndarray, b1=None, b2=None) -> n
     return silu * u
 
 
+# ----------------------------- GELU -----------------------------
+def gelu(x: np.ndarray) -> np.ndarray:
+    """GELU (Hendrycks & Gimpel 2016, tanh-approx, GPT/LLaMA 同款)。
+
+    ``gelu(x) ≈ 0.5 * x * (1 + tanh(sqrt(2/pi) * (x + 0.044715 * x**3)))``
+
+    与 ``swiglu`` 同文件 (零重写: 标准激活函数)；推理端 FFN 按
+    ``ModelConfig.activation`` 在 ``gelu`` / ``swiglu`` 间二选一。
+    """
+    x = np.asarray(x, dtype=np.float64)
+    c = np.sqrt(2.0 / np.pi)
+    return 0.5 * x * (1.0 + np.tanh(c * (x + 0.044715 * x ** 3)))
+
+
 # ----------------------------- 分块 GEMM -----------------------------
 def tiled_matmul(a: np.ndarray, b: np.ndarray, block: int = 64) -> np.ndarray:
     """分块矩阵乘 (INV-01 == a@b)。分块提升 cache 命中，复刻 BLAS 思想。"""

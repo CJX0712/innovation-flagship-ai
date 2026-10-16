@@ -164,6 +164,34 @@ class Tensor:
         out._backward = _b
         return out
 
+    def gelu(self):
+        """可微 GELU (Hendrycks & Gimpel 2016, tanh-approx, GPT/LLaMA 同款)。
+
+        前向: ``gelu(x) ≈ 0.5*x*(1 + tanh(u))``,
+        其中 ``u = sqrt(2/pi)*(x + 0.044715*x**3)``。
+
+        反向解析式:
+        ``gelu'(x) = 0.5*(1+tanh(u)) + 0.5*x*(1-tanh(u)**2)*sqrt(2/pi)*(1+0.134145*x**2)``
+        (0.134145 = 3·0.044715, 即 0.044715·x**3 对外层 x 求导的系数)。
+
+        训练端 FFN 按 ``ModelConfig.activation`` 在 gelu / SwiGLU(silu) 间二选一；
+        与推理端 ``ifai.core.ops.gelu`` 数值完全一致 (INV: 训练/推理激活函数对齐)。
+        """
+        x = self.data
+        c = np.sqrt(2.0 / np.pi)
+        u = c * (x + 0.044715 * x ** 3)
+        t = np.tanh(u)
+        out_data = 0.5 * x * (1.0 + t)
+        out = Tensor(out_data, (self,), "gelu")
+
+        def _b():
+            if self.requires_grad:
+                dgelu = (0.5 * (1.0 + t)
+                         + 0.5 * x * (1.0 - t * t) * c * (1.0 + 0.134145 * x * x))
+                self.grad += dgelu * out.grad
+        out._backward = _b
+        return out
+
     def relu(self):
         m = self.data > 0
         out = Tensor(np.where(m, self.data, 0.0), (self,), "relu")

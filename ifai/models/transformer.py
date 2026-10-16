@@ -179,8 +179,9 @@ class Transformer:
             else:
                 g = h2 @ self.params[pre + "ffn_gate"]
                 u = h2 @ self.params[pre + "ffn_up"]
-                silu = g / (1.0 + np.exp(-g))
-                ff = (silu * u) @ self.params[pre + "ffn_down"]
+                # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
+                gate_act = ops.gelu(g) if c.activation == "gelu" else g / (1.0 + np.exp(-g))
+                ff = (gate_act * u) @ self.params[pre + "ffn_down"]
                 x = x + ff
         x = ops.rms_norm(x, self.params["final_norm"], c.norm_eps)
         out = x if return_hidden else x @ self.params["lm_head"].T   # [B,T,V]
@@ -220,8 +221,9 @@ class Transformer:
         for e in range(c.n_experts):
             gate = h2 @ self.params[pre + f"e{e}_gate"]
             up = h2 @ self.params[pre + f"e{e}_up"]
-            silu = gate / (1.0 + np.exp(-gate))
-            ex = (silu * up) @ self.params[pre + f"e{e}_down"]
+            # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
+            gate_act = ops.gelu(gate) if c.activation == "gelu" else gate / (1.0 + np.exp(-gate))
+            ex = (gate_act * up) @ self.params[pre + f"e{e}_down"]
             mask = topk_idx == e
             out += np.sum(w * mask, axis=-1, keepdims=True) * ex
         return out
