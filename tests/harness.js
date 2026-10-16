@@ -81,6 +81,25 @@ const BAD_INPUTS = {
     ['reparamSample', [null, 0, () => 0]],
     ['meanFieldKL', [null, 0, 0, 0]],
     ['vae', [[], null, null, { dimX: 1, dimZ: 1 }]]
+  ],
+  ForgeRetrieval: [
+    ['cosineSim', [null, [1, 2]]],
+    ['bruteForceSearch', [null, [[1, 2]], [1, 2], 3]],
+    ['annSearch', [null, [[1, 2]], 3]],
+    ['thresholdFilter', [null, 0.5]],
+    ['batchSearch', [null, [[1, 2]], 3]]
+  ],
+  ForgeANN: [
+    ['buildKD', [null]],
+    ['kdKnN', [null, [[1, 2]], 3]],
+    ['buildBall', [null]],
+    ['ballKnN', [null, [[1, 2]], 3]],
+    ['buildAnnoy', [null, 3]],
+    ['kmeans', [[], 2]],
+    ['trainPQ', [[], [1, 2], 4]],
+    ['buildHNSW', [null, {}]],
+    ['buildIVFPQ', [[], 2, 4]],
+    ['buildCoarseQuantizer', [[], 0]]
   ]
 };
 
@@ -177,7 +196,7 @@ function globalNameFor(modPath) {
     'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling',
     'kv-cache-forge': 'ForgeKVCache', 'position-encoding-forge': 'ForgePosEnc', 'moe-forge': 'ForgeMoE',
     'quant-forge': 'ForgeQuant', 'speculative-forge': 'ForgeSpeculative', 'generation-forge': 'ForgeGeneration',
-    'dqn-forge': 'ForgeDQN', 'scheduler-forge': 'ForgeScheduler', 'diffusion-forge': 'ForgeDiffusion', 'td-forge': 'ForgeTD', 'policygrad-forge': 'ForgePolicyGrad', 'vi-forge': 'ForgeVI'
+    'dqn-forge': 'ForgeDQN', 'scheduler-forge': 'ForgeScheduler', 'diffusion-forge': 'ForgeDiffusion', 'td-forge': 'ForgeTD', 'policygrad-forge': 'ForgePolicyGrad', 'vi-forge': 'ForgeVI', 'retrieval-forge': 'ForgeRetrieval', 'ann-forge': 'ForgeANN'
   };
   return map[base] || null;
 }

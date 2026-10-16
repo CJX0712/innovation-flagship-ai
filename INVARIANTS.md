@@ -311,20 +311,7 @@
 
 ---
 
-## L5 — 检索 / 概率分布 / 图算法 / 强化学习 / 生成采样
-
-### `retrieval-forge.js`（INV-RET-001..008，8 条）
-
-| ID | 不变量 | 容差 | 验证方法 |
-|----|--------|------|----------|
-| INV-RET-001 | 余弦相似度 ∈ [−1,1] | 1e-12 | 定义边界 |
-| INV-RET-002 | 相同向量余弦=1；正交向量余弦=0 | 1e-12 | 定义 |
-| INV-RET-003 | top-k 返回 k 个结果且按相似度降序 | 1e-12 | 召回顺序 |
-| INV-RET-004 | top-k 与暴力全排序结果一致（集合+顺序） | 1e-12 | 精确召回 |
-| INV-RET-005 | 归一化向量余弦 = 点积 | 1e-12 | 余弦/点积等价 |
-| INV-RET-006 | 余弦检索对查询缩放不变（c≠0 不改变 top 顺序） | 1e-12 | 缩放不变性 |
-| INV-RET-007 | L2 距离 = ‖a−b‖；非负且零点为同向量 | 1e-12 | L2 定义 |
-| INV-RET-008 | 零向量安全：与任意向量余弦=0（不抛错不 NaN） | 1e-12 | 边界安全 |
+## L5 — 概率分布 / 图算法 / 强化学习 / 生成采样
 
 ### `prob-forge.js`（INV-PRB-001..008，8 条）
 
@@ -459,6 +446,40 @@
 
 ---
 
+## L7 — 向量检索 / ANN 索引（检索 / 图 / 系统族 F7）
+
+### `retrieval-forge.js`（INV-RT-001..008，8 条，L7 向量检索核心 / 余弦 / 穷举 top-k / MIPS / RRF）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-RT-001 | 余弦度量：正交向量余弦=0、平行向量余弦=1（黄金参照逐元素核对）；且随机对严格 ∈(−1,1) 非恒定 | 1e-15 | 手搓黄金 cosine + 非恒定证伪 |
+| INV-RT-002 | 穷举 top-k 与手搓全排序取前 k 逐位一致(EXACT)；且 k=1 与 k=5 结果必分歧 | 0 | 独立手搓 argsort 黄金参照 + 分歧断言 |
+| INV-RT-003 | int8 标量量化反量化后距离相对误差 ≤5%；且量化距离 ≠ 精确距离(近似)；误差随码本精度收敛 | 5e-2 | 反量化误差界 + 近似断言 + 收敛断言 |
+| INV-RT-004 | 默认穷举 ANN recall@k=1.0(EXACT)；切到近似标志后 recall<1.0(证明近似路径有效) | 0 | recall@k 对照 + 近似路径证伪 |
+| INV-RT-005 | 穷举 MIPS top-k 与手搓内积排序前 k 一致；最大内积 ≠ 最近邻(证伪度量混淆) | 0 | 独立手搓内积黄金参照 + 分歧断言 |
+| INV-RT-006 | 重排改变初召回顺序；RRF 融合后 top-1 为高频高排名项且融合序 ≠ 任一输入序 | 0 | 重排顺序变更 + RRF 融合序证伪 |
+| INV-RT-007 | 阈值过滤返回集 ⊆ 全集且均 ≥ 阈值；阈值升高结果数减少(单调) | 0 | 子集关系 + 单调性证伪 |
+| INV-RT-008 | 同 seed 数据集两次检索逐位相等；异 seed 必分歧(确定性+可复现) | 0 | 双跑比对 + 异种子分歧断言 |
+
+> 反空洞铁律落实（INV-RT-004/008）：ANN 默认穷举 recall=1.0（精确）必断言近似路径 recall<1.0 证伪"作弊全量"；确定性同 seed 逐位相等必断言异 seed 分歧。灵魂不变量 INV-RT-002 经手搓 argsort 黄金参照交叉验证 mismatch=0，并经 `tests/independent/retrieval-check.js` 复核。
+
+### `ann-forge.js`（INV-ANN-001..008，8 条，L7 ANN 索引结构全集 / KD树 / 球树 / LSH / Annoy / PQ / IVFPQ / ScaNN / HNSW）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-ANN-001 | KD 树精确 kNN：recall@k=1.0(=手搓穷举黄金) 且平均访问节点数 ≪N | 1e-12 | 手搓穷举黄金 top-k 对照 + 访问计数扫描 |
+| INV-ANN-002 | 球树精确 kNN：recall@k=1.0(=手搓穷举黄金) 且平均访问节点数 ≪N | 1e-12 | 手搓穷举黄金 top-k 对照 + 访问计数扫描 |
+| INV-ANN-003 | LSH 族(超平面/p稳定/旋转) 良好配置 recall≥0.8(=手搓黄金)；退化配置 recall<1.0(证伪作弊全量) | 0 | 手搓穷举黄金 top-k 对照 + 退化配置证伪 |
+| INV-ANN-004 | Annoy 良好配置 recall≥0.8；退化(nTrees=1) recall<1.0 | 0 | 手搓穷举黄金 top-k 对照 + 退化配置证伪 |
+| INV-ANN-005 | PQ/IVFPQ 重建相对误差 ≤20%；量化(ADC)距离 ≠ 精确 L2 距离(近似)；误差随子空间数/码本增大收敛 | 0.2 | 重建误差比 + ADC vs 精确距离 + M/Ks 收敛扫描 |
+| INV-ANN-006 | HNSW 召回随 efSearch 单调不减；efSearch=1 召回明显低于大 ef(证伪平凡)；大 ef recall≥0.9 | 1e-9 | efSearch 扫描单调 + ef=1 对比如下 |
+| INV-ANN-007 | 粗/细量化：同 seed 两次运行中心 id / 码本逐位相等；异 seed 分歧 | 0 | 同 seed 双跑一致性 + 异 seed 分歧 |
+| INV-ANN-008 | 确定性：同 seed 数据集建索引+查询逐位相等；异 seed 必分歧 | 0 | 双跑比对 + 异种子分歧断言 |
+
+> 反空洞铁律落实（INV-ANN-003/004/006）：各近似索引必断言退化配置 recall<1.0 证伪"作弊返回全量"；HNSW ef=1 必低于大 ef。灵魂不变量经手搓穷举黄金 top-k 交叉验证（mismatch=0），并经 `tests/independent/ann-check.js` 复核。
+
+---
+
 ## 统计汇总
 
 | 层 | 模块数 | 不变量条数 | 失败 |
@@ -467,27 +488,30 @@
 | L2 | 4 | 28 | 0 |
 | L3 | 6 | 48 | 0 |
 | L4 | 9 | 72 | 0 |
-| L5 | 7 | 56 | 0 |
+| L5 | 6 | 48 | 0 |
 | L6 | 3 | 24 | 0 |
-| **合计** | **31** | **240** | **0** |
+| L7 | 2 | 16 | 0 |
+| **合计** | **32** | **248** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **240 条**。运行时 case 数为 **242**（`npm run verify` 实测），差异来自多条子用例：
-> core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）。净 +2。
-> 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
+> 注：本表按**不变量 ID 数**统计，合计 **248 条**。运行时 case 数为 **255**（`npm run verify` 实测），差异来自多条子用例：
+> core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）；ann-forge 13 个 case 对应 8 条 ID（O04/O06/O08/O09/O11 为覆盖用例，+5）。净 +7。
+> 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变；retrieval-forge / ann-forge 声明 L7（F7 检索·图·系统族），本波由 L5 规划位升格至 L7。
 
 ---
 
 ## 如何复现
 
 ```bash
-npm run verify             # 31 模块 · 242 用例 · 0 失败
+npm run verify             # 32 模块 · 255 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
 node tests/independent/td-check.js          # INV-TD 表格RL 皇冠不变量独立复核
 node tests/independent/policygrad-check.js  # INV-PG 策略梯度 皇冠不变量独立复核
 node tests/independent/vi-check.js          # INV-VI 变分推断 皇冠不变量独立复核
+node tests/independent/retrieval-check.js  # INV-RT 向量检索 皇冠不变量独立复核
+node tests/independent/ann-check.js        # INV-ANN ANN索引 皇冠不变量独立复核
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 116 / planned 908
+node tools/verify-l10.js   # L10 1024 项 / done 143 / planned 881
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

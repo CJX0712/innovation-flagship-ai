@@ -84,6 +84,8 @@
   <script src="src/td-forge.js" onerror="window.__forgeLoadErrors['ForgeTD']=true"></script>
   <script src="src/policygrad-forge.js" onerror="window.__forgeLoadErrors['ForgePolicyGrad']=true"></script>
   <script src="src/vi-forge.js" onerror="window.__forgeLoadErrors['ForgeVI']=true"></script>
+  <script src="src/retrieval-forge.js" onerror="window.__forgeLoadErrors['ForgeRetrieval']=true"></script>
+  <script src="src/ann-forge.js" onerror="window.__forgeLoadErrors['ForgeANN']=true"></script>
 
   <script>
   (function () {
@@ -102,7 +104,8 @@
       { key: 'ForgeLossActNorm', label: 'loss-act-norm-forge (L3 损失/激活/归一化)' },
       { key: 'ForgeAttention', label: 'attention-forge (L4 注意力/GQA)' },
       { key: 'ForgeRoPE', label: 'rope-forge (L4 旋转位置编码)' },
-      { key: 'ForgeRetrieval', label: 'retrieval-forge (L5 向量检索)' },
+      { key: 'ForgeRetrieval', label: 'retrieval-forge (L7 向量检索核心/余弦/穷举/MIPS/RRF)' },
+      { key: 'ForgeANN', label: 'ann-forge (L7 ANN索引/KD树/球树/LSH/Annoy/PQ/IVFPQ/ScaNN/HNSW)' },
       { key: 'ForgeProb', label: 'prob-forge (L5 概率分布/信息论)' },
       { key: 'ForgeGraph', label: 'graph-forge (L5 图算法/BFS/Dijkstra)' },
       { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' },

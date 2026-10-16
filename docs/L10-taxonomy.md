@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 116 |
-| planned | 908 |
+| done | 143 |
+| planned | 881 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -1218,20 +1218,20 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G0-O00` | 余弦相似 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O01` | 内积检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O02` | L2 检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O03` | 近似近邻 ANN | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O04` | 穷举检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O05` | 量化检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G0-O00` | 余弦相似 | L7 | done | retrieval-forge 余弦相似(cosineSim) |
+| `L10-F7-G0-O01` | 内积检索 | L7 | done | retrieval-forge 内积检索(dotSearch/metricScore) |
+| `L10-F7-G0-O02` | L2 检索 | L7 | done | retrieval-forge L2检索(l2Search) |
+| `L10-F7-G0-O03` | 近似近邻 ANN | L7 | done | retrieval-forge 近似近邻ANN调度(buildANNIndex/annSearch) |
+| `L10-F7-G0-O04` | 穷举检索 | L7 | done | retrieval-forge 穷举检索(bruteForceSearch) |
+| `L10-F7-G0-O05` | 量化检索 | L7 | done | retrieval-forge 量化检索(buildScalarQuantizer/quantizedSearch) |
 | `L10-F7-G0-O06` | 分层导航 HNSW | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G0-O07` | 倒排文件 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O08` | 最大内积检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O09` | 检索重排 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O10` | 检索融合 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G0-O08` | 最大内积检索 | L7 | done | retrieval-forge 最大内积检索(mipsSearch) |
+| `L10-F7-G0-O09` | 检索重排 | L7 | done | retrieval-forge 检索重排(rerank) |
+| `L10-F7-G0-O10` | 检索融合 | L7 | done | retrieval-forge 检索融合RRF(rrfFuse) |
 | `L10-F7-G0-O11` | 候选生成 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O12` | 相似度阈值 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G0-O13` | 批量检索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G0-O12` | 相似度阈值 | L7 | done | retrieval-forge 相似度阈值(thresholdFilter) |
+| `L10-F7-G0-O13` | 批量检索 | L7 | done | retrieval-forge 批量检索(batchSearch) |
 | `L10-F7-G0-O14` | 近邻图构建 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G0-O15` | 近邻图搜索 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 
@@ -1239,22 +1239,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G1-O00` | KD 树 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O01` | 球树 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O02` | LSH | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O03` | Annoy 树 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O04` | 倒排索引 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O05` | 乘积量化 PQ | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O06` | IVFPQ | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O07` | 局部敏感哈希 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O08` | ScaNN | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O09` | 旋转不变 LSH | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O10` | 多索引 HNSW | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O11` | 图索引 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O12` | 树索引 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O13` | 哈希索引 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O14` | 粗量化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G1-O15` | 细量化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G1-O00` | KD 树 | L7 | done | ann-forge KD树(buildKD/kdKnN) |
+| `L10-F7-G1-O01` | 球树 | L7 | done | ann-forge 球树(buildBall/ballKnN) |
+| `L10-F7-G1-O02` | LSH | L7 | done | ann-forge LSH超平面(buildLSH/lshQuery) |
+| `L10-F7-G1-O03` | Annoy 树 | L7 | done | ann-forge Annoy(buildAnnoy/annoyQuery) |
+| `L10-F7-G1-O04` | 倒排索引 | L7 | done | ann-forge 倒排索引(buildInvertedIndex) |
+| `L10-F7-G1-O05` | 乘积量化 PQ | L7 | done | ann-forge 乘积量化PQ(trainPQ/pqADCDist) |
+| `L10-F7-G1-O06` | IVFPQ | L7 | done | ann-forge IVFPQ(buildIVFPQ/ivfpqQuery) |
+| `L10-F7-G1-O07` | 局部敏感哈希 | L7 | done | ann-forge LSH p稳定(buildLSHpstable/lshPQuery) |
+| `L10-F7-G1-O08` | ScaNN | L7 | done | ann-forge ScaNN(buildScaNN/scannQuery) |
+| `L10-F7-G1-O09` | 旋转不变 LSH | L7 | done | ann-forge 旋转不变LSH(buildRotationLSH/rotationLSHQuery) |
+| `L10-F7-G1-O10` | 多索引 HNSW | L7 | done | ann-forge 多索引HNSW(buildHNSW) |
+| `L10-F7-G1-O11` | 图索引 | L7 | done | ann-forge 图索引NSW(buildNSW/nswSearch) |
+| `L10-F7-G1-O12` | 树索引 | L7 | done | ann-forge 树索引(TreeIndex) |
+| `L10-F7-G1-O13` | 哈希索引 | L7 | done | ann-forge 哈希索引(HashIndex) |
+| `L10-F7-G1-O14` | 粗量化 | L7 | done | ann-forge 粗量化(buildCoarseQuantizer) |
+| `L10-F7-G1-O15` | 细量化 | L7 | done | ann-forge 细量化(buildFineQuantizer) |
 
 ### G2 · 图算法
 

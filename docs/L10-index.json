@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T19:34:47.686Z",
+  "generated_at": "2026-10-16T20:27:42.756Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 116,
-    "planned": 908
+    "done": 143,
+    "planned": 881
   },
   "leaves": [
     {
@@ -8977,8 +8977,8 @@
       "op": "O00",
       "name": "余弦相似",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 余弦相似(cosineSim)"
     },
     {
       "id": "L10-F7-G0-O01",
@@ -8987,8 +8987,8 @@
       "op": "O01",
       "name": "内积检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 内积检索(dotSearch/metricScore)"
     },
     {
       "id": "L10-F7-G0-O02",
@@ -8997,8 +8997,8 @@
       "op": "O02",
       "name": "L2 检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge L2检索(l2Search)"
     },
     {
       "id": "L10-F7-G0-O03",
@@ -9007,8 +9007,8 @@
       "op": "O03",
       "name": "近似近邻 ANN",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 近似近邻ANN调度(buildANNIndex/annSearch)"
     },
     {
       "id": "L10-F7-G0-O04",
@@ -9017,8 +9017,8 @@
       "op": "O04",
       "name": "穷举检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 穷举检索(bruteForceSearch)"
     },
     {
       "id": "L10-F7-G0-O05",
@@ -9027,8 +9027,8 @@
       "op": "O05",
       "name": "量化检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 量化检索(buildScalarQuantizer/quantizedSearch)"
     },
     {
       "id": "L10-F7-G0-O06",
@@ -9057,8 +9057,8 @@
       "op": "O08",
       "name": "最大内积检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 最大内积检索(mipsSearch)"
     },
     {
       "id": "L10-F7-G0-O09",
@@ -9067,8 +9067,8 @@
       "op": "O09",
       "name": "检索重排",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 检索重排(rerank)"
     },
     {
       "id": "L10-F7-G0-O10",
@@ -9077,8 +9077,8 @@
       "op": "O10",
       "name": "检索融合",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 检索融合RRF(rrfFuse)"
     },
     {
       "id": "L10-F7-G0-O11",
@@ -9097,8 +9097,8 @@
       "op": "O12",
       "name": "相似度阈值",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 相似度阈值(thresholdFilter)"
     },
     {
       "id": "L10-F7-G0-O13",
@@ -9107,8 +9107,8 @@
       "op": "O13",
       "name": "批量检索",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "retrieval-forge 批量检索(batchSearch)"
     },
     {
       "id": "L10-F7-G0-O14",
@@ -9137,8 +9137,8 @@
       "op": "O00",
       "name": "KD 树",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge KD树(buildKD/kdKnN)"
     },
     {
       "id": "L10-F7-G1-O01",
@@ -9147,8 +9147,8 @@
       "op": "O01",
       "name": "球树",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 球树(buildBall/ballKnN)"
     },
     {
       "id": "L10-F7-G1-O02",
@@ -9157,8 +9157,8 @@
       "op": "O02",
       "name": "LSH",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge LSH超平面(buildLSH/lshQuery)"
     },
     {
       "id": "L10-F7-G1-O03",
@@ -9167,8 +9167,8 @@
       "op": "O03",
       "name": "Annoy 树",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge Annoy(buildAnnoy/annoyQuery)"
     },
     {
       "id": "L10-F7-G1-O04",
@@ -9177,8 +9177,8 @@
       "op": "O04",
       "name": "倒排索引",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 倒排索引(buildInvertedIndex)"
     },
     {
       "id": "L10-F7-G1-O05",
@@ -9187,8 +9187,8 @@
       "op": "O05",
       "name": "乘积量化 PQ",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 乘积量化PQ(trainPQ/pqADCDist)"
     },
     {
       "id": "L10-F7-G1-O06",
@@ -9197,8 +9197,8 @@
       "op": "O06",
       "name": "IVFPQ",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge IVFPQ(buildIVFPQ/ivfpqQuery)"
     },
     {
       "id": "L10-F7-G1-O07",
@@ -9207,8 +9207,8 @@
       "op": "O07",
       "name": "局部敏感哈希",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge LSH p稳定(buildLSHpstable/lshPQuery)"
     },
     {
       "id": "L10-F7-G1-O08",
@@ -9217,8 +9217,8 @@
       "op": "O08",
       "name": "ScaNN",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge ScaNN(buildScaNN/scannQuery)"
     },
     {
       "id": "L10-F7-G1-O09",
@@ -9227,8 +9227,8 @@
       "op": "O09",
       "name": "旋转不变 LSH",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 旋转不变LSH(buildRotationLSH/rotationLSHQuery)"
     },
     {
       "id": "L10-F7-G1-O10",
@@ -9237,8 +9237,8 @@
       "op": "O10",
       "name": "多索引 HNSW",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 多索引HNSW(buildHNSW)"
     },
     {
       "id": "L10-F7-G1-O11",
@@ -9247,8 +9247,8 @@
       "op": "O11",
       "name": "图索引",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 图索引NSW(buildNSW/nswSearch)"
     },
     {
       "id": "L10-F7-G1-O12",
@@ -9257,8 +9257,8 @@
       "op": "O12",
       "name": "树索引",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 树索引(TreeIndex)"
     },
     {
       "id": "L10-F7-G1-O13",
@@ -9267,8 +9267,8 @@
       "op": "O13",
       "name": "哈希索引",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 哈希索引(HashIndex)"
     },
     {
       "id": "L10-F7-G1-O14",
@@ -9277,8 +9277,8 @@
       "op": "O14",
       "name": "粗量化",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 粗量化(buildCoarseQuantizer)"
     },
     {
       "id": "L10-F7-G1-O15",
@@ -9287,8 +9287,8 @@
       "op": "O15",
       "name": "细量化",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "ann-forge 细量化(buildFineQuantizer)"
     },
     {
       "id": "L10-F7-G2-O00",
