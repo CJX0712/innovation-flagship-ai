@@ -2,6 +2,28 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.12] — 2026-10-17
+
+### 文档 (Documentation) — README / L4 设计文档同步 (v0.7.4–v0.7.11 功能债清偿)
+- **问题**: 八个功能/验证版本连续交付后文档债积累 — README 首页徽章仍写
+  "tests-39 passed"（实际 263），L4 层描述缺 MoE 训练/QAT/gelu，路线图
+  "量化部署示例" 已完成却未勾选，且无任何训练配置开关文档。
+- **README.md**:
+  - 徽章改为 `tests-passing (263+)`；测试节数字 39 → 263。
+  - L4 行补齐 MoE 训练 + QAT(Jacob 2018) + SwiGLU/gelu。
+  - 「核心特性」新增 **三层训练保证**（五轴一致性 save→load ≤1e-9 / 特征组合矩阵
+    / 端到端可训性）与量化感知描述。
+  - 新增 **「🎛️ 训练特性与配置开关」** 章节：7 个 ModelConfig 开关对照表
+    （n_kv_heads / rope_scaling / activation / use_moe / use_lora / use_qat /
+    tie）+ MoE+LoRA+QAT 组合训练与一键 INT8/INT4 部署示例。
+  - 路线图勾选「量化部署示例」（int8/int4 RTN + QAT），拆出「分布式部署」待办。
+- **docs/design/L4_train.md**:
+  - 设计目标补 MoE 可微训练 + QAT；复用成果新增 Fedus 2022 (Switch MoE 训练端
+    镜像与可微路由) 与 Jacob 2018 (STE 伪量化) 两条零重写出处。
+  - 验收新增 **「训练/推理一致性三层保证」** 小节，逐测试文件对应三层保证。
+- **验证**: selftest 4 门禁 ALL GREEN（R-X-03 文档审计 + 内部链接 + README 章节
+  全部通过）；全量 263 passed 零回归。
+
 ## [0.7.11] — 2026-10-17
 
 ### 新增 (Added) — INT4 模型量化接入推理 (对偶 quantize_int8)
