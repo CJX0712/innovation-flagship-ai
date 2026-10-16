@@ -78,6 +78,7 @@
   <script src="src/quant-forge.js" onerror="window.__forgeLoadErrors['ForgeQuant']=true"></script>
   <script src="src/speculative-forge.js" onerror="window.__forgeLoadErrors['ForgeSpeculative']=true"></script>
   <script src="src/generation-forge.js" onerror="window.__forgeLoadErrors['ForgeGeneration']=true"></script>
+  <script src="src/dqn-forge.js" onerror="window.__forgeLoadErrors['ForgeDQN']=true"></script>
 
   <script>
   (function () {
@@ -107,7 +108,8 @@
       { key: 'ForgeMoE', label: 'moe-forge (L4 MoE门控/路由/负载均衡)' },
       { key: 'ForgeQuant', label: 'quant-forge (L4 量化int8/int4/k-quants)' },
       { key: 'ForgeSpeculative', label: 'speculative-forge (L4 推测解码/分布等价)' },
-      { key: 'ForgeGeneration', label: 'generation-forge (L4 端到端生成闭环)' }
+      { key: 'ForgeGeneration', label: 'generation-forge (L4 端到端生成闭环)' },
+      { key: 'ForgeDQN', label: 'dqn-forge (L6 深度强化学习/DQN)' }
     ];
 
     function row(pass, id, name, actual, tol) {

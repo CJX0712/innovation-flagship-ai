@@ -365,6 +365,25 @@
 
 ---
 
+## L6 — 深度强化学习
+
+### `dqn-forge.js`（INV-DQN-001..008，8 条，DQN 系算法族）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-DQN-001 | TD 目标闭式：tdTarget == r+γ·max(qNext)·(1−done)，随机 20 组偏差 ≤ 1e-12（实测 0）；done 时精确等于 r（截断自举） | 1e-12 | 内联闭式复算 |
+| INV-DQN-002 | 经验回放 FIFO：capacity=64 推入 100 条 → size==64、保留第 37..100 条（逐位断言）、最旧 36 条逐出；sample 不修改缓冲区 | 0 | 逐位断言 + 快照对照 |
+| INV-DQN-003 | 回放采样无偏：20000 次 sample(batch=4) 共 8 万抽，各经验被抽中频率与均匀分布最大偏差 ≤ 0.03（实测 1.85e-3，约 20σ 余量） | 0.03 | 蒙特卡洛频率检验 |
+| INV-DQN-004 | ε-贪婪口径：ε=0 恒返回 argmax（20 组×200 次违例 0）；ε=1 频率−均匀 ≤ 0.03；ε=0.5 频率 vs 0.5·均匀+0.5·argmax ≤ 0.05（实测 1.45e-3） | 0.05 | 经验频率 vs 闭式混合分布 |
+| INV-DQN-005 | ε 调度单调：线性/指数两种模式 step∈[0,2000] 全范围单调不增且 ≥ epsEnd（违例 0） | 0 | 单调性扫描 |
+| INV-DQN-006 | Polyak 闭式：tau=0.01 时 target == 0.01·online+0.99·target（≤1e-12）；tau=1 时 target == online（精确，硬同步特例） | 1e-12 | 闭式复算 |
+| INV-DQN-007 | **DQN 收敛到值迭代**（皇冠）：5 态链式 MDP 训练后贪心策略与 rl-forge 值迭代最优策略一致，贝尔曼残差 ≤ 1e-2（实测 2.62e-12） | 1e-2 | 独立黄金参照（非自证）；另经 `tests/independent/INV-DQN-007-check.js` 三重独立复核：手搓 P/R 值迭代 V\*=[0.729,0.81,0.9,1.0,0] 对闭式误差 1.1e-16、env.spec() 同源审计 0 差异、3 种子 Q 值收敛至 Q\* ~1e-11、独立复算残差与模块自报逐位相等 |
+| INV-DQN-008 | Double DQN 抑制过估计：诱惑构造 MDP（目标网络含被高估动作）上 TD 目标逐元素 ≤ 普通 DQN，20 组随机批量违例 0 | 0 | max 算子占优 + 构造实例 |
+
+> 阈值推导（INV-DQN-007）：one-hot 线性 Q 网 ≡ 表格 Q 学习，定点即 VI 的 Q\*；SGD 稳态 TD 误差 ~ O(lr·σ_TD/√batch)：lr=0.05、batch=32、收敛后单样本 TD 误差 σ≈0.05 ⇒ 残差≈5e-4，取 1e-2（≈20× 余量，且远小于 Q 值尺度 γ⁴≈0.66，收敛意义不丢失）。终态（goal）episode 进入即终止、永不被动作触及，其 Q\*≡0 是定义值而非贝尔曼约束，残差与策略一致性均在非终止态全集（4 态 × 2 动作 = 8 对）上度量。
+
+---
+
 ## 统计汇总
 
 | 层 | 模块数 | 不变量条数 | 失败 |
@@ -374,9 +393,10 @@
 | L3 | 5 | 40 | 0 |
 | L4 | 9 | 72 | 0 |
 | L5 | 5 | 40 | 0 |
-| **合计** | **25** | **192** | **0** |
+| L6 | 1 | 8 | 0 |
+| **合计** | **26** | **200** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **192 条**。运行时 case 数为 **194**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **200 条**。运行时 case 数为 **202**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）。净 +2。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
@@ -385,9 +405,10 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 25 模块 · 194 用例 · 0 失败
+npm run verify             # 26 模块 · 202 用例 · 0 失败
+node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 70 / planned 954
+node tools/verify-l10.js   # L10 1024 项 / done 74 / planned 950
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

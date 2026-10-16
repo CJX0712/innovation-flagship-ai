@@ -39,11 +39,11 @@
 
 - L1–L10 项数按 2·2ⁿ 增长（L1=2, L2=4, …, L10=1024），合计 ∑ = **2046**。
 - L10 的 1024 项微指令完整分类法见 [`docs/L10-index.json`](docs/L10-index.json) 与 [`docs/L10-taxonomy.md`](docs/L10-taxonomy.md)（8 族 / 64 组 / 每组 16 op）。
-- 当前已落码的 **25 个内核模块**，覆盖了 L1–L5 的基础与核心算法，并直接支撑 L10 中 **70 项 done** 微指令（其余 954 项标记为 planned，等待后续波次）。
+- 当前已落码的 **26 个内核模块**，覆盖了 L1–L6 的基础与核心算法，并直接支撑 L10 中 **74 项 done** 微指令（其余 950 项标记为 planned，等待后续波次）。
 
 ---
 
-## 三、模块清单（25 个内核 · 194 条不变量 · 0 失败）
+## 三、模块清单（26 个内核 · 202 条不变量 · 0 失败）
 
 所有模块均满足 `@forge-module` 统一契约：`selfCheck()` 返回 `forge-selfcheck/1.0` schema、代码 hash 幂等、不良输入抛错、CLI 退出码规范（0/1/2/3/4/66）。每条不变量都有 **≥1 条可被独立交叉验证的硬标准**（残差界 / 正交归一 / 梯度检验 / 闭式对照 / 参考重实现），阈值常量化于 `TOL`。
 
@@ -74,6 +74,7 @@
 | `src/prob-forge.js` | L5 | INV-PRB-001..008 | 8 | 高斯 / Bernoulli / KL 散度 / 逆 CDF 采样 |
 | `src/graph-forge.js` | L5 | INV-GRAPH-001..008 | 8 | BFS / Dijkstra（独立重实现校验） |
 | `src/rl-forge.js` | L5 | INV-RL-001..008 | 8 | 值迭代 / 贝尔曼最优性 / REINFORCE 策略梯度 |
+| `src/dqn-forge.js` | L6 | INV-DQN-001..008 | 8 | Mnih 2015 DQN / 目标网络 / Double DQN(van Hasselt 2015) / Polyak / ε-贪婪 |
 
 > 注：`attn-forge.js`（L4，INV-ATTN-*）为经典注意力模块的零重写迁移包装；`attention-forge.js`（L4，INV-ATT-*）为新写的多头 / GQA / 因果注意力。两者并存、互不冲突。
 
@@ -89,7 +90,7 @@
 
 ### 命令行自检（Node 端）
 ```bash
-# 1) 聚合自检：17 模块 / 129 不变量，全部跑一遍
+# 1) 聚合自检：26 模块 / 202 不变量，全部跑一遍
 npm test                 # ≡ node run-all.js
 npm run selfcheck        # ≡ node run-all.js
 
@@ -150,7 +151,7 @@ innovation-flagship-ai/
 ├── run-all.js              # 聚合自检运行器（自动发现 src/*.js）
 ├── package.json            # 脚本：test/selfcheck/harness/verify/l10/check:reuse
 ├── LICENSE                 # MIT（署名 晨星 / CJX0712）
-├── src/                    # 17 个零依赖单文件内核
+├── src/                    # 26 个零依赖单文件内核
 │   ├── core-numeric.js  core-verify.js  stable-forge.js
 │   ├── linalg-forge.js  pca-forge.js  gmm-forge.js
 │   ├── nn-forge.js  attn-forge.js
@@ -159,9 +160,11 @@ innovation-flagship-ai/
 │   ├── kv-cache-forge.js  position-encoding-forge.js  moe-forge.js
 │   ├── quant-forge.js  speculative-forge.js  generation-forge.js
 │   └── retrieval-forge.js  prob-forge.js  graph-forge.js
-│   └── rl-forge.js  sampling-forge.js
+│   └── rl-forge.js  sampling-forge.js  dqn-forge.js
 ├── tests/
-│   └── harness.js          # @forge-module 契约自检器
+│   ├── harness.js          # @forge-module 契约自检器
+│   └── independent/        # 独立黄金参照复核（不采信模块自检）
+│       └── INV-DQN-007-check.js
 ├── tools/
 │   ├── gen-l10.js          # L10 微指令分类法生成
 │   ├── verify-l10.js       # L10 校验（唯一性 / 字段完整 / 状态分布）
@@ -186,13 +189,14 @@ innovation-flagship-ai/
 - ✅ **W8**：Transformer 模型组件（嵌入 / 正弦位置编码 / 预归一化残差 / SwiGLU 前馈 / 编码器前向）+ 生成采样内核（温度 / 贪心 / top-k / top-p 核采样 / 重复惩罚 / 批量采样）——2 模块 / 16 不变量全绿
 - ✅ **W9**：KV 缓存与增量解码（预分配 / 分页块表 / 增量等价全量前向 / 逐出）+ 位置编码族（ALiBi 线性偏置 / T5 相对桶 / 位置插值）+ 混合专家 MoE（top-k 门控 / 路由 / 负载均衡 / 容量裁剪 / 共享专家）——3 模块 / 24 不变量全绿
 - ✅ **W10**：模型量化（int8/int4 真位压缩 / 逐通道 / k-quants 超块 / 量化矩阵乘）+ 推测解码（草稿提议 / 目标并行验证 / 拒绝采样 / **分布等价**）+ 端到端生成闭环（KV 增量 / 流式 / 前缀缓存 / 批量）——3 模块 / 25 用例全绿
-- 🔜 **W11+**：F4-G5 余项（并行解码、树状注意力、缓存压缩、注意力下沉）、F4-G6 余项（混合精度、SmoothQuant、QAT、稀疏量化）、L6 序列建模、L7 多模态 / 生成、L8 预训练 / 对齐、L9 推理优化——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
+- ✅ **W11（进行中）**：深度强化学习内核 dqn-forge（经验回放 / 目标网络 / ε-贪婪 / DQN 更新 / Double DQN / Polyak / **收敛到值迭代**，皇冠不变量 INV-DQN-007 经手搓黄金参照 + 3 种子独立复核确认）——1 模块 / 8 不变量全绿；学习率调度器 scheduler-forge 与扩散模型内核 diffusion-forge（DDPM/DDIM）并行建造中
+- 🔜 **W11+ / W12+**：F2-G2 学习率调度（阶跃 / 余弦退火 / warmup / 余弦重启 / 1cycle）、F5-G7 扩散模型（β 调度 / 前向加噪 / DDPM 祖先采样 / DDIM 确定性采样）、F4-G5 余项（并行解码、树状注意力、缓存压缩、注意力下沉）、F4-G6 余项（混合精度、SmoothQuant、QAT、稀疏量化）、F5 概率与生成余项（MCMC / VAE / 流模型）、F6 策略梯度、F7 检索/图/系统——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
 
-**当前验证基线（W10 提交前本地复核）：**
-- `npm run verify` → **25 模块 · 通过 194 · 失败 0**
-- `npm run harness` → 25/25 模块满足 `@forge-module` 契约（含不良输入抛错登记）
-- `npm run check:reuse` → 0 ERROR / 0 ADVISORY
-- `npm run l10` → 1024 项 / done 70 / planned 954 / ID 唯一 / 字段完整
+**当前验证基线（W11 dqn 集成后本地复核）：**
+- `npm run verify` → **26 模块 · 通过 202 · 失败 0**
+- `npm run harness` → 26/26 模块满足 `@forge-module` 契约（含不良输入抛错登记）
+- `npm run check:reuse` → 0 ERROR / 5 ADVISORY（X 级自研声明提示，不影响退出码）
+- `npm run l10` → 1024 项 / done 74 / planned 950 / ID 唯一 / 字段完整
 
 ---
 

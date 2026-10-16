@@ -107,6 +107,11 @@ const REUSE = {
   'L10-F4-G6-O14': 'quant-forge 量化反量化(往返/SNR)',
   'L10-F4-G6-O15': 'quant-forge 校准量化(absmax/affine)',
   'L10-F5-G7-O00': 'sampling-forge 自回归生成',
+  // F6 强化学习
+  'L10-F6-G3-O00': 'dqn-forge DQN更新(Mnih 2015)',
+  'L10-F6-G3-O01': 'dqn-forge 经验回放(均匀采样环形缓冲)',
+  'L10-F6-G3-O02': 'dqn-forge 目标网络(Polyak软更新)',
+  'L10-F6-G3-O03': 'dqn-forge 双重DQN(van Hasselt 2015)',
 };
 
 const FAM = [

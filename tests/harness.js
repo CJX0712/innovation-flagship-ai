@@ -30,7 +30,20 @@ const BAD_INPUTS = {
   ForgeMoE: [['topKGating', [[1, 2, 3], 0]], ['loadBalancingLoss', [null, 4]]],
   ForgeQuant: [['calibrate', [[1, 2, 3], { bits: 0 }]], ['calibrate', [[1, 2, 3], { bits: 8, scheme: 'bogus' }]]],
   ForgeSpeculative: [['rejectionSample', [[0.5, 0.6], [0.5, 0.5], 1]]],
-  ForgeGeneration: [['generate', [null, [], { maxTokens: 3 }]], ['stopCheck', [null, null]]]
+  ForgeGeneration: [['generate', [null, [], { maxTokens: 3 }]], ['stopCheck', [null, null]]],
+  ForgeDQN: [
+    ['qNet', [new Float64Array(3), null]],
+    ['qNet', [new Float64Array([2, 2, 0, 0, 0, 0, 0, 0]), null]],
+    ['makeQParams', [0, 2]],
+    ['makeChainEnv', [1]],
+    ['tdTarget', [1, [], false, 0.9]],
+    ['epsilonGreedy', [[], 0.5, () => 0.5]],
+    ['epsilonGreedy', [[0.1, 0.2], 1.5, () => 0]],
+    ['epsilonSchedule', [-1, { mode: 'linear', decaySteps: 10 }]],
+    ['epsilonSchedule', [5, { mode: 'bogus' }]],
+    ['polyakUpdate', [new Float64Array(4), new Float64Array(6), 0.1]],
+    ['bellmanResidual', [null, null, 0.9]]
+  ]
 };
 
 const problems = [];
@@ -125,7 +138,8 @@ function globalNameFor(modPath) {
     'prob-forge': 'ForgeProb', 'graph-forge': 'ForgeGraph', 'rl-forge': 'ForgeRL',
     'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling',
     'kv-cache-forge': 'ForgeKVCache', 'position-encoding-forge': 'ForgePosEnc', 'moe-forge': 'ForgeMoE',
-    'quant-forge': 'ForgeQuant', 'speculative-forge': 'ForgeSpeculative', 'generation-forge': 'ForgeGeneration'
+    'quant-forge': 'ForgeQuant', 'speculative-forge': 'ForgeSpeculative', 'generation-forge': 'ForgeGeneration',
+    'dqn-forge': 'ForgeDQN'
   };
   return map[base] || null;
 }

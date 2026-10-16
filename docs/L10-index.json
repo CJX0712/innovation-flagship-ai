@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T17:24:59.617Z",
+  "generated_at": "2026-10-16T17:59:25.285Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 70,
-    "planned": 954
+    "done": 74,
+    "planned": 950
   },
   "leaves": [
     {
@@ -8177,8 +8177,8 @@
       "op": "O00",
       "name": "DQN",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "dqn-forge DQN更新(Mnih 2015)"
     },
     {
       "id": "L10-F6-G3-O01",
@@ -8187,8 +8187,8 @@
       "op": "O01",
       "name": "经验回放",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "dqn-forge 经验回放(均匀采样环形缓冲)"
     },
     {
       "id": "L10-F6-G3-O02",
@@ -8197,8 +8197,8 @@
       "op": "O02",
       "name": "目标网络",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "dqn-forge 目标网络(Polyak软更新)"
     },
     {
       "id": "L10-F6-G3-O03",
@@ -8207,8 +8207,8 @@
       "op": "O03",
       "name": "双重 DQN",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "dqn-forge 双重DQN(van Hasselt 2015)"
     },
     {
       "id": "L10-F6-G3-O04",

@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 70 |
-| planned | 954 |
+| done | 74 |
+| planned | 950 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -1111,10 +1111,10 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F6-G3-O00` | DQN | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G3-O01` | 经验回放 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G3-O02` | 目标网络 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G3-O03` | 双重 DQN | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G3-O00` | DQN | L6 | done | dqn-forge DQN更新(Mnih 2015) |
+| `L10-F6-G3-O01` | 经验回放 | L6 | done | dqn-forge 经验回放(均匀采样环形缓冲) |
+| `L10-F6-G3-O02` | 目标网络 | L6 | done | dqn-forge 目标网络(Polyak软更新) |
+| `L10-F6-G3-O03` | 双重 DQN | L6 | done | dqn-forge 双重DQN(van Hasselt 2015) |
 | `L10-F6-G3-O04` | 决斗网络 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F6-G3-O05` | 优先经验回放 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F6-G3-O06` | 噪声网络 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
