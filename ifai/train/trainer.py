@@ -75,6 +75,19 @@ class TinyTrainer:
                 self._P(p + "ffn_gate", (d, c.d_ff))
                 self._P(p + "ffn_up", (d, c.d_ff))
                 self._P(p + "ffn_down", (c.d_ff, d))
+            if c.use_lora:
+                # LoRA 低秩适配 (Hu et al. 2022, INV-24): 仅训练 A/B, 冻结目标基座。
+                # 与推理端 Transformer 同名同结构 (W + (α/r)·B@A), save→load 零偏差。
+                for t, shp in (("q_proj", (d, d)),
+                               ("k_proj", (d, n_kv * c.d_head)),
+                               ("v_proj", (d, n_kv * c.d_head)),
+                               ("o_proj", (d, d))):
+                    Wi, Wo = shp   # 投影权重形状 = (in_dim, out_dim)
+                    self._P(p + f"{t}_lora_a", (c.lora_r, Wi))
+                    # B 初始化为 0 (INV-24: B=0 ⇒ LoRA 增量≡0 ⇒ 等价基座前向)
+                    self.params[p + f"{t}_lora_b"] = Tensor(
+                        np.zeros((Wo, c.lora_r), dtype=np.float64), requires_grad=True)
+                    self.params[p + t].requires_grad = False   # 冻结基座 (LoRA 语义)
 
     # ---------------- autograd 前向 ----------------
     def _rope(self, x: Tensor, pos: np.ndarray, dim: int) -> Tensor:
@@ -148,9 +161,9 @@ class TinyTrainer:
         # RMSNorm
         ms = (x * x).mean(axis=-1, keepdims=True)
         h = x / (ms + c.norm_eps).pow(0.5) * self.params[p + "attn_norm"]
-        q = h.matmul(self.params[p + "q_proj"])
-        k = h.matmul(self.params[p + "k_proj"])
-        v = h.matmul(self.params[p + "v_proj"])
+        q = self._apply_lora(h, p, "q_proj", h.matmul(self.params[p + "q_proj"]))
+        k = self._apply_lora(h, p, "k_proj", h.matmul(self.params[p + "k_proj"]))
+        v = self._apply_lora(h, p, "v_proj", h.matmul(self.params[p + "v_proj"]))
         # RoPE (单节点) + 头重排 (reshape/transpose 元操作)
         q = self._rope(q, pos, d).reshape(B, T, n_h, dh).transpose((0, 2, 1, 3))
         k = self._rope(k, pos, n_kv * dh).reshape(B, T, n_kv, dh).transpose((0, 2, 1, 3))
@@ -163,6 +176,7 @@ class TinyTrainer:
         ctx = Tensor.attention(q, k, v, scale, bias=self._bias(T))  # [B,H,T,dh]
         ctx = ctx.transpose((0, 2, 1, 3)).reshape(B, T, d)
         o = ctx.matmul(self.params[p + "o_proj"])
+        o = self._apply_lora(ctx, p, "o_proj", o)
         x = x + o
         ms2 = (x * x).mean(axis=-1, keepdims=True)
         h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
@@ -208,6 +222,21 @@ class TinyTrainer:
             coeff = (w * Tensor(mask, requires_grad=False)).sum(axis=-1, keepdims=True)  # [B,T,1]
             out = out + coeff * ex
         return out
+
+    def _apply_lora(self, x: "Tensor", pre: str, tgt: str, base_out: "Tensor") -> "Tensor":
+        """LoRA 低秩增量 (Hu et al. 2022, INV-24): ``base + (α/r)·(x@Aᵀ)@Bᵀ``。
+
+        与推理端 ``Transformer`` 同公式 (INV-24); ``B=0`` 初始时增量≡0 ⇒ 等价
+        基座前向。冻结目标基座 (q/k/v/o), 仅 A/B 可训练。
+        """
+        c = self.cfg
+        if not c.use_lora:
+            return base_out
+        A = self.params[f"{pre}{tgt}_lora_a"]                   # [r, in]
+        B = self.params[f"{pre}{tgt}_lora_b"]                   # [out, r]
+        scale = c.lora_alpha / c.lora_r
+        lora = (x.matmul(A.transpose())).matmul(B.transpose()) * scale
+        return base_out + lora
 
     def forward(self, ids: np.ndarray) -> Tensor:
         c = self.cfg

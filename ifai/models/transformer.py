@@ -65,6 +65,16 @@ class Transformer:
             p[pre + "v_proj"] = self._normal(d, n_kv * c.d_head)
             p[pre + "o_proj"] = self._normal(d, d)
             p[pre + "ffn_norm"] = np.ones(d, np.float64)
+            if c.use_lora:
+                # LoRA 低秩适配 (Hu et al. 2022, INV-24): 与训练端同公式
+                # (W + (α/r)·B@A); B=0 初始 ⇒ 等价基座前向。
+                for t, shp in (("q_proj", (d, d)),
+                               ("k_proj", (d, n_kv * c.d_head)),
+                               ("v_proj", (d, n_kv * c.d_head)),
+                               ("o_proj", (d, d))):
+                    Wi, Wo = shp   # 投影权重形状 = (in_dim, out_dim)
+                    p[pre + f"{t}_lora_a"] = self._normal(c.lora_r, Wi)
+                    p[pre + f"{t}_lora_b"] = np.zeros((Wo, c.lora_r), np.float64)  # B=0
             if c.use_moe:
                 for e in range(c.n_experts):
                     p[pre + f"e{e}_gate"] = self._normal(d, c.d_ff)
@@ -136,9 +146,9 @@ class Transformer:
         for l in range(c.n_layers):
             pre = f"layer{l}."
             h = ops.rms_norm(x, self.params[pre + "attn_norm"], c.norm_eps)
-            q = h @ self.params[pre + "q_proj"]            # [B,T,d]
-            k = h @ self.params[pre + "k_proj"]
-            v = h @ self.params[pre + "v_proj"]
+            q = self._apply_lora(h, pre, "q_proj", h @ self.params[pre + "q_proj"])            # [B,T,d]
+            k = self._apply_lora(h, pre, "k_proj", h @ self.params[pre + "k_proj"])
+            v = self._apply_lora(h, pre, "v_proj", h @ self.params[pre + "v_proj"])
             q = ops.apply_rope(q, positions, d, c.rope_base, c.rope_scaling).reshape(B, T, n_h, dh)
             k = ops.apply_rope(k, positions, n_kv * dh, c.rope_base, c.rope_scaling).reshape(B, T, n_kv, dh)
             v = v.reshape(B, T, n_kv, dh)
@@ -171,6 +181,7 @@ class Transformer:
             probs = numeric.stable_softmax(scores, axis=-1)
             ctx = np.einsum("bhtT,bThd->bthd", probs, v).reshape(B, T, d)
             o = ctx @ self.params[pre + "o_proj"]
+            o = self._apply_lora(ctx, pre, "o_proj", o)
             x = x + o
             # FFN / MoE
             h2 = ops.rms_norm(x, self.params[pre + "ffn_norm"], c.norm_eps)
@@ -227,6 +238,19 @@ class Transformer:
             mask = topk_idx == e
             out += np.sum(w * mask, axis=-1, keepdims=True) * ex
         return out
+
+    def _apply_lora(self, x: np.ndarray, pre: str, tgt: str, base_out: np.ndarray) -> np.ndarray:
+        """推理端 LoRA 增量 (numpy 同公式, Hu et al. 2022, INV-24):
+        ``base + (α/r)·(x@Aᵀ)@Bᵀ``；与训练端 TinyTrainer._apply_lora 数值一致
+        (INV-24), save→load 后零偏差。"""
+        c = self.cfg
+        if not c.use_lora:
+            return base_out
+        A = self.params[f"{pre}{tgt}_lora_a"]                   # [r, in]
+        B = self.params[f"{pre}{tgt}_lora_b"]                   # [out, r]
+        scale = c.lora_alpha / c.lora_r
+        lora = ((x @ A.T) @ B.T) * scale
+        return base_out + lora
 
     def logits_next(self, token_ids: np.ndarray) -> np.ndarray:
         """给定已生成序列, 返回最后一个位置的 logits [V]。"""

@@ -32,6 +32,9 @@ class ModelConfig:
     tie_word_embeddings: bool = True   # INV-12 权重绑定
     max_seq_len: int = 1024
     activation: str = "swiglu"         # swiglu | gelu
+    use_lora: bool = False             # LoRA 低秩适配 (Hu et al. 2022)
+    lora_r: int = 4                     # LoRA 秩 r
+    lora_alpha: int = 8                 # LoRA 缩放 α (scale = α/r)
     initializer_range: float = 0.02
 
     def __post_init__(self):
@@ -41,6 +44,8 @@ class ModelConfig:
         assert self.n_heads % self.n_kv_heads == 0, "n_heads must be divisible by n_kv_heads"
         if self.use_moe:
             assert self.n_experts >= 2 and self.moe_topk >= 1 and self.moe_topk < self.n_experts
+        if self.use_lora:
+            assert self.lora_r >= 1 and self.lora_alpha >= 1, "lora_r/lora_alpha 必须 ≥ 1"
 
     # 派生属性
     @property

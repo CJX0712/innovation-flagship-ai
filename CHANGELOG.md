@@ -2,6 +2,28 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.7] — 2026-10-17
+
+### 新增 (Added) — LoRA 接入训练端+推理端 + 训练/推理 save→load 一致性 (补齐最后一配置轴)
+- **真缺口 (能力缺陷, 非测试缺口)**: `ifai/train/lora.py::LoRALinear` 仅是独立参考
+  实现 (Hu et al. 2022), 未接入 `TinyTrainer` 与推理端 `Transformer` —— LoRA 这一
+  旗舰级微调方法此前**不可用** (一致性矩阵最后一轴缺失)。现补齐 (零重写·集大成):
+  - `config.py`: 新增 `use_lora / lora_r / lora_alpha` (`W_eff = W + (α/r)·B·A`)。
+  - `trainer.py` `_build`: 按 `use_lora` 为 q/k/v/o 投影建 `lora_a[r,in] / lora_b[out,r]`,
+    **冻结基座** (`requires_grad=False`), `B` 初始化为 0 (INV-24 初始等价基座)。
+  - `trainer._apply_lora` / `transformer._apply_lora`: 训练端(Tensor)与推理端(numpy)
+    **同一公式** `base + (α/r)·(x@Aᵀ)@Bᵀ`, save→load 零偏差。
+  - 修复维度约定坑: 本项目投影权重形状为 `(in_dim, out_dim)`, lora_a/lora_b 据此推导
+    (k/v_proj 形状 `(d, n_kv·d_head)` 曾因 (out,in) 误读导致 matmul 维度失配)。
+- **验证**: 新增 `tests/unit/l4/test_lora_consistency.py` 4 用例 ——
+  ① LoRA 训练后 trainer 前向 vs 推理端 save→load 对照 (swiglu/gelu) `≤1e-9`;
+  ② 训练数步后 A/B 梯度贯通 (非 None 且范数>0) + 基座冻结 (无梯度流);
+  ③ INV-24 B=0 初始严格等价基座前向 (`≤1e-12`)。
+- 一致性矩阵现状: 注意力(n_kv×scaling)/激活(swiglu|gelu)/MoE/INT8/**LoRA** 五轴已覆盖,
+  训练端配置轴全部打通 (GQA/RoPE-scaling/激活/MoE/INT8推理/LoRA 微调)。
+
+### 测试 (Tests) — 215 → 219 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.6] — 2026-10-17
 
 ### 新增 (Added) — INT8 量化接入推理前向 + INV-07 重建误差界一致性守卫
