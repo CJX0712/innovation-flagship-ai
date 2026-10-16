@@ -84,7 +84,15 @@ class Transformer:
 
     # ---------------- 参数量 ----------------
     def count_params(self) -> int:
-        return int(sum(v.size for v in self.params.values()))
+        """可训练参数量 (INV-13: 与按配置解析计算值精确相等)。
+
+        按**唯一数组**计数: 权重绑定 (INV-12, ``lm_head is embed``) 时同一
+        ndarray 只计一次, 否则 tied 模型的参数量会被虚报 ``V·d``。
+        """
+        seen: Dict[int, int] = {}
+        for v in self.params.values():
+            seen[id(v)] = v.size
+        return int(sum(seen.values()))
 
     # ---------------- 前向 ----------------
     def forward(self, token_ids: np.ndarray, return_hidden: bool = False,

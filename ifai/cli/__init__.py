@@ -59,7 +59,7 @@ def cmd_train(args):
     losses = trainer.train(np.array(ids), steps=args.steps, lr=args.lr)
     dt = time.perf_counter() - t0
     trainer.save(args.out)
-    nparams = sum(v.size for v in trainer.to_numpy_params().values())
+    nparams = trainer.count_params()
     print(f"训练完成: {args.steps} 步, 用时 {dt:.1f}s, 末损 {losses[-1]:.4f}")
     print(f"模型已保存至 {args.out} (参数量 {nparams})")
 
@@ -195,9 +195,13 @@ def cmd_selftest(args):
 
     INV-41 (分层零反向依赖) / INV-42 (≥25 处世界顶级出处) / R-X-03 (文档完备),
     并额外校验「微指令分解覆盖 PRD 全部 42 条 INV (含 X 层 INV-41/42)」。
+    ``--inv INV-17`` 可单查一条不变量: 定位 tests/ 下引用该 INV 的测试文件并运行。
     """
     import re
     import subprocess
+    if getattr(args, "inv", None):
+        _run_single_inv(args.inv)
+        return
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     audits = [
         ("分层审计 (INV-41)", "scripts/check_layering.py"),
@@ -241,6 +245,43 @@ def cmd_selftest(args):
     sys.exit(0 if all_ok else 1)
 
 
+def _run_single_inv(inv: str) -> None:
+    """按 INV 编号定位并运行验证它的测试 (ARCHITECTURE.md 映射原则的 CLI 落点)。"""
+    import re
+    import subprocess
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    m = re.fullmatch(r"INV[-_]?(\d{1,2})", inv.strip(), re.IGNORECASE)
+    if not m:
+        print(f"[失败] 无法解析 INV 编号: {inv} (示例: --inv INV-17)")
+        sys.exit(2)
+    num = int(m.group(1))
+    if not 1 <= num <= 42:
+        print(f"[失败] INV 编号超出 01..42: {num}")
+        sys.exit(2)
+    tests_dir = os.path.join(repo, "tests")
+    hits = []
+    for root, _dirs, files in os.walk(tests_dir):
+        for fn in files:
+            if not fn.endswith(".py") or fn == "__init__.py":
+                continue
+            p = os.path.join(root, fn)
+            try:
+                text = open(p, encoding="utf-8", errors="replace").read()
+            except OSError:
+                continue
+            if num in {int(x) for x in re.findall(r"INV-(\d{1,2})\b", text)}:
+                hits.append(os.path.relpath(p, repo))
+    if not hits:
+        print(f"[失败] INV-{num:02d} 在 tests/ 下无任何测试引用 (违反可追溯性门禁)")
+        sys.exit(1)
+    print(f"=== INV-{num:02d} → {len(hits)} 个测试文件 ===")
+    for h in hits:
+        print("  ", h)
+    rc = subprocess.run([sys.executable, "-m", "pytest", "-q"] + hits, cwd=repo).returncode
+    print("=== 结论:", "PASS ✅" if rc == 0 else "FAIL ❌", f"(INV-{num:02d}) ===")
+    sys.exit(rc)
+
+
 def _exists(p):
     import os
     return os.path.exists(p)
@@ -258,6 +299,8 @@ def main():
         p.set_defaults(func=fn)
     sub.choices["selftest"].add_argument("--pytest", action="store_true",
                                         help="额外运行 pytest 黄金测试")
+    sub.choices["selftest"].add_argument("--inv", default=None, dest="inv",
+                                        help="单查一条不变量, 如 --inv INV-17")
     # 通用参数
     for name in ["train"]:
         sub.choices[name].add_argument("--seed", type=int, default=0)

@@ -2,6 +2,42 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.6.0] — 2026-10-17
+
+### 新增 (Added)
+- **INV 测试可追溯性闭环（规范 → 实现 → 验证 三点贯通）**：PRD 映射原则
+  （「每条不变量至少一个独立测试」）首次可执行化。
+  - 硬门禁 `tests/unit/x/test_inv_traceability.py`：42/42 条 INV 每条至少被
+    1 个测试文件引用（静态扫描 `tests/`，编号十进制归一），45 项参数化断言。
+  - `ifai selftest --inv INV-17`：单查一条不变量，定位并运行验证它的测试文件。
+- **补齐 4 条真缺口测试**（诊断发现 24 条 INV 在测试侧零引用，其中 4 条连
+  语义覆盖都没有）：
+  - `tests/unit/l2/test_param_moe.py`：**INV-13** 参数量 == 解析公式（4 种配置
+    精确整数相等）+ **INV-14** MoE 路由守恒（选中概率和=1、每 token 恰
+    `moe_topk` 个互异专家、独立重算 MoE 前向 diff ≤ 1e-12）。
+  - `tests/unit/l4/test_trainer.py`：**INV-26** 训练损失单调（平滑后
+    tail20% ≤ head20% × 0.8，真实训练非构造曲线）。
+  - `tests/unit/x/test_determinism.py`：**INV-40** 同 seed bitwise 确定性
+    （初始化/前向/训练一步/采样 四链路 + 异 seed 判别力对照）。
+  - `tests/test_core.py`：**INV-04** RoPE 相对性（平移内积不变 ≤ 1e-6）、
+    **INV-08** 补 ±1e4 溢出稳定判据。
+- 既有 30+ 测试按证据补 INV 标签（test_core/test_models/test_engine/
+  test_train/test_retrieval），测试侧引用从 18/42 → **42/42**。
+- `docs/ARCHITECTURE.md`：INV 落点表从**历史规划路径**重写为**实际扁平布局**
+  （证据制：逐 INV 以真实验证它的测试文件为准），并声明以实际代码为准。
+
+### 修复 (Fixed)
+- **INV-13 揭示并修复真实 bug**：权重绑定 (tied) 时 `Transformer.count_params()`
+  把共享的 `lm_head`/`embed` **重复计一次**（参数量虚报 V·d）。改为按唯一数组
+  计数；`TinyTrainer` 新增同口径 `count_params()`，`save()` 的 manifest 与
+  `ifai train` 的参数量打印统一，保证 save→load 断言一致。
+
+### 变更 (Changed)
+- 微指令分解重生成：功能级 334 + 步骤级 1586 = **1920** 条；INV 覆盖 42/42。
+
+### 测试 (Tests)
+- `pytest -q` → **169 passed**（v0.5.0 时 104）。
+
 ## [0.5.0] — 2026-10-17
 
 ### 新增 (Added)

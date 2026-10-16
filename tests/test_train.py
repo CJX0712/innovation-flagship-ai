@@ -10,6 +10,7 @@ rng.seed(2)
 
 
 def test_adamw_single_step_vs_analytic():
+    """INV-21: AdamW 单步更新 ≡ 解析公式 (diff ≤ 1e-6)。"""
     p = Tensor(rng.get_rng().standard_normal((4,)))
     p.grad = rng.get_rng().standard_normal((4,))
     opt = AdamW([p], lr=0.1, weight_decay=0.0)
@@ -27,6 +28,7 @@ def test_adamw_single_step_vs_analytic():
 
 
 def test_adamw_wd_zero_equals_adam():
+    """INV-21 补充: wd=0 时 AdamW ≡ Adam。"""
     p = Tensor(rng.get_rng().standard_normal((3,)))
     p.grad = rng.get_rng().standard_normal((3,))
     opt = AdamW([p], lr=0.05, weight_decay=0.0, betas=(0.9, 0.999))
@@ -53,6 +55,7 @@ def test_cosine_schedule_vs_analytic():
 
 
 def test_clip_global_norm():
+    """INV-23: 梯度裁剪 — 裁剪后 ‖g‖ ≤ max_norm + 1e-6; 未超限 bitwise 不变。"""
     p1 = Tensor(rng.get_rng().standard_normal((10,)))
     p2 = Tensor(rng.get_rng().standard_normal((5,)))
     p1.grad = rng.get_rng().standard_normal((10,))
@@ -98,6 +101,7 @@ def test_autodiff_vs_finite_diff():
 
 
 def test_lora_merge_consistency():
+    """INV-24: LoRA merge() ≡ 未 merge 前向 (diff ≤ 1e-6)。"""
     W = rng.get_rng().standard_normal((8, 6))
     lora = LoRALinear(W, r=3, alpha=6)
     x = Tensor(rng.get_rng().standard_normal((4, 6)))

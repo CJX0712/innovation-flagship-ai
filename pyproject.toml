@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ifai"
-version = "0.5.0"
+version = "0.6.0"
 description = "创新旗舰 AI · Innovation Flagship AI — 十层架构、零重写集大成、CPU 可运行可复现可验证的旗舰级 AI 系统"
 readme = "README.md"
 requires-python = ">=3.9"

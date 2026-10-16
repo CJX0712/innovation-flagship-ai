@@ -17,6 +17,7 @@ def test_config_json_roundtrip():
 
 
 def test_gqa_equals_mha():
+    """INV-10: GQA (n_kv == n_q) ≡ MHA (diff ≤ 1e-6)。"""
     cfg = ModelConfig(vocab_size=50, d_model=32, n_layers=1, n_heads=4,
                       n_kv_heads=4, ffn_mult=2, max_seq_len=16)
     m = Transformer(cfg)
@@ -35,6 +36,7 @@ def test_gqa_equals_mha():
 
 
 def test_tied_embedding_is_same_object():
+    """INV-12: lm_head 与 embedding 为同一对象 (is 判定 + 数值逐位相同)。"""
     cfg = ModelConfig(vocab_size=50, d_model=16, n_layers=1, tie_word_embeddings=True)
     m = Transformer(cfg)
     assert m.params["lm_head"] is m.params["embed"]

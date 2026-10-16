@@ -39,6 +39,7 @@ def _model_forward(model):
 
 
 def test_continuous_batch_equals_serial_greedy():
+    """INV-16: 连续批处理 ≡ 串行独立推理 (同 seed greedy, 逐 token 100% 一致)。"""
     model = _tiny_model()
     fwd = _model_forward(model)
     prompts = [[1, 2, 3], [5, 6], [7, 8, 9, 10]]
@@ -56,6 +57,7 @@ def test_continuous_batch_equals_serial_greedy():
 
 
 def test_sampler_probs_sum_one():
+    """INV-18: 截断后采样分布归一 Σp = 1 (|Σp − 1| ≤ 1e-6)。"""
     s = Sampler(seed=0)
     logits = rng.get_rng().standard_normal(30)
     for temp in [0.5, 1.0, 2.0]:
@@ -64,6 +66,7 @@ def test_sampler_probs_sum_one():
 
 
 def test_sampler_greedy_equals_argmax():
+    """INV-19: 采样退化 — T→0 与 top_k=1 均 ≡ greedy (100% 一致)。"""
     s = Sampler(seed=0)
     logits = rng.get_rng().standard_normal(20)
     assert s.greedy(logits) == int(np.argmax(logits))
@@ -72,6 +75,7 @@ def test_sampler_greedy_equals_argmax():
 
 
 def test_speculative_equals_greedy():
+    """INV-17: 投机解码 (greedy) ≡ 目标模型自回归 greedy (逐 token 100% 一致)。"""
     model = _tiny_model()
     fwd = _model_forward(model)
 

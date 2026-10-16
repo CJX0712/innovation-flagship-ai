@@ -1548,50 +1548,54 @@ with rng_scope(7) as g2:      # 测试用：临时独立 RNG，不污染全局
 
 | INV | 层级 | 守护文件（主要） | 测试文件 | 验证方式 |
 | --- | --- | --- | --- | --- |
-| INV-01 | L0 | `l0_kernel/gemm.py` | `tests/unit/l0/test_gemm.py` | C 朴素三重循环 |
-| INV-02 | L0 | `l0_kernel/attention.py` | `tests/unit/l0/test_attention.py` | C 朴素 softmax attention |
-| INV-03 | L0 | `l0_kernel/rope.py` | `tests/unit/l0/test_rope.py` | A 解析 2D 旋转 |
-| INV-04 | L0 | `l0_kernel/rope.py` | `tests/unit/l0/test_rope.py` | E 平移不变 |
-| INV-05 | L0 | `l0_kernel/activation.py` | `tests/unit/l0/test_activation.py` | C 分离实现 |
-| INV-06 | L0 | `l0_kernel/norm.py` | `tests/unit/l0/test_norm.py` | E ‖·‖₂≈√d |
-| INV-07 | L0/L1 | `quant_kernel.py` / `quantizer.py` | `test_quant_kernel.py` / `test_quantizer.py` | A 误差界 |
-| INV-08 | L1 | `l1_tensor/numerics.py` | `tests/unit/l1/test_numerics.py` | A logsumexp |
-| INV-09 | L1 | `l1_tensor/numerics.py` | `tests/unit/l1/test_numerics.py` | E 平移不变 |
-| INV-10 | L2 | `l2_model/attention.py` | `tests/unit/l2/test_gqa.py` | E GQA≡MHA |
-| INV-11 | L2 | `transformer.py` / `block.py` | `tests/unit/l2/test_transformer.py` | E 因果遮蔽 |
-| INV-12 | L2 | `l2_model/transformer.py` | `tests/unit/l2/test_weights.py` | E `is` 判定 |
-| INV-13 | L2 | `l2_model/weights.py` | `tests/unit/l2/test_weights.py` | A 解析计数 |
-| INV-14 | L2 | `l2_model/moe.py` | `tests/unit/l2/test_moe.py` | E 守恒 |
-| INV-15 | L3 | `l3_engine/kv_cache.py` | `tests/unit/l3/test_kv_cache.py` | C 稠密对照 |
-| INV-16 | L3 | `l3_engine/scheduler.py` | `tests/unit/l3/test_scheduler.py` | C 串行对照 |
-| INV-17 | L3 | `l3_engine/spec_decode.py` | `tests/unit/l3/test_spec_decode.py` | C greedy 逐 token |
-| INV-18 | L3 | `l3_engine/sampler.py` | `tests/unit/l3/test_sampler.py` | E Σp=1 |
-| INV-19 | L3 | `l3_engine/sampler.py` | `tests/unit/l3/test_sampler.py` | E 退化 greedy |
-| INV-20 | L3 | `l3_engine/prefill.py` | `tests/unit/l3/test_prefill.py` | C 整段 prefill |
-| INV-21 | L4 | `l4_train/optim.py` | `tests/unit/l4/test_optim.py` | A 解析公式 |
-| INV-22 | L4 | `l4_train/autodiff/ops.py` + `check.py` | `tests/unit/l4/test_autodiff.py` | B 有限差分 |
-| INV-23 | L4 | `l4_train/grad_utils.py` | `tests/unit/l4/test_clip.py` | E 范数界 |
-| INV-24 | L4 | `l4_train/lora.py` | `tests/unit/l4/test_lora.py` | E merge 等价 |
-| INV-25 | L4 | `l4_train/checkpoint.py` | `tests/unit/l4/test_checkpoint.py` | C 无检查点对照 |
-| INV-26 | L4 | `l4_train/trainer.py` | `tests/unit/l4/test_trainer.py` | E 单调性 |
-| INV-27 | L5 | `l5_retrieval/bm25.py` | `tests/unit/l5/test_bm25.py` | D 参考实现 |
-| INV-28 | L5 | `l5_retrieval/hnsw.py` | `tests/unit/l5/test_hnsw.py` | C 暴力 recall |
-| INV-29 | L5 | `l5_retrieval/vector_index.py` | `tests/unit/l5/test_hnsw.py` | C 暴力 TopK |
-| INV-30 | L5 | `l5_retrieval/fusion.py` | `tests/unit/l5/test_fusion.py` | A RRF 公式 |
-| INV-31 | L5 | `l5_retrieval/chunk.py` | `tests/unit/l5/test_chunk.py` | E 拼接还原 |
-| INV-32 | L5 | `l5_retrieval/persist.py` | `tests/unit/l5/test_persist.py` | E reload 一致 |
-| INV-33 | L6 | `l6_agent/tools/base.py` + `schema.py` | `tests/unit/l6/test_tools_schema.py` | E Draft-07 |
-| INV-34 | L6 | `l6_agent/tools/sandbox.py` | `tests/unit/l6/test_sandbox.py` | E 拦截率 |
-| INV-35 | L6 | `l6_agent/trace.py` | `tests/unit/l6/test_trace.py` | E 回放一致 |
-| INV-36 | L7 | `l7_server/schema.py` | `tests/unit/l7/test_schema.py` | D 字段集 diff |
-| INV-37 | L7 | `l7_server/sse.py` | `tests/unit/l7/test_sse.py` | C 字符串相等 |
-| INV-38 | L7 | `l7_server/guardrail.py` | `tests/unit/l7/test_guardrail.py` | E 拦截/误杀 |
-| INV-39 | L8 | `l8_eval/perplexity.py` | `tests/unit/l8/test_perplexity.py` | A exp(mean NLL) |
-| INV-40 | X | `common/rng.py` + `l8_eval/determinism.py` | `tests/unit/x/test_rng.py` + `l8/test_determinism.py` | E bitwise |
+| INV-01 | L0 | `ifai/core/ops.py` (`tiled_matmul`) | `tests/test_core.py` | C 朴素三重循环 |
+| INV-02 | L0 | `ifai/core/ops.py` (`attention_flash`) | `tests/test_core.py` | C 朴素 softmax attention |
+| INV-03 | L0 | `ifai/core/ops.py` (`apply_rope`) | `tests/test_core.py` | A 解析 2D 旋转 |
+| INV-04 | L0 | `ifai/core/ops.py` (`apply_rope`) | `tests/test_core.py` | E 平移不变 |
+| INV-05 | L0 | `ifai/core/ops.py` (`swiglu`) | `tests/test_core.py` | C 分离实现 |
+| INV-06 | L0 | `ifai/core/ops.py` (`rms_norm`) | `tests/test_core.py` | E ‖·‖₂≈√d |
+| INV-07 | L0/L1 | `ifai/core/quant.py` | `tests/test_core.py` | A 误差界 |
+| INV-08 | L1 | `ifai/core/numeric.py` (`logsumexp`) | `tests/test_core.py` | A logsumexp |
+| INV-09 | L1 | `ifai/core/numeric.py` (`stable_softmax`) | `tests/test_core.py` | E 平移不变 |
+| INV-10 | L2 | `ifai/models/transformer.py` | `tests/test_models.py` | E GQA≡MHA |
+| INV-11 | L2 | `ifai/models/transformer.py` (causal mask) | `tests/unit/l2/test_transformer.py` | E 因果遮蔽 |
+| INV-12 | L2 | `ifai/models/transformer.py` (tied) | `tests/test_models.py` | E `is` 判定 |
+| INV-13 | L2 | `ifai/models/transformer.py` (`count_params`) | `tests/unit/l2/test_param_moe.py` | A 解析计数 |
+| INV-14 | L2 | `ifai/models/transformer.py` (`_moe`) | `tests/unit/l2/test_param_moe.py` | E 守恒 |
+| INV-15 | L3 | `ifai/engine/kvcache.py` | `tests/test_engine.py` | C 稠密对照 |
+| INV-16 | L3 | `ifai/engine/scheduler.py` | `tests/test_engine.py` | C 串行对照 |
+| INV-17 | L3 | `ifai/engine/speculative.py` | `tests/test_engine.py` | C greedy 逐 token |
+| INV-18 | L3 | `ifai/engine/sampler.py` | `tests/test_engine.py` | E Σp=1 |
+| INV-19 | L3 | `ifai/engine/sampler.py` | `tests/test_engine.py` | E 退化 greedy |
+| INV-20 | L3 | `ifai/engine/prefill.py` | `tests/unit/l3/test_prefill.py` | C 整段 prefill |
+| INV-21 | L4 | `ifai/train/optim.py` | `tests/test_train.py` | A 解析公式 |
+| INV-22 | L4 | `ifai/train/autodiff.py` | `tests/test_train.py` | B 有限差分 |
+| INV-23 | L4 | `ifai/core/numeric.py` (`clip_by_norm`) / `ifai/train/optim.py` | `tests/test_train.py` | E 范数界 |
+| INV-24 | L4 | `ifai/train/lora.py` | `tests/test_train.py` | E merge 等价 |
+| INV-25 | L4 | `ifai/train/checkpoint.py` | `tests/unit/l4/test_checkpoint.py` | C 无检查点对照 |
+| INV-26 | L4 | `ifai/train/trainer.py` | `tests/unit/l4/test_trainer.py` | E 单调性 |
+| INV-27 | L5 | `ifai/retrieval/bm25.py` | `tests/test_retrieval.py` | D 参考实现 |
+| INV-28 | L5 | `ifai/retrieval/hnsw.py` | `tests/test_retrieval.py` | C 暴力 recall |
+| INV-29 | L5 | `ifai/retrieval/dense.py` | `tests/test_retrieval.py` | C 暴力 TopK |
+| INV-30 | L5 | `ifai/retrieval/rrf.py` | `tests/test_retrieval.py` | A RRF 公式 |
+| INV-31 | L5 | `ifai/retrieval/chunk.py` | `tests/unit/l5/test_chunk.py` | E 拼接还原 |
+| INV-32 | L5 | `ifai/retrieval/persist.py` | `tests/unit/l5/test_persist.py` | E reload 一致 |
+| INV-33 | L6 | `ifai/agent/tools.py` | `tests/test_agent.py` | E Draft-07 |
+| INV-34 | L6 | `ifai/agent/sandbox.py` | `tests/test_agent.py` | E 拦截率 |
+| INV-35 | L6 | `ifai/agent/trace.py` | `tests/unit/l6/test_trace.py` | E 回放一致 |
+| INV-36 | L7 | `ifai/serve/api.py` | `tests/test_serve.py` | D 字段集 diff |
+| INV-37 | L7 | `ifai/serve/api.py` | `tests/test_serve.py` | C 字符串相等 |
+| INV-38 | L7 | `ifai/serve/guardrail.py` | `tests/unit/l7/test_guardrail.py` | E 拦截/误杀 |
+| INV-39 | L8 | `ifai/eval/perplexity.py` | `tests/test_eval.py` | A exp(mean NLL) |
+| INV-40 | X | `ifai/rng.py` + 训练/采样链路 | `tests/unit/x/test_determinism.py` | E bitwise |
 | INV-41 | X | `scripts/check_layering.py` | `tests/unit/x/test_layering.py` | E 0 反向 |
 | INV-42 | X | `scripts/audit_no_reinvention.py` | `tests/unit/x/test_citation_audit.py` | E 10/10 层 |
 
-> 映射原则：**每条不变量至少一个独立测试函数**，测试函数命名 `test_inv_XX_*`。`ifai selftest --inv INV-17` 即可单独执行。
+> 映射原则：**每条不变量至少一个独立测试函数**，且每条 INV 编号至少被 1 个测试文件
+> 引用（由 `tests/unit/x/test_inv_traceability.py` 硬门禁强制，42/42）。
+> `ifai selftest --inv INV-17` 即可定位并单独运行验证该不变量的测试文件。
+> 注：本表为**实际扁平布局** (`ifai/core|models|engine|train|retrieval|agent|serve|eval`)，
+> 与本文其余小节的历史规划路径 (`l0_kernel/` 等) 不同时，以本表与实际代码为准。
 
 ---
 

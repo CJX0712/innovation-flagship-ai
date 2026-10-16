@@ -201,6 +201,16 @@ class TinyTrainer:
             out["lm_head"] = out["embed"].copy()
         return out
 
+    def count_params(self) -> int:
+        """可训练参数量 (与 ``Transformer.count_params`` 同口径, INV-13)。
+
+        权重绑定 (INV-12) 时 ``lm_head`` 与 ``embed`` 共享同一数组,
+        只计一次; 保证 save→load 后 ``Transformer.load`` 的
+        ``count_params() == manifest["total_params"]`` 断言成立。
+        """
+        skip = {"lm_head"} if self.cfg.tie_word_embeddings else set()
+        return int(sum(v.data.size for k, v in self.params.items() if k not in skip))
+
     def save(self, dir_path: str) -> str:
         os.makedirs(dir_path, exist_ok=True)
         params = self.to_numpy_params()
@@ -210,7 +220,7 @@ class TinyTrainer:
         manifest = {
             "config": self.cfg.to_json(),
             "params_sha256": {"_npz": hashlib.sha256(raw).hexdigest()},
-            "total_params": int(sum(v.size for v in params.values())),
+            "total_params": self.count_params(),
             "trained_by": "TinyTrainer",
         }
         with open(os.path.join(dir_path, "manifest.json"), "w", encoding="utf-8") as f:

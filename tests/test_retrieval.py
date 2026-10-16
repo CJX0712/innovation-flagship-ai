@@ -12,6 +12,7 @@ rng.seed(4)
 
 
 def test_bm25_vs_reference_top10():
+    """INV-27: BM25 ≡ 参考实现排序 (Top-10 重合度 ≥ 95%)。"""
     corpus = [["the", "cat", "sat"], ["the", "dog", "ran"], ["cat", "dog", "play"],
               ["bird", "flew"], ["the", "cat", "dog"], ["dog", "barked"], ["cat", "slept"],
               ["the", "bird", "sang"], ["dog", "cat", "friend"], ["the", "quick", "cat"],
@@ -25,6 +26,7 @@ def test_bm25_vs_reference_top10():
 
 
 def test_dense_equals_brute():
+    """INV-29: 稠密索引 TopK ≡ 暴力 TopK (100% 一致)。"""
     corpus = [["ai", "model"], ["dog", "cat"], ["transformer", "attention"], ["ai", "data"]]
     di = DenseIndex(dim=64, seed=0).fit(corpus)
     q = ["ai"]
@@ -36,6 +38,7 @@ def test_dense_equals_brute():
 
 
 def test_hnsw_recall():
+    """INV-28: HNSW 召回 ⊇ 近似暴力枚举 (recall@10 ≥ 0.95)。"""
     rng_np = rng.get_rng()
     data = rng_np.standard_normal((400, 32))
     data /= np.linalg.norm(data, axis=1, keepdims=True)
@@ -56,6 +59,7 @@ def test_hnsw_recall():
 
 
 def test_rrf_formula():
+    """INV-30: RRF 分数 ≡ 公式 Σ 1/(k + rank_i) (diff ≤ 1e-12)。"""
     rank_lists = [[0, 1, 2], [2, 0, 3]]
     fused = reciprocal_rank_fusion(rank_lists, k=60)
     score_0 = 1 / (60 + 0) + 1 / (60 + 1)   # ranks 0 and 1
