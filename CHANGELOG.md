@@ -2,6 +2,21 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.3] — 2026-10-17
+
+### 修复 (Fixed) — CLI `train` 的 vocab_size 软目标陷阱 (真实健壮性缺陷)
+- `ifai/cli/__init__.py::cmd_train` 旧实现给 `ModelConfig(vocab_size=args.vocab)`
+  与 `Tokenizer(vocab_size=args.vocab)` 用同一值, 但分词器 `train` 的 vocab_size
+  仅限制 merge 数、基础字符数不设上限 (见 `ifai/models/tokenizer.py::train`)。
+  语料实际词表 > `args.vocab` 时 `tok.encode` 产生越界 id, 训练中 embed 索引
+  IndexError —— 用户用较小 `--vocab` 训练较大语料必崩。修复: 先构造分词器,
+  模型词表取 `max(args.vocab, tok.vocab_size)`, 始终 ≥ 分词器实际词表。
+- **验证**: 新增 `tests/unit/l9/test_cli_e2e.py` 端到端 subprocess 测试 —
+  train 产物齐全 + 小 `--vocab 64` (MICRO_CORPUS 实际词表 116 > 64) 不抛
+  IndexError + train→demo 闭环 stdout 非空。
+
+### 测试 (Tests) — 204 → 207 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.2] — 2026-10-17
 
 ### 工程 (CI) — 覆盖率 report-only job
