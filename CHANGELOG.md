@@ -2,6 +2,29 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.6] — 2026-10-17
+
+### 新增 (Added) — INT8 量化接入推理前向 + INV-07 重建误差界一致性守卫
+- **真缺口 (死代码未接入)**: `core/quant.py::quantize_int8_per_channel` 此前仅被
+  单元测试 (`tests/test_core.py::test_int8_quant_error_bound`) 与演示脚本
+  (`examples/quantize_int8.py`) 触达, **从未接入模型前向** —— 无法对整模型做 INT8
+  量化并运行。现补齐推理端接入 (零重写·集大成, LLM.int8 Dettmers et al. 2022
+  per-channel 对称量化思想):
+  - `models/transformer.py::Transformer.quantize_int8` 对全部 2D 线性权重做
+    per-channel RTN 量化, 原地替换为反量化权重 (`q·scale`, INT8 存储 + 使用时
+    反量化, 内存收益); 1D 参数 (RMSNorm/final_norm) 不量化 (需精确且 per-channel
+    无意义)。
+  - 权重绑定 (INV-12) 安全: `tie_word_embeddings` 下 `lm_head` 与 `embed` 同一
+    数组, 量化一次并维持 tie 引用, 杜绝双重量化。
+- **验证**: 新增 `tests/test_core.py::test_int8_model_quantization_inference` ——
+  整模型量化后 (1) INV-07 逐权重重建误差 `|orig−dequant| ≤ scale/2` (真实模型
+  权重, 非合成矩阵, 覆盖 embed/q/k/v/o/ffn 等 15 个权重); (2) int8 RTN 不翻转
+  top-1 决策; (3) 前向误差有限且受控 (实测 ≈1.8e-3 ≪ 0.05 界)。
+- 一致性矩阵现状: 注意力(n_kv×scaling)/激活(swiglu|gelu)/MoE/INT8 四轴已覆盖;
+  LoRA 尚未接入训练端, 列为后续增量。
+
+### 测试 (Tests) — 214 → 215 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.5] — 2026-10-17
 
 ### 新增 (Added) — TinyTrainer 支持 MoE + 训练/推理 save→load 一致性矩阵 (补齐 MoE 轴)

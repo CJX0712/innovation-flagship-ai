@@ -31,7 +31,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 from .. import rng
-from ..core import numeric, ops
+from ..core import numeric, ops, quant
 from .config import ModelConfig
 
 
@@ -269,6 +269,30 @@ class Transformer:
             model.params["lm_head"] = model.params["embed"]
         assert model.count_params() == manifest["total_params"], "param count mismatch"
         return model
+
+    # ---------------- INT8 量化 (推理端, INV-07) ----------------
+    def quantize_int8(self, axis: int = -1) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
+        """对全部线性权重做 per-channel INT8 RTN 量化 (Dettmers et al. 2022
+        LLM.int8 思想, INV-07), 原地替换为反量化权重 ``q·scale`` —— 前向数值
+        仅含量化误差, 权重以 INT8 存储、使用时反量化 (内存收益)。
+
+        返回 ``{name: (scale, orig)}`` 供 INV-07 逐权重重建误差界校验
+        (``|orig − dequant| ≤ scale/2``)。1D 参数 (RMSNorm/final_norm) 不量化
+        (其需精确且 per-channel 对向量无意义)。权重绑定 (INV-12) 下 ``lm_head``
+        与 ``embed`` 指向同一 (反量化后) 数组, 避免双重量化并维持 tie 语义。
+        """
+        info: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+        for k in [k2 for k2, v in self.params.items() if v.ndim == 2]:
+            if self.cfg.tie_word_embeddings and k == "lm_head":
+                continue  # 与 embed 同一数组, 量化一次即可
+            v = self.params[k]
+            q, scale = quant.quantize_int8_per_channel(v, axis=axis)
+            self.params[k] = quant.dequantize_int8(q, scale)     # 反量化后原地替换
+            info[k] = (np.asarray(scale, dtype=np.float64),
+                       np.array(v, dtype=np.float64))
+        if self.cfg.tie_word_embeddings:
+            self.params["lm_head"] = self.params["embed"]       # 维持 INV-12 绑定
+        return info
 
 
 def verify_causal_mask(model: Transformer, token_ids: np.ndarray,

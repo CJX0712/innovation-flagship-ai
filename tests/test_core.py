@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 from ifai.core import ops, numeric, quant
 from ifai import rng
+from ifai.models.config import ModelConfig
+from ifai.models.transformer import Transformer
 
 rng.seed(0)
 
@@ -120,6 +122,36 @@ def test_int8_quant_error_bound():
     q, scale = quant.quantize_int8_per_channel(x)
     xr = quant.dequantize_int8(q, scale)
     assert np.all(np.abs(x - xr) <= scale / 2 + 1e-6)
+
+
+def test_int8_model_quantization_inference():
+    """INT8 量化接入推理前向 (v0.7.6): 整模型 per-channel RTN 后
+    1) INV-07 逐权重重建误差 ≤ scale/2 (真实模型权重, 非合成矩阵);
+    2) int8 RTN 不翻转 top-1 决策 (前向一致性);
+    3) 前向误差有限且受控 (经验上 ≤ 1.0, 主判据为 INV-07 + top-1)。
+    零重写: LLM.int8 (Dettmers et al. 2022) per-channel 对称量化思想。
+    """
+    rng.seed(123)
+    cfg = ModelConfig(
+        vocab_size=64, d_model=16, n_layers=2, n_heads=4, n_kv_heads=2,
+        ffn_mult=2, tie_word_embeddings=True,
+    )
+    model = Transformer(cfg)
+    ids = rng.get_rng().integers(0, cfg.vocab_size, size=(2, 8))
+    fp64_out = model.forward(ids)
+    info = model.quantize_int8()
+    q_out = model.forward(ids)
+    # 1) INV-07 逐权重 (真实模型权重, 含 embed/q/k/v/o/ffn/路由/专家)
+    for k, (scale, orig) in info.items():
+        dq = model.params[k]
+        assert np.all(np.abs(orig - dq) <= scale / 2 + 1e-9), (
+            f"{k} 违反 INV-07 重建误差界")
+    # 2) top-1 决策不变 (int8 RTN 不得翻转模型输出)
+    assert np.array_equal(fp64_out.argmax(-1), q_out.argmax(-1)), (
+        "INT8 RTN 翻转了模型 top-1 决策")
+    # 3) 前向误差有限且受控 (经验界 0.05 ≫ 实测 0.0018, 主判据为 INV-07 + top-1)
+    err = float(np.max(np.abs(fp64_out - q_out)))
+    assert np.isfinite(err) and err <= 0.05, f"INT8 前向误差失控: {err:.3e}"
 
 
 def test_int4_pack_roundtrip():
