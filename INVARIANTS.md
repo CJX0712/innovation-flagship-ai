@@ -1,7 +1,7 @@
 # 不变量总览 · INVARIANTS
 
 > 创新旗舰 AI 的**硬不变量（hard invariant）清单**——每条不变量都有 ≥1 条可被独立交叉验证的金标准。
-> 当前基线：**19 模块 · 145 条不变量 · 0 失败**（`npm run verify` 实测）。
+> 当前基线：**22 模块 · 169 用例 · 0 失败**（`npm run verify` 实测）。
 
 ---
 
@@ -212,6 +212,45 @@
 | INV-TRA-007 | 0 层堆叠：`transformerEncoder(x,[],finalNorm) == finalNorm(x)` 逐元素 ≤ 1e-12 | 1e-12 | 空堆叠恒等 |
 | INV-TRA-008 | 确定性：同 opts 两次 `transformerForward` 输出逐位相等 | 0 | 纯函数确定性 |
 
+### `kv-cache-forge.js`（INV-KVC-001..008，8 条，KV 缓存与增量解码）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-KVC-001 | 写入读出一致：乱序 append 覆盖 [0,T) 后 getKV 与写入值逐位相等 | 0 | 缓冲区 round-trip |
+| INV-KVC-002 | **增量解码等价全量前向**：T=8 逐 token append+decode 与一次性全序列因果 SDPA 对应位置输出逐元素一致（含非零断言） | 1e-12 | attention-forge sdpa 全量参照 |
+| INV-KVC-003 | 容量边界：pos≥maxLen 或 layer≥nLayers（含负值/非整数/行宽非法/T 超限）时抛错，漏抛计数 0 | 0 | 异常契约 |
+| INV-KVC-004 | 分页一致性：同一序列走块表分页布局与连续布局，getKV / 增量解码 / 统计逐位一致 | 0 | 块表间接寻址等价 |
+| INV-KVC-005 | 多层隔离：写 layer0 后其余层 getKV 全零且有效长度不受污染 | 0 | 层间缓冲寻址隔离 |
+| INV-KVC-006 | 确定性：同序列两次完整增量解码（默认 sdpa 路径与自定义 forwardFn 路径）输出逐位相等 | 0 | 纯函数确定性 |
+| INV-KVC-007 | 预分配不重扩：写满 maxLen 时 utilization 精确 ==1 且底层 Float64Array 长度恒定 | 0 | 容量刚性 |
+| INV-KVC-008 | 逐出窗口：evictRange(from) 后有效长度 ==from 且已逐出位置读出头为零 | 0 | 截断语义 |
+
+### `position-encoding-forge.js`（INV-POS-001..008，8 条，位置编码族）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-POS-001 | ALiBi 因果结构：causal 模式所有 j>i 位 bias==-Infinity、下三角全有限（违例计数 0） | 0 | 因果掩码定义 |
+| INV-POS-002 | ALiBi 斜率：首项==2^(-8/n)（n 头标准式）、严格递减、末项最小；n=1 时==2^-8（8 头与 Press 原式 [2^-1..2^-8] 逐位相等） | 1e-15 | Press et al. 2021 get_slopes 原式 |
+| INV-POS-003 | ALiBi 距离线性闭式：`bias[h][i][j]==-slopes[h]·(j-i)`（j≤i，20 组随机） | 1e-12 | 线性偏置定义 |
+| INV-POS-004 | 位置插值闭式：`positionInterpolation==pos/s` 且 `ropeWithInterpolation==rope(x,pos/s,base)` | 1e-12 | Chen et al. 2023 |
+| INV-POS-005 | T5 桶映射：双向模式 d 与 -d 异桶、\|d\|≥maxDistance clamp 到远桶、桶索引∈[0,nBuckets)（违例计数 0） | 0 | Raffel et al. 2020 |
+| INV-POS-006 | 偏置施加一致：`applyBias==scores+bias`（有限位）；-Infinity 偏置位保持 -Infinity 不 NaN | 1e-12 | 逐元素相加定义 |
+| INV-POS-007 | 相对性：`relativePositionBias` 为 Toeplitz 结构，[i][j] 仅依赖 (j-i)（违例计数 0） | 0 | 相对位置定义 |
+| INV-POS-008 | softmaxRows 对接：ALiBi 偏置施加后每行和==1（因果下三角）且 j>i 位归一化后==0 | 1e-12 | 偏置+softmax=因果掩码 |
+
+### `moe-forge.js`（INV-MOE-001..008，8 条，混合专家）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-MOE-001 | top-k 门控归一：随机 gate logits 每 token top-k 权重和 == 1 且权重全非负 | 1e-12 | softmax 定义（top-k 内归一） |
+| INV-MOE-002 | top-k 正确性：20 组随机 gate logits 选中集合 == logit 最大 k 个专家（违例计数 0） | 0 | 独立排序参照 vs 主实现 |
+| INV-MOE-003 | 单专家退化：k=1 确定性门控下输出 == 被选中专家输出逐元素一致（权重=1） | 1e-12 | 退化情形参照专家直算 |
+| INV-MOE-004 | 全专家退化：k=nExperts 时输出 == 全专家 softmax 加权平均（独立重实现） | 1e-12 | 独立双重循环参照 vs 主实现 |
+| INV-MOE-005 | 负载均衡闭式：均匀门控 aux == 理论最小值 1.0，且随机 20 组 aux ≥ 1 | 1e-12 | Switch 公式 + Cauchy-Schwarz 下界 |
+| INV-MOE-006 | 容量守恒：裁剪后每专家分派数 ≤ 容量上限，且总丢弃数 == 超容量数（精确整数断言） | 0 | 独立逐专家重算 vs 主实现 |
+| INV-MOE-007 | 向量化 vs 独立重实现：moeForward 与逐 token 朴素双重循环输出逐元素一致 | 1e-12 | 参照实现 vs 主实现 |
+| INV-MOE-008 | 确定性：同输入两次 moeForward、同 rng 种子两次 noisyGate 输出逐位相等 | 0 | 纯函数确定性定义 |
+
 ---
 
 ## L5 — 检索 / 概率分布 / 图算法 / 强化学习 / 生成采样
@@ -290,11 +329,11 @@
 | L1 | 2 | 12 | 0 |
 | L2 | 4 | 28 | 0 |
 | L3 | 5 | 40 | 0 |
-| L4 | 3 | 24 | 0 |
+| L4 | 6 | 48 | 0 |
 | L5 | 5 | 40 | 0 |
-| **合计** | **19** | **144** | **0** |
+| **合计** | **22** | **168** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **144 条**。运行时 case 数为 **145**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **168 条**。运行时 case 数为 **169**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）。净 +1。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
@@ -303,9 +342,9 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 19 模块 · 145 用例 · 0 失败
+npm run verify             # 22 模块 · 169 用例 · 0 失败
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 42 / planned 982
+node tools/verify-l10.js   # L10 1024 项 / done 55 / planned 969
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

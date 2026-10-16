@@ -72,6 +72,9 @@
   <script src="src/rl-forge.js" onerror="window.__forgeLoadErrors['ForgeRL']=true"></script>
   <script src="src/transformer-forge.js" onerror="window.__forgeLoadErrors['ForgeTransformer']=true"></script>
   <script src="src/sampling-forge.js" onerror="window.__forgeLoadErrors['ForgeSampling']=true"></script>
+  <script src="src/kv-cache-forge.js" onerror="window.__forgeLoadErrors['ForgeKVCache']=true"></script>
+  <script src="src/position-encoding-forge.js" onerror="window.__forgeLoadErrors['ForgePosEnc']=true"></script>
+  <script src="src/moe-forge.js" onerror="window.__forgeLoadErrors['ForgeMoE']=true"></script>
 
   <script>
   (function () {
@@ -95,7 +98,10 @@
       { key: 'ForgeGraph', label: 'graph-forge (L5 图算法/BFS/Dijkstra)' },
       { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' },
       { key: 'ForgeTransformer', label: 'transformer-forge (L4 Transformer组件/预归一化)' },
-      { key: 'ForgeSampling', label: 'sampling-forge (L5 生成采样/top-k/top-p)' }
+      { key: 'ForgeSampling', label: 'sampling-forge (L5 生成采样/top-k/top-p)' },
+      { key: 'ForgeKVCache', label: 'kv-cache-forge (L4 KV缓存/增量解码)' },
+      { key: 'ForgePosEnc', label: 'position-encoding-forge (L4 ALiBi/T5桶/插值)' },
+      { key: 'ForgeMoE', label: 'moe-forge (L4 MoE门控/路由/负载均衡)' }
     ];
 
     function row(pass, id, name, actual, tol) {

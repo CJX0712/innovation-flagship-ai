@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 42 |
-| planned | 982 |
+| done | 55 |
+| planned | 969 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -731,16 +731,16 @@
 | --- | --- | --- | --- | --- |
 | `L10-F4-G1-O00` | RoPE | L4 | done | rope-forge RoPE |
 | `L10-F4-G1-O01` | 绝对位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G1-O02` | 相对位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G1-O03` | ALiBi | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G1-O02` | 相对位置 | L4 | done | position-encoding-forge 相对位置 |
+| `L10-F4-G1-O03` | ALiBi | L4 | done | position-encoding-forge ALiBi |
 | `L10-F4-G1-O04` | 正弦位置 | L4 | done | transformer-forge 正弦位置编码 |
 | `L10-F4-G1-O05` | 可学习位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O06` | 旋转相对 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G1-O07` | 位置插值 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G1-O07` | 位置插值 | L4 | done | position-encoding-forge 位置插值 |
 | `L10-F4-G1-O08` | 旋转绝对 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O09` | 轴向位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O10` | 傅里叶特征 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G1-O11` | 相对位置偏置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G1-O11` | 相对位置偏置 | L4 | done | position-encoding-forge 相对位置偏置 |
 | `L10-F4-G1-O12` | 旋转位置扩展 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O13` | 学习相对 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G1-O14` | 连续位置 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -813,15 +813,15 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F4-G5-O00` | KV 缓存 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O01` | 分页注意力 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O02` | 增量解码 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O00` | KV 缓存 | L4 | done | kv-cache-forge KV缓存 |
+| `L10-F4-G5-O01` | 分页注意力 | L4 | done | kv-cache-forge 分页注意力 |
+| `L10-F4-G5-O02` | 增量解码 | L4 | done | kv-cache-forge 增量解码 |
 | `L10-F4-G5-O03` | 推测解码 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O04` | 并行解码 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O05` | 缓存复用 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O06` | 缓存逐出 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O05` | 缓存复用 | L4 | done | kv-cache-forge 缓存复用 |
+| `L10-F4-G5-O06` | 缓存逐出 | L4 | done | kv-cache-forge 缓存逐出 |
 | `L10-F4-G5-O07` | 流式生成 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G5-O08` | 缓存预分配 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G5-O08` | 缓存预分配 | L4 | done | kv-cache-forge 缓存预分配 |
 | `L10-F4-G5-O09` | 缓存压缩 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O10` | 缓存量化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G5-O11` | 并行采样 | L4 | done | sampling-forge 并行采样 |
@@ -864,9 +864,9 @@
 | `L10-F4-G7-O06` | 初始化 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O07` | 参数绑定 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O08` | 位置前馈 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O09` | 专家混合 MoE | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O10` | 路由 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F4-G7-O11` | 共享专家 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F4-G7-O09` | 专家混合 MoE | L4 | done | moe-forge 专家混合 MoE |
+| `L10-F4-G7-O10` | 路由 | L4 | done | moe-forge 路由 |
+| `L10-F4-G7-O11` | 共享专家 | L4 | done | moe-forge 共享专家 |
 | `L10-F4-G7-O12` | 缩放点积预 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O13` | 层缩放 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F4-G7-O14` | 深度缩放 | L4 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

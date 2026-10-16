@@ -24,7 +24,10 @@ const BAD_INPUTS = {
   ForgeStable: [['logsumexp', [null]], ['softmax', [1, 2, 'x']], ['logSigmoid', [Infinity]]],
   ForgeLinalg: [['lu', [null]], ['chol', [[1, 2], [3]]], ['qr', [[1, 2], [3]]]],
   ForgeSampling: [['softmaxTemperature', [null]], ['topKFilter', [[1, 2], 0]], ['topPFilter', [[1, 2], 1.5]]],
-  ForgeTransformer: [['tokenEmbedding', [null, [0]]], ['sinusoidalPositionalEncoding', [0, 4]]]
+  ForgeTransformer: [['tokenEmbedding', [null, [0]]], ['sinusoidalPositionalEncoding', [0, 4]]],
+  ForgeKVCache: [['createKVCache', [null]], ['createKVCache', [{ nLayers: 0, nHeads: 2, headDim: 4, maxLen: 8 }]]],
+  ForgePosEnc: [['positionInterpolation', [3, 0]], ['positionInterpolation', [3, -1]], ['alibiSlopes', [0]]],
+  ForgeMoE: [['topKGating', [[1, 2, 3], 0]], ['loadBalancingLoss', [null, 4]]]
 };
 
 const problems = [];
@@ -117,7 +120,8 @@ function globalNameFor(modPath) {
     'optim-forge': 'ForgeOptim', 'autodiff-forge': 'ForgeAutoDiff', 'loss-act-norm-forge': 'ForgeLossActNorm',
     'attention-forge': 'ForgeAttention', 'rope-forge': 'ForgeRoPE', 'retrieval-forge': 'ForgeRetrieval',
     'prob-forge': 'ForgeProb', 'graph-forge': 'ForgeGraph', 'rl-forge': 'ForgeRL',
-    'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling'
+    'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling',
+    'kv-cache-forge': 'ForgeKVCache', 'position-encoding-forge': 'ForgePosEnc', 'moe-forge': 'ForgeMoE'
   };
   return map[base] || null;
 }

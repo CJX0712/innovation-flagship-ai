@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T15:23:14.262Z",
+  "generated_at": "2026-10-16T16:40:44.641Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 42,
-    "planned": 982
+    "done": 55,
+    "planned": 969
   },
   "leaves": [
     {
@@ -5317,8 +5317,8 @@
       "op": "O02",
       "name": "相对位置",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "position-encoding-forge 相对位置"
     },
     {
       "id": "L10-F4-G1-O03",
@@ -5327,8 +5327,8 @@
       "op": "O03",
       "name": "ALiBi",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "position-encoding-forge ALiBi"
     },
     {
       "id": "L10-F4-G1-O04",
@@ -5367,8 +5367,8 @@
       "op": "O07",
       "name": "位置插值",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "position-encoding-forge 位置插值"
     },
     {
       "id": "L10-F4-G1-O08",
@@ -5407,8 +5407,8 @@
       "op": "O11",
       "name": "相对位置偏置",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "position-encoding-forge 相对位置偏置"
     },
     {
       "id": "L10-F4-G1-O12",
@@ -5937,8 +5937,8 @@
       "op": "O00",
       "name": "KV 缓存",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge KV缓存"
     },
     {
       "id": "L10-F4-G5-O01",
@@ -5947,8 +5947,8 @@
       "op": "O01",
       "name": "分页注意力",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge 分页注意力"
     },
     {
       "id": "L10-F4-G5-O02",
@@ -5957,8 +5957,8 @@
       "op": "O02",
       "name": "增量解码",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge 增量解码"
     },
     {
       "id": "L10-F4-G5-O03",
@@ -5987,8 +5987,8 @@
       "op": "O05",
       "name": "缓存复用",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge 缓存复用"
     },
     {
       "id": "L10-F4-G5-O06",
@@ -5997,8 +5997,8 @@
       "op": "O06",
       "name": "缓存逐出",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge 缓存逐出"
     },
     {
       "id": "L10-F4-G5-O07",
@@ -6017,8 +6017,8 @@
       "op": "O08",
       "name": "缓存预分配",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "kv-cache-forge 缓存预分配"
     },
     {
       "id": "L10-F4-G5-O09",
@@ -6347,8 +6347,8 @@
       "op": "O09",
       "name": "专家混合 MoE",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "moe-forge 专家混合 MoE"
     },
     {
       "id": "L10-F4-G7-O10",
@@ -6357,8 +6357,8 @@
       "op": "O10",
       "name": "路由",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "moe-forge 路由"
     },
     {
       "id": "L10-F4-G7-O11",
@@ -6367,8 +6367,8 @@
       "op": "O11",
       "name": "共享专家",
       "layer": "L4",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "moe-forge 共享专家"
     },
     {
       "id": "L10-F4-G7-O12",
