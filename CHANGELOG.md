@@ -2,6 +2,22 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.8] — 2026-10-17
+
+### 新增 (Added) — 特征组合一致性矩阵 (锁定五轴一致性矩阵最后盲区)
+- **真缺口 (测试盲区, 非能力缺陷)**: v0.7.5/0.7.6/0.7.7 分别将 MoE / INT8 / LoRA
+  接入训练端+推理端并各自**单轴**验证 save→load ≤1e-9, 但**特征组合**
+  (MoE+LoRA / GQA+MoE / GQA+LoRA / 激活×MoE / 未绑定×MoE+LoRA 等) 从未被测试触达
+  —— 是五轴一致性矩阵最后的盲区。Recon 确认两端参数名由 flag 组合唯一决定、组合在
+  两端真实可用, 故本轮以测试锁死组合面 (防未来单侧命名漂移导致 save→load 静默分叉)。
+- 新增 `tests/unit/l4/test_composition_consistency.py` (29 用例), 覆盖 13 种配置组合:
+  - **参数集严格对齐**: 任意组合 `set(TinyTrainer.params) == set(Transformer.params)`
+    (含结构断言: MoE 须带 router/专家权重、LoRA 须带 lora_a/lora_b、dense 须带 ffn_gate)。
+  - **前向数学一致性**: 训练端前向 vs 推理端 (加载同参数) 输出 `max|diff| ≤ 1e-9`。
+  - **INV-24 组合保持**: 含 LoRA 的组合在 B=0 初始时仍严格等价对应基座 (≤1e-12)。
+- 组合矩阵覆盖: MHA/GQA × {MoE, LoRA, MoE+LoRA} × {swiglu, gelu} × {绑定, 未绑定}。
+- 全量测试 219 → **248** (净 +29), selftest 4 门禁 ALL GREEN, INV 42/42 双侧达成。
+
 ## [0.7.7] — 2026-10-17
 
 ### 新增 (Added) — LoRA 接入训练端+推理端 + 训练/推理 save→load 一致性 (补齐最后一配置轴)
