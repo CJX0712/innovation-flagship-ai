@@ -2,6 +2,40 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.6.1] — 2026-10-17
+
+### 修复 (Fixed) — 均由覆盖率驱动测试发现
+- **top-p (nucleus) 采样错误** (`engine/sampler.py`): 旧实现 `cutoff = cum > top_p`
+  会把**越过阈值的跨界 token 一并删除** —— `top_p < p_max` 时全部清零触发回退
+  (top_p 形同虚设), 中段则过度截断 (核质量 < top_p)。改为正确语义
+  「累计质量 ≥ top_p 的最小前缀」(判据 `cum − p ≥ top_p`, 首 token 恒在核内)。
+- **logsumexp batch=1 形状塌缩** (`core/numeric.py`): 无轴 `np.squeeze` 把
+  `(1,C) 沿 axis=1 → (1,1)` 压成 0 维标量, 令 `safe_cross_entropy` 在 batch=1
+  时崩溃 (潜在, 此前从未有 batch=1 路径被测)。改为只压约简轴, 并加回归断言。
+- **回归门禁断链** (`scripts/gen_baseline.py` × `eval/harness.py`):
+  `RegressionBaseline.parse_baseline` 找 `tok/s mean:` 行, 但生成的
+  BASELINE.md 从未包含该行 → 门禁永远 NO_BASELINE。生成器现追加机器可读行。
+
+### 测试 (Tests) — 覆盖率 82% → 87% (总体), 169 → 186 项
+- 新增 ~25 项针对性测试, 补齐覆盖率盲区:
+  - `core/numeric.py` 40%→**100%**: safe_cross_entropy (手工对照/±1e4 稳定/
+    ignore_index/label smoothing 公式对照) + clip_by_norm (INV-23 基元)。
+  - `eval/harness.py` 32%→**100%**: GSM8K-Mini oracle/零分/取末数字 +
+    RegressionBaseline GREEN/RED/NO_BASELINE 三态。
+  - `serve/api.py` 66%→**96%**: 真实 HTTP 层 (ThreadingHTTPServer 临时端口 +
+    urllib): GET models / POST chat(严格 schema) / completions / 404 / 坏 JSON。
+  - `engine/speculative.py` 62%→**91%**: 采样模式接受路径 (草稿≡目标, 同 seed
+    可复现) 与对抗草稿拒绝路径 (退化为贪心回填)。
+  - `train/autodiff.py` 82%→**94%**: 复合表达式有限差分梯度检验
+    (`__rtruediv__`/`__neg__`/relu/exp/mean(axis,keepdims)/max(axis)/pow)。
+  - `engine/sampler.py` 89%→**95%**: forbidden/repetition_penalty/top_k=1/
+    min_p/top_p 边界; `cli/__main__.py` 0%→100% (子进程冒烟);
+    MoE 完整 forward + past_kv×padding 掩码扩展分支; 护栏小分支。
+
+### 已知残留 (低价值盲区, 不强求)
+- `eval/benchmark.py` 34-40 (基准函数主体由 `scripts/gen_baseline.py` 进程覆盖,
+  不在 pytest 内); chunk/checkpoint 各 ~8 行防御分支。
+
 ## [0.6.0] — 2026-10-17
 
 ### 新增 (Added)

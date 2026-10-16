@@ -12,9 +12,13 @@
 
 | 指标 | 值 | 说明 |
 | --- | --- | --- |
-| Prefill (prompt_len=32) | 2.076 ms | 单次前向, 构成 TTFT 主体 |
-| TPOT | 3.553 ms/token | 每输出 token 平均耗时 |
-| Decode 吞吐 | 281.46 tok/s | 1000 / TPOT |
+| Prefill (prompt_len=32) | 2.659 ms | 单次前向, 构成 TTFT 主体 |
+| TPOT | 4.68 ms/token | 每输出 token 平均耗时 |
+| Decode 吞吐 | 213.68 tok/s | 1000 / TPOT |
+
+## 机器可读 (RegressionBaseline.parse_baseline 解析此行)
+
+tok/s mean: 213.68
 
 ## 复现
 

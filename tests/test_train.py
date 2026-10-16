@@ -114,3 +114,49 @@ def test_lora_merge_consistency():
     out = lora.forward(x)
     base = x.matmul(Tensor(W).transpose())
     assert np.allclose(out.data, base.data, atol=1e-9)
+
+
+def test_autodiff_composite_gradcheck_missing_branches():
+    """复合表达式有限差分梯度检验, 一次性覆盖反向分支:
+    __rtruediv__ / __neg__ / relu / exp / mean(axis, keepdims) / max(axis) / pow。
+
+    设计约束 (保证有限差分有效):
+    - `3/(t+4)` 恒有界 (t+4 > 1.5), 避免 exp 爆炸;
+    - 输入末列显著最大, 避免 max 并列; ReLU 折点概率 ~2e-5 可忽略;
+    - pow(3)/tanh 输出有界。
+    """
+    rng.seed(77)
+    x0 = rng.get_rng().standard_normal((4, 5))
+    x0[:, 4] += 3.0  # 末列显著最大 (max 无并列)
+
+    def f(t: Tensor) -> Tensor:
+        a = (-(3.0 / (t + 4.0))).exp().sum()                             # rtruediv/add/__neg__/exp
+        b = (t.relu().mean(axis=1, keepdims=True) * t.max(axis=0)).sum()  # relu/mean(axis,keepdims)/max(axis)
+        c = t.pow(3).mean().tanh()                                       # pow/mean/tanh
+        return a + b + c
+
+    # 解析梯度
+    t = Tensor(x0.copy(), requires_grad=True)
+    f(t).backward()
+    assert np.all(np.isfinite(t.grad))
+    # 中心差分
+    eps = 1e-6
+    num = np.zeros_like(x0)
+    for idx in np.ndindex(x0.shape):
+        xp = x0.copy(); xp[idx] += eps
+        xm = x0.copy(); xm[idx] -= eps
+        num[idx] = (float(f(Tensor(xp, requires_grad=False)).data)
+                    - float(f(Tensor(xm, requires_grad=False)).data)) / (2 * eps)
+    rel = np.max(np.abs(t.grad - num)) / max(np.max(np.abs(num)), 1e-8)
+    assert rel <= 1e-5, f"复合梯度检验失败: rel_err={rel:.2e}"
+
+
+def test_autodiff_neg_rtruediv_direct():
+    """__neg__ 与 __rtruediv__ 的解析梯度直接对照 (和式, 非有限差分)。
+
+    d/dt [Σ(-t) + Σ(3/t)] = -1 − 3/t²。
+    """
+    t = Tensor(np.array([2.0, 4.0]), requires_grad=True)
+    y = (-t).sum() + (3.0 / t).sum()
+    y.backward()
+    assert np.allclose(t.grad, -1.0 - 3.0 / (np.array([2.0, 4.0]) ** 2)), t.grad

@@ -45,13 +45,16 @@ class Sampler:
             pmax = np.max(numeric.stable_softmax(logits))
             logits = np.where(numeric.stable_softmax(logits) < min_p * pmax, -np.inf, logits)
         probs = numeric.stable_softmax(logits)
-        # top-p (nucleus)
+        # top-p (nucleus): 保留「累计质量 ≥ top_p 的最小前缀」—
+        # 判据是"前缀质量(不含自身)已 ≥ top_p 则移除", 首个 token 永在核内。
+        # 旧实现 `cum > top_p` 会误删跨界 token: top_p < p_max 时全零回退
+        # (top_p 形同虚设), 中段则过度截断 (核质量 < top_p)。
         if top_p < 1.0:
             order = np.argsort(-probs)
             cum = np.cumsum(probs[order])
-            cutoff = order[cum > top_p]
-            probs[cutoff] = 0.0
-            if probs.sum() == 0:
+            remove = (cum - probs[order]) >= top_p
+            probs[order[remove]] = 0.0
+            if probs.sum() == 0:  # 理论不可达 (首 token 前缀质量恒 0), 兜底
                 probs = numeric.stable_softmax(logits)
         s = probs.sum()
         return probs / s

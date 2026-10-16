@@ -91,3 +91,77 @@ def test_speculative_equals_greedy():
         nxt = int(np.argmax(next_logits(ref)))
         ref.append(nxt)
     assert spec == ref[len(prompt):]
+
+
+def _spec_accept_run() -> list:
+    """整块确定性运行: seed → logits → 投机解码 (草稿≡目标, 全接受)。"""
+    rng.seed(5)
+    V = 12
+    base = rng.get_rng().standard_normal(V) * 2
+    logits_fn = lambda seq: base + 0.1 * len(seq)
+    return speculative_decode(logits_fn, logits_fn, [0, 1], gamma=3,
+                              max_new_tokens=9, greedy=False, temperature=0.9)
+
+
+def test_speculative_sampling_mode_accept_path():
+    """采样模式 + 草稿≡目标: 接受概率恒为 1, 全部候选被接受且同 seed 可复现。"""
+    spec = _spec_accept_run()
+    V = 12
+    assert len(spec) == 9 and all(0 <= t < V for t in spec)
+    assert spec == _spec_accept_run(), "同 seed 两次运行应逐 token 一致"
+
+
+def test_speculative_sampling_mode_reject_path():
+    """采样模式 + 对抗草稿 (恒提 p_t≈0 的 token): 必走拒绝分支,
+    输出退化为目标模型贪心序列 (拒绝后回填 argmax)。"""
+    V = 10
+    # 目标分布: token 0 概率≈0 (logit 很低), 其余可区分
+    def target_next(seq):
+        lg = np.full(V, -1.0)
+        lg[0] = -50.0
+        lg[1 + (len(seq) % (V - 1))] = 5.0  # 随前缀长度轮换的强 token
+        return lg
+
+    def draft_next(seq):
+        lg = np.full(V, -30.0)
+        lg[0] = 10.0  # 草稿执着于目标几乎不会选的 token → 接受率≈0
+        return lg
+
+    rng.seed(9)
+    spec = speculative_decode(target_next, draft_next, [3], gamma=4,
+                              max_new_tokens=6, greedy=False, temperature=1.0)
+    # 每个位置都应是目标模型的 argmax (拒绝 → 回填 argmax)
+    seq = [3]
+    for _ in range(6):
+        seq.append(int(np.argmax(target_next(seq))))
+    assert spec == seq[1:], f"拒绝路径应退化为贪心: {spec} vs {seq[1:]}"
+
+
+def test_sampler_edge_branches():
+    """采样器边界分支: forbidden / repetition_penalty / top_k=1 / min_p / top_p 截断。"""
+    from ifai.engine.sampler import Sampler
+    s = Sampler(seed=3)
+    logits = np.array([5.0, 4.0, 3.0, 2.0, 1.0])
+    # forbidden: 被禁 token 永不被选; greedy 同样生效
+    for _ in range(20):
+        assert s.sample(logits, forbidden={0}) != 0
+        assert s.greedy(logits, forbidden={0}) == 1
+    # repetition_penalty>1 抑制已出现的正 logit
+    p_pen = s.probs(logits, temperature=1.0, repetition_penalty=2.0)
+    p_raw = s.probs(logits, temperature=1.0)
+    assert p_pen[0] < p_raw[0] and abs(p_pen.sum() - 1.0) <= 1e-9
+    # top_k=1 ≡ greedy (INV-19 补充: 概率路径)
+    assert s.sample(logits, temperature=0.5, top_k=1) == int(np.argmax(logits))
+    # min_p: 过滤 p < min_p*pmax 的尾部 (此处保留 top-2), 过滤位归零且归一
+    p_min = s.probs(logits, temperature=1.0, min_p=0.3)
+    assert p_min[2:] .sum() == 0.0 and p_min[0] > 0.7 and p_min[1] > 0.2
+    assert abs(p_min.sum() - 1.0) <= 1e-9
+    # top_p 极小: 核集只含 argmax (修复后不再全零回退)
+    p_tiny = s.probs(logits, temperature=1.0, top_p=1e-9)
+    assert abs(p_tiny.sum() - 1.0) <= 1e-9 and p_tiny[np.argmax(logits)] > 0.999
+    # top_p=0.9: 核集 = 累计质量 ≥ 0.9 的最小前缀 (此处 top-3, 质量 ≈0.956)
+    p_nuc = s.probs(logits, temperature=1.0, top_p=0.9)
+    kept = np.nonzero(p_nuc)[0]
+    assert kept.tolist() == [0, 1, 2], f"核集应为 top-3: {kept}"
+    assert (p_nuc * logits).sum() > 0 and abs(p_nuc.sum() - 1.0) <= 1e-9
+    assert p_nuc[:3].sum() >= 0.9, "核集累计质量必须 ≥ top_p"

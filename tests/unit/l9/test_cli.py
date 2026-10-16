@@ -24,3 +24,15 @@ def test_version_subcommand_runs(capsys):
     cli.cmd_version(None)
     out = capsys.readouterr().out
     assert "ifai" in out and "晨星" in out, "version 应输出署名信息"
+
+
+def test_python_m_entrypoint_runs(capsys):
+    """`python -m ifai.cli version` 可运行 (覆盖 cli/__main__.py 入口)。"""
+    import subprocess
+    import sys
+    from pathlib import Path
+    repo = Path(__file__).resolve().parents[3]
+    r = subprocess.run([sys.executable, "-m", "ifai.cli", "version"],
+                       capture_output=True, text=True, cwd=str(repo))
+    assert r.returncode == 0
+    assert "ifai" in r.stdout and "晨星" in r.stdout

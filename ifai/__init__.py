@@ -7,7 +7,7 @@
 """
 from __future__ import annotations
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __author__ = "晨星 (Morningstar)"
 
 from . import rng  # noqa: F401  全局统一随机源

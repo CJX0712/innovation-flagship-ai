@@ -27,7 +27,9 @@ def logsumexp(x: np.ndarray, axis: int | None = None, keepdims: bool = False) ->
     xmax_safe = np.where(np.isfinite(xmax), xmax, 0.0)
     out = xmax_safe + np.log(np.sum(np.exp(x - xmax_safe), axis=axis, keepdims=True))
     if not keepdims:
-        out = np.squeeze(out)
+        # 只压掉被约简的轴: 无轴 squeeze 会把 size-1 的批次维一并压掉
+        # (如 (1,C) 沿 axis=1 → (1,1) → 0 维), 破坏 ``lse[:, None]`` 等下游用法
+        out = np.squeeze(out, axis=axis) if axis is not None else out.reshape(())
     return out.astype(np.float64)
 
 

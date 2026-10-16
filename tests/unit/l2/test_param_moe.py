@@ -101,3 +101,41 @@ def test_inv_14_moe_routing_conservation():
         out_ref += np.sum(w * (topk == e), axis=-1, keepdims=True) * ex
     out = m._moe(h, pre, cfg)
     assert np.max(np.abs(out - out_ref)) <= 1e-12
+
+
+def test_moe_forward_and_save_load_roundtrip(tmp_path):
+    """MoE 模型走完整 forward (覆盖 Transformer.forward 的 use_moe 分支) +
+    save/load 往返参数量守恒 (INV-13 × MoE 配置)。"""
+    cfg = ModelConfig(vocab_size=48, d_model=16, n_layers=2, n_heads=2,
+                      n_kv_heads=2, use_moe=True, n_experts=3, moe_topk=2,
+                      max_seq_len=32)
+    m = Transformer(cfg)
+    ids = rng.get_rng().integers(0, 48, size=(2, 6))
+    out = m.forward(ids)
+    assert out.shape == (2, 6, 48) and np.all(np.isfinite(out))
+    d = m.save(str(tmp_path / "moe"))
+    m2 = Transformer.load(d)
+    assert m2.count_params() == m.count_params() == cfg_analytic(cfg)
+    assert np.array_equal(m.forward(ids), m2.forward(ids))
+
+
+def cfg_analytic(c: ModelConfig) -> int:
+    return _analytic_param_count(c)
+
+
+def test_forward_with_past_kv_and_padding_mask_extension():
+    """past_kv + key_padding_mask 仅覆盖历史段 → 触发掩码右扩展分支 (INV-20/11)。"""
+    from ifai.engine.kvcache import PagedKVCache
+    cfg = ModelConfig(vocab_size=32, d_model=16, n_layers=1, n_heads=2,
+                      n_kv_heads=2, ffn_mult=2, max_seq_len=32)
+    m = Transformer(cfg)
+    past_ids = rng.get_rng().integers(0, 32, size=(1, 4))
+    cur_ids = rng.get_rng().integers(0, 32, size=(1, 2))
+    _, kv = m.forward(past_ids, return_kv=True)
+    # pad 掩码只给历史 4 位 (当前块无 pad) → 内部需扩展到 P+T
+    pad = np.zeros((1, 4), dtype=bool)
+    out = m.forward(cur_ids, past_kv=kv, key_padding_mask=pad)
+    assert out.shape == (1, 2, 32) and np.all(np.isfinite(out))
+    # 无掩码前向与全 False 掩码前向逐位一致
+    out_nomask = m.forward(cur_ids, past_kv=kv)
+    assert np.array_equal(out, out_nomask)

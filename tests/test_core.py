@@ -25,6 +25,13 @@ def test_logsumexp_vs_naive():
     ref_big = m.squeeze(-1) + np.log(np.sum(np.exp(big - m), axis=-1))
     assert np.all(np.isfinite(mine_big)), "logsumexp 在 ±1e4 输入下溢出"
     assert np.allclose(mine_big, ref_big, atol=1e-6)
+    # 回归: batch=1 沿 axis 约简后必须保持 (1,) 形状 (不得压成 0 维标量)
+    one = np.array([[1.0, 2.0, 3.0]])
+    out1 = numeric.logsumexp(one, axis=1)
+    assert out1.shape == (1,), f"batch=1 形状回归: {out1.shape}"
+    assert out1[0] == pytest.approx(np.log(np.exp(one).sum()), abs=1e-12)
+    assert numeric.logsumexp(one, axis=0).shape == (3,)
+    assert numeric.logsumexp(one).shape == ()  # 全约简才允许标量
 
 
 def test_softmax_shift_invariant():
@@ -121,3 +128,73 @@ def test_int4_pack_roundtrip():
     packed = quant.pack_int4(x)
     back = quant.unpack_int4(packed, len(x))
     assert np.array_equal(back, x)
+
+
+def test_safe_cross_entropy_vs_manual():
+    """safe_cross_entropy ≡ 手工 log-softmax NLL; 梯度 == p − onehot。"""
+    logits = rng.get_rng().standard_normal((6, 5)) * 3
+    targets = rng.get_rng().integers(0, 5, size=6)
+    loss, grad = numeric.safe_cross_entropy(logits, targets)
+    # 手工参考
+    z = logits - logits.max(axis=1, keepdims=True)
+    logp = z - np.log(np.exp(z).sum(axis=1, keepdims=True))
+    ref = -logp[np.arange(6), targets].mean()
+    assert abs(loss - ref) <= 1e-10
+    p = np.exp(logp)
+    assert np.allclose(grad, (p - np.eye(5)[targets]) / 6, atol=1e-12)
+
+
+def test_safe_cross_entropy_extreme_logits_stable():
+    """±1e4 量级 logits 下损失/梯度有限且正确 (数值稳定, INV-08 同源)。"""
+    logits = np.array([[1e4, 0.0, -1e4], [0.0, 1e4, -1e4]])
+    targets = np.array([0, 1])
+    loss, grad = numeric.safe_cross_entropy(logits, targets)
+    assert np.isfinite(loss) and np.all(np.isfinite(grad))
+    assert abs(loss) <= 1e-6  # 目标类恰为最大 → 损失≈0
+    assert abs(grad[0, 0]) <= 1e-9  # p≈1 → grad≈0
+
+
+def test_safe_cross_entropy_ignore_and_smoothing():
+    """ignore_index 行不计入损失且梯度为 0; label_smoothing 增大损失。"""
+    logits = rng.get_rng().standard_normal((4, 6))
+    targets = np.array([1, 2, -100, 4])
+    loss, grad = numeric.safe_cross_entropy(logits, targets)
+    assert np.all(grad[2] == 0.0), "被忽略行的梯度必须为 0"
+    # 被忽略行不计入均值: 与 3 行有效子集的损失逐位一致
+    sub = np.array([1, 2, 4])
+    loss_sub, _ = numeric.safe_cross_entropy(logits[[0, 1, 3]], sub)
+    assert abs(loss - loss_sub) <= 1e-12
+    # label smoothing: 损失 == 手工平滑 q 的交叉熵 (不假设方向 —
+    # 自信错误时平滑可能降低损失, 故直接对照公式)
+    eps_ls = 0.1
+    loss_ls, grad_ls = numeric.safe_cross_entropy(logits, targets, label_smoothing=eps_ls)
+    z = logits - logits.max(axis=1, keepdims=True)
+    logp = z - np.log(np.exp(z).sum(axis=1, keepdims=True))
+    q = np.zeros((4, 6))
+    q[np.arange(4), np.where(targets == -100, 0, targets)] = 1.0
+    q = (1 - eps_ls) * q + eps_ls / 6
+    mask = (targets != -100).astype(float)
+    ref = float((-(q * logp).sum(axis=1) * mask).sum() / mask.sum())
+    assert abs(loss_ls - ref) <= 1e-12
+    assert np.allclose(grad_ls, (np.exp(logp) - q) * mask[:, None] / 3, atol=1e-12)
+    assert np.all(np.isfinite(grad_ls))
+    # 1D 输入
+    l1, g1 = numeric.safe_cross_entropy(logits[0], np.array(targets[0]))
+    assert np.isfinite(l1) and g1.shape == (1, 6)
+
+
+def test_clip_by_norm_inv23():
+    """INV-23 基元: clip_by_norm 超限缩放 / 未限 bitwise 不变 / L1 范数。"""
+    g = np.array([3.0, 4.0])  # L2 范数 5
+    clipped, flag = numeric.clip_by_norm(g, max_norm=2.5)
+    assert flag is True
+    assert abs(np.linalg.norm(clipped) - 2.5) <= 1e-12
+    assert np.allclose(clipped, g * (2.5 / 5.0))
+    same, flag2 = numeric.clip_by_norm(g, max_norm=10.0)
+    assert flag2 is False and np.array_equal(same, g)  # 未超限 bitwise 不变
+    g1 = np.array([1.0, -2.0, 3.0])  # L1 范数 6
+    c1, flag3 = numeric.clip_by_norm(g1, max_norm=3.0, norm_type=1.0)
+    assert flag3 is True and abs(np.abs(c1).sum() - 3.0) <= 1e-12
+    # max_norm<=0 不触发裁剪 (守卫分支)
+    c0, flag0 = numeric.clip_by_norm(g, max_norm=0.0)
+    assert flag0 is False and np.array_equal(c0, g)
