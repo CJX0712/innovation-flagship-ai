@@ -34,16 +34,16 @@
 | L7 | 多模态 / 生成模型 | 128 | 规划中 |
 | L8 | 大模型预训练 / 对齐 | 256 | 规划中 |
 | L9 | 推理优化 / 部署 | 512 | 规划中 |
-| L10 | 微指令级操作（最终层） | **1024** | **done 85 / planned 939** |
+| L10 | 微指令级操作（最终层） | **1024** | **done 116 / planned 908** |
 | **合计** | | **2046** | |
 
 - L1–L10 项数按 2·2ⁿ 增长（L1=2, L2=4, …, L10=1024），合计 ∑ = **2046**。
 - L10 的 1024 项微指令完整分类法见 [`docs/L10-index.json`](docs/L10-index.json) 与 [`docs/L10-taxonomy.md`](docs/L10-taxonomy.md)（8 族 / 64 组 / 每组 16 op）。
-- 当前已落码的 **28 个内核模块**，覆盖了 L1–L7 的基础与核心算法，并直接支撑 L10 中 **85 项 done** 微指令（其余 939 项标记为 planned，等待后续波次）。
+- 当前已落码的 **31 个内核模块**，覆盖了 L1–L7 的基础与核心算法，并直接支撑 L10 中 **116 项 done** 微指令（其余 908 项标记为 planned，等待后续波次）。
 
 ---
 
-## 三、模块清单（28 个内核 · 218 条不变量 · 0 失败）
+## 三、模块清单（31 个内核 · 242 条不变量 · 0 失败）
 
 所有模块均满足 `@forge-module` 统一契约：`selfCheck()` 返回 `forge-selfcheck/1.0` schema、代码 hash 幂等、不良输入抛错、CLI 退出码规范（0/1/2/3/4/66）。每条不变量都有 **≥1 条可被独立交叉验证的硬标准**（残差界 / 正交归一 / 梯度检验 / 闭式对照 / 参考重实现），阈值常量化于 `TOL`。
 
@@ -77,6 +77,9 @@
 | `src/dqn-forge.js` | L6 | INV-DQN-001..008 | 8 | Mnih 2015 DQN / 目标网络 / Double DQN(van Hasselt 2015) / Polyak / ε-贪婪 |
 | `src/scheduler-forge.js` | L3 | INV-SCH-001..008 | 8 | 阶跃衰减 / 余弦退火 / Warmup / 余弦重启 / 1cycle（PyTorch lr_scheduler 口径） |
 | `src/diffusion-forge.js` | L5 | INV-DIF-001..008 | 8 | Ho 2020 DDPM / Song 2021 DDIM / Nichol& Dhariwal β 调度 |
+| `src/td-forge.js` | L6 | INV-TD-001..008 | 8 | Sutton&Barto 值迭代 / Watkins 1989 Q-learning / Rummery&Niranjan 1994 SARSA / Sutton 1988 TD(λ) |
+| `src/policygrad-forge.js` | L6 | INV-PG-001..008 | 8 | Williams 1992 REINFORCE / Sutton 2000 策略梯度 / Schulman 2015 GAE / Schulman 2017 PPO |
+| `src/vi-forge.js` | L5 | INV-VI-001..008 | 8 | Kingma&Welling 2013 VAE / Rezende 2014 重参数化 / Jordan 1999 变分推断 |
 
 > 注：`attn-forge.js`（L4，INV-ATTN-*）为经典注意力模块的零重写迁移包装；`attention-forge.js`（L4，INV-ATT-*）为新写的多头 / GQA / 因果注意力。两者并存、互不冲突。
 
@@ -92,7 +95,7 @@
 
 ### 命令行自检（Node 端）
 ```bash
-# 1) 聚合自检：28 模块 / 218 不变量，全部跑一遍
+# 1) 聚合自检：31 模块 / 242 不变量，全部跑一遍
 npm test                 # ≡ node run-all.js
 npm run selfcheck        # ≡ node run-all.js
 
@@ -162,11 +165,12 @@ innovation-flagship-ai/
 │   ├── kv-cache-forge.js  position-encoding-forge.js  moe-forge.js
 │   ├── quant-forge.js  speculative-forge.js  generation-forge.js
 │   └── retrieval-forge.js  prob-forge.js  graph-forge.js
-│   └── rl-forge.js  sampling-forge.js  dqn-forge.js  diffusion-forge.js
+│   └── rl-forge.js  sampling-forge.js  dqn-forge.js  diffusion-forge.js  td-forge.js  policygrad-forge.js  vi-forge.js
 ├── tests/
 │   ├── harness.js          # @forge-module 契约自检器
 │   └── independent/        # 独立黄金参照复核（不采信模块自检）
-│       └── INV-DQN-007-check.js
+│       ├── INV-DQN-007-check.js  INV-DIF-check.js  td-check.js
+│       └── policygrad-check.js  vi-check.js
 ├── tools/
 │   ├── gen-l10.js          # L10 微指令分类法生成
 │   ├── verify-l10.js       # L10 校验（唯一性 / 字段完整 / 状态分布）
@@ -192,14 +196,15 @@ innovation-flagship-ai/
 - ✅ **W9**：KV 缓存与增量解码（预分配 / 分页块表 / 增量等价全量前向 / 逐出）+ 位置编码族（ALiBi 线性偏置 / T5 相对桶 / 位置插值）+ 混合专家 MoE（top-k 门控 / 路由 / 负载均衡 / 容量裁剪 / 共享专家）——3 模块 / 24 不变量全绿
 - ✅ **W10**：模型量化（int8/int4 真位压缩 / 逐通道 / k-quants 超块 / 量化矩阵乘）+ 推测解码（草稿提议 / 目标并行验证 / 拒绝采样 / **分布等价**）+ 端到端生成闭环（KV 增量 / 流式 / 前缀缓存 / 批量）——3 模块 / 25 用例全绿
 - ✅ **W11**：深度强化学习内核 dqn-forge（经验回放 / 目标网络 / ε-贪婪 / DQN 更新 / Double DQN / Polyak / **收敛到值迭代**，皇冠不变量 INV-DQN-007 经手搓黄金参照 + 3 种子独立复核确认）；学习率调度器 scheduler-forge（阶跃 / 余弦退火 / Warmup / 余弦重启 / oneCycle / 多项式衰减，8 不变量全绿）；扩散模型内核 diffusion-forge（DDPM 前向加噪 / x0↔ε 互逆 / 后验 / 祖先采样 / DDIM 确定性采样 / SNR，8 不变量全绿，INV-DIF-005 已修复为**非退化真检验**杜绝恒等掩盖）——本波共 3 模块 / 24 不变量全绿
-- 🔜 **W12+**：F4-G5 余项（并行解码、树状注意力、缓存压缩、注意力下沉）、F4-G6 余项（混合精度、SmoothQuant、QAT、稀疏量化）、F5 概率与生成余项（MCMC / VAE / 流模型）、F6 策略梯度（REINFORCE 增强 / PPO 系）、F7 检索/图/系统——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
+- ✅ **W12**：表格强化学习内核 td-forge（值迭代 / 策略迭代 / SARSA / Q-learning / TD(0) / TD(λ) / 期望 SARSA，8 不变量全绿，INV-TD-004 Q-learning 收敛到值迭代经手搓独立黄金参照复核）；策略梯度内核 policygrad-forge（REINFORCE / 基线减除 / 优势函数 / 演员评论家 / A2C / GAE / PPO 裁剪，8 不变量全绿，INV-PG-003 REINFORCE 收敛到值迭代经 rl-forge 独立黄金参照）；变分推断内核 vi-forge（ELBO 分解 / 重参数化 / 高斯 KL 闭式 / VAE / 均值场，8 不变量全绿，INV-VI-005 重参数化确定性已落非退化真检验杜绝恒等掩盖）——本波共 3 模块 / 24 不变量全绿
+- 🔜 **W12+ 续**：F4-G5 余项（并行解码 / 树状注意力 / 缓存压缩 / 注意力下沉）、F4-G6 余项（混合精度 / SmoothQuant / QAT / 稀疏量化）、F5 概率与生成余项（MCMC / 流模型）、F7 检索 / 图 / 系统——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
 
 **当前验证基线（W11 全波集成后本地复核）：**
-- `npm run verify` → **28 模块 · 通过 218 · 失败 0**
-- `npm run harness` → 28/28 模块满足 `@forge-module` 契约（含不良输入抛错登记）
+- `npm run verify` → **31 模块 · 通过 242 · 失败 0**
+- `npm run harness` → 31/31 模块满足 `@forge-module` 契约（含不良输入抛错登记）
 - `npm run check:reuse` → 0 ERROR / 5 ADVISORY（X 级自研声明提示，不影响退出码）
-- `npm run l10` → 1024 项 / done 85 / planned 939 / ID 唯一 / 字段完整
-- `tests/independent/INV-DQN-007-check.js` 与 `tests/independent/INV-DIF-check.js` → DQN/扩散皇冠不变量三重独立复核全绿
+- `npm run l10` → 1024 项 / done 116 / planned 908 / ID 唯一 / 字段完整
+- `tests/independent/INV-DQN-007-check.js` / `INV-DIF-check.js` / `td-check.js` / `policygrad-check.js` / `vi-check.js` → DQN / 扩散 / 表格RL / 策略梯度 / 变分推断 皇冠不变量独立复核全绿
 
 ---
 

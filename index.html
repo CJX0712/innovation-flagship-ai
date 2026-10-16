@@ -81,6 +81,9 @@
   <script src="src/dqn-forge.js" onerror="window.__forgeLoadErrors['ForgeDQN']=true"></script>
   <script src="src/scheduler-forge.js" onerror="window.__forgeLoadErrors['ForgeScheduler']=true"></script>
   <script src="src/diffusion-forge.js" onerror="window.__forgeLoadErrors['ForgeDiffusion']=true"></script>
+  <script src="src/td-forge.js" onerror="window.__forgeLoadErrors['ForgeTD']=true"></script>
+  <script src="src/policygrad-forge.js" onerror="window.__forgeLoadErrors['ForgePolicyGrad']=true"></script>
+  <script src="src/vi-forge.js" onerror="window.__forgeLoadErrors['ForgeVI']=true"></script>
 
   <script>
   (function () {
@@ -113,7 +116,10 @@
       { key: 'ForgeGeneration', label: 'generation-forge (L4 端到端生成闭环)' },
       { key: 'ForgeDQN', label: 'dqn-forge (L6 深度强化学习/DQN)' },
       { key: 'ForgeScheduler', label: 'scheduler-forge (L3 学习率调度器)' },
-      { key: 'ForgeDiffusion', label: 'diffusion-forge (L5 扩散模型 DDPM/DDIM)' }
+      { key: 'ForgeDiffusion', label: 'diffusion-forge (L5 扩散模型 DDPM/DDIM)' },
+      { key: 'ForgeTD', label: 'td-forge (L6 表格RL/值迭代/SARSA/Q-learning/TD(λ))' },
+      { key: 'ForgePolicyGrad', label: 'policygrad-forge (L6 策略梯度/REINFORCE/PPO/GAE)' },
+      { key: 'ForgeVI', label: 'vi-forge (L5 变分推断/ELBO/VAE/重参数化)' }
     ];
 
     function row(pass, id, name, actual, tol) {

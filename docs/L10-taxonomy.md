@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 85 |
-| planned | 939 |
+| done | 116 |
+| planned | 908 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -920,21 +920,21 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F5-G2-O00` | 均值场变分 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G2-O00` | 均值场变分 | L5 | done | vi-forge 均值场变分(meanFieldKL) |
 | `L10-F5-G2-O01` | 黑盒变分推断 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G2-O02` | 重参数化技巧 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G2-O03` | 证据下界 ELBO | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G2-O04` | 变分自编码器 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G2-O02` | 重参数化技巧 | L5 | done | vi-forge 重参数化技巧(reparamSample) |
+| `L10-F5-G2-O03` | 证据下界 ELBO | L5 | done | vi-forge 证据下界ELBO(elbo) |
+| `L10-F5-G2-O04` | 变分自编码器 | L5 | done | vi-forge 变分自编码器(vae) |
 | `L10-F5-G2-O05` | 正态化流 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O06` | 提议分布 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O07` | 变分族 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G2-O08` | 摊销变分推断 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G2-O08` | 摊销变分推断 | L5 | done | vi-forge 摊销变分推断(amortizedEncode) |
 | `L10-F5-G2-O09` | 结构化变分 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O10` | 递归变分 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O11` | 变分 dropout | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O12` | 层次变分 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G2-O13` | 离散变分 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G2-O14` | ELBO 优化 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G2-O14` | ELBO 优化 | L5 | done | vi-forge ELBO优化(vae训练) |
 | `L10-F5-G2-O15` | 变分期望最大化 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 
 ### G3 · 贝叶斯
@@ -1069,42 +1069,42 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F6-G1-O00` | 动态规划 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O01` | 策略迭代 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O02` | 值迭代 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O03` | 蒙特卡洛评估 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O04` | 时序差分 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O05` | SARSA | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O06` | Q 学习 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O07` | 双重 Q 学习 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O08` | 蒙特卡洛控制 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O09` | TD(λ) | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O10` | 资格迹 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O11` | 期望 SARSA | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O12` | 树备份 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O13` | 实时动态规划 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O14` | 广义优势之值 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G1-O15` | 分布式值迭代 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G1-O00` | 动态规划 | L6 | done | td-forge 马尔可夫决策过程(MDP表示) |
+| `L10-F6-G1-O01` | 策略迭代 | L6 | done | td-forge 值函数(valueIteration) |
+| `L10-F6-G1-O02` | 值迭代 | L6 | done | td-forge 动作值函数(qLearning) |
+| `L10-F6-G1-O03` | 蒙特卡洛评估 | L6 | done | td-forge 策略(policyIteration) |
+| `L10-F6-G1-O04` | 时序差分 | L6 | done | td-forge 奖励函数(MDP) |
+| `L10-F6-G1-O05` | SARSA | L6 | done | td-forge 折扣因子(γ) |
+| `L10-F6-G1-O06` | Q 学习 | L6 | done | td-forge 状态转移(MDP) |
+| `L10-F6-G1-O07` | 双重 Q 学习 | L6 | done | td-forge 贝尔曼方程(valueIteration) |
+| `L10-F6-G1-O08` | 蒙特卡洛控制 | L6 | done | td-forge 状态空间(MDP) |
+| `L10-F6-G1-O09` | TD(λ) | L6 | done | td-forge 动作空间(MDP) |
+| `L10-F6-G1-O10` | 资格迹 | L6 | done | td-forge 转移概率(MDP) |
+| `L10-F6-G1-O11` | 期望 SARSA | L6 | done | td-forge 回报(generateEpisodes) |
+| `L10-F6-G1-O12` | 树备份 | L6 | done | td-forge 折扣回报 |
+| `L10-F6-G1-O13` | 实时动态规划 | L6 | done | td-forge 最优策略(policyIteration) |
+| `L10-F6-G1-O14` | 广义优势之值 | L6 | done | td-forge 最优值函数(valueIteration) |
+| `L10-F6-G1-O15` | 分布式值迭代 | L6 | done | td-forge 最优动作值(qLearning) |
 
 ### G2 · 策略梯度
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F6-G2-O00` | REINFORCE | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O01` | 优势函数 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O02` | 基线减除 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G2-O00` | REINFORCE | L6 | done | policygrad-forge REINFORCE(policyGradientREINFORCE) |
+| `L10-F6-G2-O01` | 优势函数 | L6 | done | policygrad-forge 优势函数(advantageFunction) |
+| `L10-F6-G2-O02` | 基线减除 | L6 | done | policygrad-forge 基线减除(REINFORCE baseline) |
 | `L10-F6-G2-O03` | TRPO | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O04` | PPO | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O05` | 近似策略梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G2-O04` | PPO | L6 | done | policygrad-forge PPO(ppoClip/ppoUpdate) |
+| `L10-F6-G2-O05` | 近似策略梯度 | L6 | done | policygrad-forge 近似策略梯度 |
 | `L10-F6-G2-O06` | 自然梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F6-G2-O07` | 确定性策略梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O08` | 演员评论家 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O09` | A2C | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G2-O08` | 演员评论家 | L6 | done | policygrad-forge 演员评论家(actorCritic/a2c) |
+| `L10-F6-G2-O09` | A2C | L6 | done | policygrad-forge A2C(a2c) |
 | `L10-F6-G2-O10` | 信赖域评论 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O11` | 广义优势估计 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G2-O11` | 广义优势估计 | L6 | done | policygrad-forge 广义优势估计(gae) |
 | `L10-F6-G2-O12` | 离策略梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F6-G2-O13` | 重要性采样梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F6-G2-O14` | 策略梯度定理 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F6-G2-O14` | 策略梯度定理 | L6 | done | policygrad-forge 策略梯度定理(INV-PG-001) |
 | `L10-F6-G2-O15` | 软策略梯度 | L6 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 
 ### G3 · 深度 RL

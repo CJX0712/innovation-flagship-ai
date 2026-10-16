@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T18:50:54.899Z",
+  "generated_at": "2026-10-16T19:34:47.686Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 85,
-    "planned": 939
+    "done": 116,
+    "planned": 908
   },
   "leaves": [
     {
@@ -6737,8 +6737,8 @@
       "op": "O00",
       "name": "均值场变分",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge 均值场变分(meanFieldKL)"
     },
     {
       "id": "L10-F5-G2-O01",
@@ -6757,8 +6757,8 @@
       "op": "O02",
       "name": "重参数化技巧",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge 重参数化技巧(reparamSample)"
     },
     {
       "id": "L10-F5-G2-O03",
@@ -6767,8 +6767,8 @@
       "op": "O03",
       "name": "证据下界 ELBO",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge 证据下界ELBO(elbo)"
     },
     {
       "id": "L10-F5-G2-O04",
@@ -6777,8 +6777,8 @@
       "op": "O04",
       "name": "变分自编码器",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge 变分自编码器(vae)"
     },
     {
       "id": "L10-F5-G2-O05",
@@ -6817,8 +6817,8 @@
       "op": "O08",
       "name": "摊销变分推断",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge 摊销变分推断(amortizedEncode)"
     },
     {
       "id": "L10-F5-G2-O09",
@@ -6877,8 +6877,8 @@
       "op": "O14",
       "name": "ELBO 优化",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "vi-forge ELBO优化(vae训练)"
     },
     {
       "id": "L10-F5-G2-O15",
@@ -7857,8 +7857,8 @@
       "op": "O00",
       "name": "动态规划",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 马尔可夫决策过程(MDP表示)"
     },
     {
       "id": "L10-F6-G1-O01",
@@ -7867,8 +7867,8 @@
       "op": "O01",
       "name": "策略迭代",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 值函数(valueIteration)"
     },
     {
       "id": "L10-F6-G1-O02",
@@ -7877,8 +7877,8 @@
       "op": "O02",
       "name": "值迭代",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 动作值函数(qLearning)"
     },
     {
       "id": "L10-F6-G1-O03",
@@ -7887,8 +7887,8 @@
       "op": "O03",
       "name": "蒙特卡洛评估",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 策略(policyIteration)"
     },
     {
       "id": "L10-F6-G1-O04",
@@ -7897,8 +7897,8 @@
       "op": "O04",
       "name": "时序差分",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 奖励函数(MDP)"
     },
     {
       "id": "L10-F6-G1-O05",
@@ -7907,8 +7907,8 @@
       "op": "O05",
       "name": "SARSA",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 折扣因子(γ)"
     },
     {
       "id": "L10-F6-G1-O06",
@@ -7917,8 +7917,8 @@
       "op": "O06",
       "name": "Q 学习",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 状态转移(MDP)"
     },
     {
       "id": "L10-F6-G1-O07",
@@ -7927,8 +7927,8 @@
       "op": "O07",
       "name": "双重 Q 学习",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 贝尔曼方程(valueIteration)"
     },
     {
       "id": "L10-F6-G1-O08",
@@ -7937,8 +7937,8 @@
       "op": "O08",
       "name": "蒙特卡洛控制",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 状态空间(MDP)"
     },
     {
       "id": "L10-F6-G1-O09",
@@ -7947,8 +7947,8 @@
       "op": "O09",
       "name": "TD(λ)",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 动作空间(MDP)"
     },
     {
       "id": "L10-F6-G1-O10",
@@ -7957,8 +7957,8 @@
       "op": "O10",
       "name": "资格迹",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 转移概率(MDP)"
     },
     {
       "id": "L10-F6-G1-O11",
@@ -7967,8 +7967,8 @@
       "op": "O11",
       "name": "期望 SARSA",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 回报(generateEpisodes)"
     },
     {
       "id": "L10-F6-G1-O12",
@@ -7977,8 +7977,8 @@
       "op": "O12",
       "name": "树备份",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 折扣回报"
     },
     {
       "id": "L10-F6-G1-O13",
@@ -7987,8 +7987,8 @@
       "op": "O13",
       "name": "实时动态规划",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 最优策略(policyIteration)"
     },
     {
       "id": "L10-F6-G1-O14",
@@ -7997,8 +7997,8 @@
       "op": "O14",
       "name": "广义优势之值",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 最优值函数(valueIteration)"
     },
     {
       "id": "L10-F6-G1-O15",
@@ -8007,8 +8007,8 @@
       "op": "O15",
       "name": "分布式值迭代",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "td-forge 最优动作值(qLearning)"
     },
     {
       "id": "L10-F6-G2-O00",
@@ -8017,8 +8017,8 @@
       "op": "O00",
       "name": "REINFORCE",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge REINFORCE(policyGradientREINFORCE)"
     },
     {
       "id": "L10-F6-G2-O01",
@@ -8027,8 +8027,8 @@
       "op": "O01",
       "name": "优势函数",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 优势函数(advantageFunction)"
     },
     {
       "id": "L10-F6-G2-O02",
@@ -8037,8 +8037,8 @@
       "op": "O02",
       "name": "基线减除",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 基线减除(REINFORCE baseline)"
     },
     {
       "id": "L10-F6-G2-O03",
@@ -8057,8 +8057,8 @@
       "op": "O04",
       "name": "PPO",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge PPO(ppoClip/ppoUpdate)"
     },
     {
       "id": "L10-F6-G2-O05",
@@ -8067,8 +8067,8 @@
       "op": "O05",
       "name": "近似策略梯度",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 近似策略梯度"
     },
     {
       "id": "L10-F6-G2-O06",
@@ -8097,8 +8097,8 @@
       "op": "O08",
       "name": "演员评论家",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 演员评论家(actorCritic/a2c)"
     },
     {
       "id": "L10-F6-G2-O09",
@@ -8107,8 +8107,8 @@
       "op": "O09",
       "name": "A2C",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge A2C(a2c)"
     },
     {
       "id": "L10-F6-G2-O10",
@@ -8127,8 +8127,8 @@
       "op": "O11",
       "name": "广义优势估计",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 广义优势估计(gae)"
     },
     {
       "id": "L10-F6-G2-O12",
@@ -8157,8 +8157,8 @@
       "op": "O14",
       "name": "策略梯度定理",
       "layer": "L6",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "policygrad-forge 策略梯度定理(INV-PG-001)"
     },
     {
       "id": "L10-F6-G2-O15",

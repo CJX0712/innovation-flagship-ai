@@ -393,6 +393,21 @@
 
 > 阈值推导（INV-DIF-005）：原始模块自检曾用 `fn=(x,t)⇒predictEps(x0,t,x,ᾱ)` 的退化 epsPredFn，使 DDIM 首步即解出 x0、与 x_T 完全无关，"异种子亦相等"仅是恒等掩盖——该不变量空洞。已改为与 x_T 无关的确定性 epsPredFn，并新增"eta=0 与 eta>0 同种子必分歧"的非空洞化对照，确证 eta=0 确实消除了随机注入。修复后经 `tests/independent/INV-DIF-check.js` 独立复核：10 组皇冠不变量逐项独立重算全绿。
 
+### `vi-forge.js`（INV-VI-001..008，8 条，变分推断 / ELBO / 重参数化 / VAE）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-VI-001 | ELBO 分解闭式：elbo == −recon − kl，且 elbo ≤ E_q[log p(x|z)]（因 KL≥0，max|·|≤1e-12） | 1e-12 | 分量一致性 + KL 非负性 |
+| INV-VI-002 | 重参数化梯度检验：dL/dmean、dL/dlogStd 解析（pathwise）vs 中心差分 max 相对误差 ≤1e-6（灵魂不变量） | 1e-6 | 独立有限差分交叉验证 |
+| INV-VI-003 | 高斯 KL 闭式 vs 手搓黄金参照 max|·|≤1e-12；KL≥0；KL=0 ⟺ 同参数（灵魂不变量） | 1e-12 | 独立黄金参照 |
+| INV-VI-004 | VAE 损失分解：loss=recon+β·kl；β=0 逐位 == recon；β=1 == recon+kl | 1e-12 | 闭式分量一致 |
+| INV-VI-005 | **重参数化确定性（反空洞铁律）**：①同 seed 同(μ,σ) 重采样 z 逐位相等(≤1e-15) ②异 seed 序列可复现且分歧 ③σ=0 vs σ>0 必分歧(>0) ④大样本 MC mean(z)≈μ、std(z)≈σ（统计容差 ≥10σ） | 0 | 确定性 + 分歧 + 矩收敛三重 |
+| INV-VI-006 | 均值场 KL 可加：Σ_i KL(q_i‖p_i) == 整体 KL(q‖p)，max|·|≤1e-12 | 1e-12 | 逐维求和等价 |
+| INV-VI-007 | 摊销推断一致性：同 x 多次编码(确定性前向) mean/logStd 逐位相等；近邻 x 的 mean 接近(≤0.05)；远距 x 的 mean 分歧 | 0 | 确定性 + 平滑性 + 非平凡 |
+| INV-VI-008 | ELBO 单调上升：玩具数据单步梯度上升后 ELBO_new ≥ ELBO_old − 1e-6（优化方向正确，断言不降） | 1e-6 | 正确 ascent 方向 |
+
+> 反空洞铁律落实（INV-VI-005）：原易退化为「同 seed 相等」的恒等掩盖——已新增「σ=0 与 σ>0 同种子必分歧」对照，确证采样式 z 的差异真实传导；并经 `tests/independent/vi-check.js` 独立复核：手搓高斯 KL 黄金参照、闭式 ELBO 分量、重参数化确定性三重逐项确认全绿。
+
 ---
 
 ## L6 — 深度强化学习
@@ -412,6 +427,36 @@
 
 > 阈值推导（INV-DQN-007）：one-hot 线性 Q 网 ≡ 表格 Q 学习，定点即 VI 的 Q\*；SGD 稳态 TD 误差 ~ O(lr·σ_TD/√batch)：lr=0.05、batch=32、收敛后单样本 TD 误差 σ≈0.05 ⇒ 残差≈5e-4，取 1e-2（≈20× 余量，且远小于 Q 值尺度 γ⁴≈0.66，收敛意义不丢失）。终态（goal）episode 进入即终止、永不被动作触及，其 Q\*≡0 是定义值而非贝尔曼约束，残差与策略一致性均在非终止态全集（4 态 × 2 动作 = 8 对）上度量。
 
+### `td-forge.js`（INV-TD-001..008，8 条，表格强化学习基础 / 值迭代 / SARSA / Q-learning / TD(λ)）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-TD-001 | 值迭代收敛到最优值：max\|V−V*\|≤1e-6 且固定点残差 max_s\|V−T*V\|≤1e-6（V* 为独立手搓值迭代） | 1e-6 | 独立手搓值迭代对照 + 固定点残差扫描 |
+| INV-TD-002 | 策略迭代值单调不降（逐元素违例数==0）且末轮 V 与值迭代最优 V 一致（≤1e-6） | 1e-6 | 逐元素单调性扫描 + 独立 VI 对照 |
+| INV-TD-003 | 贝尔曼最优算子严格收缩：‖T*V−T*V'‖∞/‖V−V'‖∞ ≤ γ（γ=0.9 ⇒ ≤0.9+1e-12） | 1e-12 | 两随机 V 解析算子比 |
+| INV-TD-004 | **Q-learning 收敛到最优 Q**（皇冠）：贪心策略与值迭代最优策略 mismatch==0 且 max\|Q−Q*\|≤1e-2（独立手搓 Q* 黄金参照） | 1e-2 | 独立手搓 Q* 对照 |
+| INV-TD-005 | TD(0) 估计收敛到 v^π：与蒙特卡洛（多次 episodic 累积回报平均）对照 max\|V_TD−V_MC\|≤5e-2（统计容差留 ≥10σ 余量） | 5e-2 | 多重种子 MC + 步衰减 α |
+| INV-TD-006 | SARSA(ε-贪婪) vs Q-learning 非退化：ε=0 时 max\|Q_SARSA−Q_QL\|≤1e-9 且 ε>0/异种子下 max\|·\|>0（反空洞铁律：必断言分歧） | 1e-9 | 贪心一致性 + 异设置分歧断言 |
+| INV-TD-007 | 资格迹退化：λ=0 与 td0 一致（≤1e-9 逐位）；λ=1 接近蒙特卡洛（≤统计容差）；λ=0 与 λ=1 必分歧（>0，反空洞） | 1e-9 | 逐位一致 + MC 对照 + 分歧断言 |
+| INV-TD-008 | 期望 SARSA 目标闭式：贪心时目标=r+γ·maxQ（与 Q-learning 目标≤1e-12）；优势零均值 E_a[π(a)A(a)]=0（≤1e-9） | 1e-9 | 目标公式复算 + 零均值恒等式 |
+
+> 反空洞铁律落实（INV-TD-006/007）：凡「退化/一致性」必同时断言「不同设置必分歧」，杜绝恒等掩盖；灵魂不变量 INV-TD-004 经 `tests/independent/td-check.js` 手搓 Q* 黄金参照独立复核（mismatch=0、max\|Q−Q*\|≈1e-15）。
+
+### `policygrad-forge.js`（INV-PG-001..008，8 条，策略梯度 / REINFORCE / PPO / GAE）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-PG-001 | 策略梯度定理梯度检验：高斯策略 ∇_μ=(a−μ)/σ²、∇_σ=((a−μ)²/σ²−1)/σ 与中心差分对照 max 相对误差 ≤1e-6 | 1e-6 | 手搓解析梯度 vs 有限差分 |
+| INV-PG-002 | 基线不减偏置：E[∇logπ·(G−b)]=E[∇logπ·G]（Σπ∇logπ≈0，偏差≤1e-12）且 b=mean(G) 方差比<1（多重子验证） | 1e-12 | score function 零均值 + 中心化降方差 |
+| INV-PG-003 | **REINFORCE 收敛到最优策略**（皇冠）：5 态链 MDP 训练后贪心策略与值迭代最优策略 mismatch=0（独立黄金参照：rl-forge 值迭代，非自证） | 0 | 黄金参照交叉验证 |
+| INV-PG-004 | 优势函数零均值：Σ_a π(a|s)A(s,a)≈0（max\|·\|≤1e-9）且 A=Q−V 闭式一致 | 1e-9 | A(s,a)=Q(s,a)−V(s)，V=ΣπQ |
+| INV-PG-005 | GAE 退化：λ=0 → TD 残差 δ（≤1e-12 逐位）；λ=1 → MC 回报减 V_t（≤1e-9）；且 λ=0 与 λ=1 必分歧（>0，反空洞） | 1e-9 | 闭式 + 分歧铁律 |
+| INV-PG-006 | 演员评论家价值一致：critic 估计 v^π 收敛到同策略 TD 评估真 v^π（对照 max\|·\|≤统计容差，多重子验证） | 1e-2 | 同策略 TD0 一致性 |
+| INV-PG-007 | PPO 裁剪代理目标占优非退化：裁剪≤未裁剪（逐元素 ≥20 批违例 0）且存在严格小于（strict>0，证明非恒等） | 0 | min 算子占优 + 构造实例 |
+| INV-PG-008 | 优势符号与策略改进方向一致：∇_θJ≈E[∇logπ·A] 与 A 符号一致（≤1e-6）；或 MC 验证沿 ∇logπ(a*) 上升改进>0 | 1e-6 | 策略梯度定理符号一致性 |
+
+> 反空洞铁律落实（INV-PG-005/007）：GAE 的 λ=0 与 λ=1 强制分歧、PPO 裁剪必存在严格小于（403 组）以证明非恒等；灵魂不变量 INV-PG-003 经 rl-forge 值迭代独立黄金参照交叉验证，并经 `tests/independent/policygrad-check.js` 复核。
+
 ---
 
 ## 统计汇总
@@ -422,11 +467,11 @@
 | L2 | 4 | 28 | 0 |
 | L3 | 6 | 48 | 0 |
 | L4 | 9 | 72 | 0 |
-| L5 | 6 | 48 | 0 |
-| L6 | 1 | 8 | 0 |
-| **合计** | **28** | **216** | **0** |
+| L5 | 7 | 56 | 0 |
+| L6 | 3 | 24 | 0 |
+| **合计** | **31** | **240** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **216 条**。运行时 case 数为 **218**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **240 条**。运行时 case 数为 **242**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）。净 +2。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
@@ -435,11 +480,14 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 28 模块 · 218 用例 · 0 失败
+npm run verify             # 31 模块 · 242 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
+node tests/independent/td-check.js          # INV-TD 表格RL 皇冠不变量独立复核
+node tests/independent/policygrad-check.js  # INV-PG 策略梯度 皇冠不变量独立复核
+node tests/independent/vi-check.js          # INV-VI 变分推断 皇冠不变量独立复核
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 85 / planned 939
+node tools/verify-l10.js   # L10 1024 项 / done 116 / planned 908
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。
