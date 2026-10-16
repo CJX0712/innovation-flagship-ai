@@ -193,8 +193,10 @@ def cmd_doctor(_):
 def cmd_selftest(args):
     """零重写自验证: 运行三项静态审计 + (可选) pytest 黄金测试。
 
-    INV-41 (分层零反向依赖) / INV-42 (≥25 处世界顶级出处) / R-X-03 (文档完备)。
+    INV-41 (分层零反向依赖) / INV-42 (≥25 处世界顶级出处) / R-X-03 (文档完备),
+    并额外校验「微指令分解覆盖 PRD 全部 42 条 INV (含 X 层 INV-41/42)」。
     """
+    import re
     import subprocess
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     audits = [
@@ -213,6 +215,23 @@ def cmd_selftest(args):
         ok = rc == 0
         all_ok &= ok
         print(f"[{'通过' if ok else '失败'}] {label}")
+
+    # 不变量覆盖: 微指令分解必须覆盖 PRD 的全部 42 条 INV (含 X 横切层 INV-41/42)
+    gen = os.path.join(repo, "scripts", "gen_micro_instructions.py")
+    if os.path.exists(gen):
+        proc = subprocess.run([sys.executable, gen], cwd=repo,
+                              capture_output=True, text=True)
+        covered: set = set()
+        m = re.search(r"覆盖 INV:\s*\[([0-9, ]+)\]", proc.stdout)
+        if m:
+            covered = {int(x) for x in m.group(1).split(",") if x.strip()}
+        expect = set(range(1, 43))
+        ok = proc.returncode == 0 and covered >= expect
+        all_ok &= ok
+        print(f"[{'通过' if ok else '失败'}] 不变量覆盖 (42/42 INV): "
+              f"已覆盖 {len(covered)} 条"
+              + ("" if ok else f", 缺失 {sorted(expect - covered)}"))
+
     if getattr(args, "pytest", False):
         rc = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=repo).returncode
         ok = rc == 0

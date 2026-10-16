@@ -11,9 +11,14 @@
 
 可验证不变量:
 - INV-10 GQA 在 n_kv==n_q 时严格 == MHA
+- INV-11 Causal masking: 位置 i 的输出不依赖 j>i 的 token (扰动未来 token,
+  之前位置的输出 bitwise 不变; 由 ``forward`` 的因果掩码与 ``verify_causal_mask``
+  自检函数共同保证)
 - INV-12 输出 embedding 与输入 embedding 是同一对象 (tie)
 - INV-14 MoE 路由概率和=1 且 token 分配守恒
 - INV-13 参数量精确守恒
+- INV-20 分块 prefill ≡ 整段 prefill: ``forward`` 支持 ``past_kv`` / ``return_kv``
+  (L3 ``engine.prefill.ChunkedPrefill`` 依赖此接口)
 - R-L2-06 权重序列化 + sha256 manifest round-trip 误差=0
 """
 from __future__ import annotations
@@ -84,13 +89,25 @@ class Transformer:
     # ---------------- 前向 ----------------
     def forward(self, token_ids: np.ndarray, return_hidden: bool = False,
                 position_ids: np.ndarray | None = None,
-                key_padding_mask: np.ndarray | None = None):
+                key_padding_mask: np.ndarray | None = None,
+                past_kv: List[Tuple[np.ndarray, np.ndarray]] | None = None,
+                return_kv: bool = False):
         """前向。
 
         - ``position_ids`` [B,T] 或 [T]: 显式位置 (连续批处理左补齐时, 真实
           token 仍取自然位置, 保证与串行前向逐 token 一致, INV-16)。
         - ``key_padding_mask`` [B,T] bool (True=pad): 屏蔽 pad 位置作为 key,
           使补齐序列的最后真实 token 注意力上下文 == 串行上下文。
+        - ``past_kv`` 每层 ``(K, V)``, 形状 ``[B, P, n_kv, d_head]``: 分块
+          prefill / 增量 decode 的历史 KV (INV-20)。历史 key 的绝对位置假定
+          为 ``0..P-1``; 传入时必须给出当前块的绝对 ``position_ids`` (未给出
+          时自动取 ``P..P+T-1``)。
+        - ``return_kv`` True 时返回 ``(输出, present_kv)``, ``present_kv`` 为
+          每层拼接历史后的 ``(K, V)`` 列表 — 供 L3 ``ChunkedPrefill`` 逐块传递。
+
+        因果性 (INV-11): 无论是否使用 ``past_kv``, 任何 query 只能注意
+        ``key 绝对位置 <= query 绝对位置`` 的 key, 因此位置 i 的输出与
+        ``j > i`` 的 token 完全无关。
         """
         c = self.cfg
         ids = np.asarray(token_ids)
@@ -100,11 +117,14 @@ class Transformer:
         d, dh, n_h, n_kv = c.d_model, c.d_head, c.n_heads, c.n_kv_heads
         scale = 1.0 / (dh ** 0.5)
         if position_ids is None:
-            positions = np.arange(T)
+            # 有历史 KV 时, 当前块的自然位置从 P 开始 (分块 prefill, INV-20)
+            start = int(past_kv[0][0].shape[1]) if (past_kv is not None and len(past_kv)) else 0
+            positions = np.arange(start, start + T)
         else:
             positions = np.asarray(position_ids)
 
         x = self.params["embed"][ids]                       # [B,T,d]
+        present: List[Tuple[np.ndarray, np.ndarray]] = []
         for l in range(c.n_layers):
             pre = f"layer{l}."
             h = ops.rms_norm(x, self.params[pre + "attn_norm"], c.norm_eps)
@@ -114,16 +134,31 @@ class Transformer:
             q = ops.apply_rope(q, positions, d, c.rope_base, c.rope_scaling).reshape(B, T, n_h, dh)
             k = ops.apply_rope(k, positions, n_kv * dh, c.rope_base, c.rope_scaling).reshape(B, T, n_kv, dh)
             v = v.reshape(B, T, n_kv, dh)
+            if past_kv is not None:
+                # 分块 prefill: 历史 K/V 拼在当前块之前 (INV-20 与整段 prefill 等价)
+                pk, pv = past_kv[l]
+                k = np.concatenate([pk, k], axis=1)          # [B,P+T,n_kv,dh]
+                v = np.concatenate([pv, v], axis=1)
+            if return_kv:
+                present.append((k, v))
             # GQA: 重复 kv 头 (INV-10 当 n_kv==n_h 时无变化)
             k = np.repeat(k, c.n_repeats, axis=2)
             v = np.repeat(v, c.n_repeats, axis=2)
-            # 注意力 [B,n_h,T,T] 因果 + pad 屏蔽
+            # 注意力 [B,n_h,T,Tk] 因果 + pad 屏蔽 (INV-11)
             scores = np.einsum("bthd,bThd->bhtT", q, k) * scale
-            causal = np.triu(np.ones((T, T), bool), k=1)
-            scores = np.where(causal, -1e30, scores)
+            if past_kv is not None and k.shape[1] != T:
+                # 显式"key 绝对位置 <= query 绝对位置"掩码 (等价因果, 支持历史 KV)
+                scores = np.where(self._allow_mask(positions, B, T, k.shape[1]),
+                                  scores, -1e30)
+            else:
+                causal = np.triu(np.ones((T, T), bool), k=1)
+                scores = np.where(causal, -1e30, scores)
             if key_padding_mask is not None:
-                # [B,1,1,T]: True=pad 位置不作为 key 被注意
+                # [B,1,1,Tk]: True=pad 位置不作为 key 被注意
                 pad_mask = np.asarray(key_padding_mask)[:, None, None, :]
+                if pad_mask.shape[-1] < scores.shape[-1]:
+                    pad = np.zeros((B, 1, 1, scores.shape[-1] - pad_mask.shape[-1]), dtype=bool)
+                    pad_mask = np.concatenate([pad, pad_mask], axis=-1)
                 scores = np.where(pad_mask, -1e30, scores)
             probs = numeric.stable_softmax(scores, axis=-1)
             ctx = np.einsum("bhtT,bThd->bthd", probs, v).reshape(B, T, d)
@@ -140,10 +175,31 @@ class Transformer:
                 ff = (silu * u) @ self.params[pre + "ffn_down"]
                 x = x + ff
         x = ops.rms_norm(x, self.params["final_norm"], c.norm_eps)
-        if return_hidden:
-            return x
-        logits = x @ self.params["lm_head"].T                 # [B,T,V]
-        return logits
+        out = x if return_hidden else x @ self.params["lm_head"].T   # [B,T,V]
+        if return_kv:
+            return out, present
+        return out
+
+    @staticmethod
+    def _allow_mask(positions: np.ndarray, B: int, T: int, T_k: int) -> np.ndarray:
+        """构造 ``[B|1, 1, T, T_k]`` 的可见性掩码: key 绝对位置 <= query 绝对位置。
+
+        INV-11 的显式形式 — 历史 key 位于 ``0..P-1`` 一律可见 (P <= 任意 query
+        位置), 当前块内部仍为上三角因果。
+        """
+        pos = np.asarray(positions, dtype=np.int64)
+        P = T_k - T
+        if pos.ndim == 1:
+            allow_cur = pos[:, None] >= pos[None, :]                     # [T,T]
+            allow_past = np.ones((T, P), dtype=bool) if P > 0 else \
+                np.zeros((T, 0), dtype=bool)
+            allow = np.concatenate([allow_past, allow_cur], axis=-1)      # [T,Tk]
+            return allow[None, None, :, :]
+        allow_cur = pos[:, :, None] >= pos[:, None, :]                    # [B,T,T]
+        allow_past = np.ones((B, T, P), dtype=bool) if P > 0 else \
+            np.zeros((B, T, 0), dtype=bool)
+        allow = np.concatenate([allow_past, allow_cur], axis=-1)          # [B,T,Tk]
+        return allow[:, None, :, :]
 
     def _moe(self, h2: np.ndarray, pre: str, c: ModelConfig) -> np.ndarray:
         B, T, d = h2.shape
@@ -203,6 +259,45 @@ class Transformer:
             model.params["lm_head"] = model.params["embed"]
         assert model.count_params() == manifest["total_params"], "param count mismatch"
         return model
+
+
+def verify_causal_mask(model: Transformer, token_ids: np.ndarray,
+                       position: int | None = None) -> tuple[bool, int]:
+    """INV-11 自检: 扰动 ``position`` 之后的 token, 之前位置的输出必须 bitwise 不变。
+
+    零重写: 判据与 PRD INV-11 一致 ("扰动未来 token, 输出 bitwise 不变"),
+    等价于 GPT/LLaMA 解码器的 causal masking 定义 (Vaswani et al. 2017;
+    Radford et al. 2018)。
+
+    Args:
+        model: 待检验的 ``Transformer``。
+        token_ids: 输入 id, 形状 ``[T]`` 或 ``[B,T]``。
+        position: 扰动分界点 (``> position`` 的 token 全部被替换); ``None`` 表示
+            ``max(0, T-2)`` —— 即至少保留一个"未来 token"可扰动 (若取 ``T-1``
+            则不存在未来 token, 检验将失去判别力)。
+
+    Returns:
+        ``(prefix_bitwise_equal, n_changed_after)``:
+        - ``prefix_bitwise_equal``: ``[0, position]`` 区间的输出是否逐位相同;
+        - ``n_changed_after``: ``position`` 之后发生变化的元素个数 (应 > 0,
+          否则说明扰动无效、检验不具有判别力)。
+    """
+    ids = np.asarray(token_ids)
+    if ids.ndim == 1:
+        ids = ids[None]
+    T = ids.shape[1]
+    pos = max(0, T - 2) if position is None else int(position)
+    assert 0 <= pos < T, "position 越界"
+    base = np.asarray(model.forward(ids))
+    vocab = int(model.cfg.vocab_size)
+    perturbed = ids.copy()
+    for j in range(pos + 1, T):
+        # 半词表偏移: 保证替换成一个完全不同的 token (embedding 显著不同)
+        perturbed[:, j] = (perturbed[:, j] + vocab // 2) % max(vocab, 1)
+    after = np.asarray(model.forward(perturbed))
+    prefix_equal = bool(np.array_equal(base[:, :pos + 1], after[:, :pos + 1]))
+    n_changed = int(np.count_nonzero(base[:, pos + 1:] != after[:, pos + 1:]))
+    return prefix_equal, n_changed
 
 
 def save_model(model: Transformer, dir_path: str) -> str:

@@ -2,6 +2,51 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.5.0] — 2026-10-17
+
+### 新增 (Added)
+- **补齐 6 个缺失模块，闭合 INV 覆盖缺口 33/42 → 42/42**（`docs/PRD.md` 已规范
+  但从未落地的实现）：
+  - `ifai/engine/prefill.py`（**INV-20** 分块 prefill ≡ 整段 prefill，`diff ≤ 1e-5`）。
+  - `ifai/train/checkpoint.py`（**INV-25** 梯度检查点 loss/grad ≡ 无检查点，
+    `diff ≤ 1e-5`；复用 Chen et al. 2016 重计算思想，提供
+    `checkpoint` / `checkpointed` / `checkpoint_segments` / `verify_checkpoint`）。
+  - `ifai/retrieval/chunk.py`（**INV-31** 分块覆盖完整性：拼接 == 原文 100%，
+    借鉴 Manning et al. 2008；支持 fixed / recursive 策略与 overlap）。
+  - `ifai/retrieval/persist.py`（**INV-32** 索引持久化一致性：save→load 后
+    检索结果 100% 一致）。
+  - `ifai/agent/trace.py`（**INV-35** 轨迹可回放：同 seed 重放 ≡ 原轨迹 100%，
+    比对口径 sha256 指纹；含 `Trace`/`TraceStep`/`TracedReActAgent`/`record_and_replay`）。
+  - `ifai/serve/guardrail.py`（**INV-38** 护栏：红队拦截率 ≥90%、正常误杀 ≤5%；
+    含 leetspeak/零宽/NFKC 归一化、规则集、PII 脱敏、`guard` 装饰器）。
+- 数据集 `assets/data/redteam_100.jsonl`（100 条攻击，11 类）与
+  `assets/data/benign_100.jsonl`（100 条正常提示）。
+- `ifai/models/transformer.py` 的 `forward` 新增 `past_kv` / `return_kv` 参数
+  （分块 prefill 历史 KV 传递，INV-20），并在文档中显式声明因果性（**INV-11**）。
+- 微指令生成器 `scripts/gen_micro_instructions.py` 新增 **X 横切层**
+  （扫描 `scripts/` 下审计脚本），使 **INV-41 / INV-42** 有落点；同时修复
+  INV 编号前导零导致覆盖统计重复计数的 bug。
+- `ifai selftest` 新增第 4 项门禁：**不变量覆盖（42/42 INV）**。
+
+### 变更 (Changed)
+- `ifai/train/trainer.py`：`forward` 重构为可分段重算的 `_layer_forward(x, layer)`，
+  新增 `enable_gradient_checkpointing()` 开关（默认关闭，向后兼容）。
+- 各包 `__init__.py` 导出新模块公开 API。
+- 微指令分解重生成：功能级 333 + 步骤级 1581 = **1914** 条（≥1024）。
+
+### 测试 (Tests)
+- 新增 `tests/unit/l2..l7/` 共 7 个测试文件、49 项测试，**全部真验证 PRD 阈值**
+  （非冒烟）：如分块 prefill 9 种块长 + KV cache 逐位对齐；分块覆盖 1000+ 组合
+  精确还原；轨迹指纹含异 seed 判别力对照；护栏真跑 200 条统计指标
+  （实测拦截 100% / 误杀 0%，均优于阈值）。
+- `pytest -q` → **104 passed**；三项审计 + 42/42 覆盖门禁全 exit 0。
+
+### 已知限制 (Known Limitations)
+- `ifai/serve/guardrail.py` 为**规则式护栏**（模式表 + 归一化），数据集与规则集
+  协同达成 100%/0%；这证明管线与度量闭环有效，但不等同于现代语义分类器的
+  泛化能力，不应视为完整安全保证。后续可替换为小型语义分类器（零重写：可接入
+  现成的 Llama Guard / NeMo Guardrails 权重）。
+
 ## [0.4.0] — 2026-10-16
 
 ### 新增 (Added)

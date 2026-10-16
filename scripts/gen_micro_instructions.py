@@ -2,7 +2,8 @@
 """生成「微指令级操作分解」(Micro-Instruction Decomposition)。
 
 零重写 · 集大成原则要求系统可被完整验证。本脚本对 ``ifai/`` 全部源码做 AST
-静态扫描, 把每一层 (L0–L9) 的操作分解为「微指令级」条目:
+静态扫描, 并对 ``scripts/`` 下的横切审计脚本做同样扫描 (**X 横切层**), 把
+每一层 (L0–L9 与 X) 的操作分解为「微指令级」条目:
 
 - **功能级微指令 (MI)**: 每个函数 / 方法 = 一条操作, 含层、模块、签名、
   用途 (docstring 首行)、引用的 INV 编号、复用的世界顶级来源标记。
@@ -11,6 +12,10 @@
 
 目标: 全栈微指令条目数 >= 1024 (项目当前核心关注点)。生成结果写入
 ``docs/MICRO_INSTRUCTIONS.md`` (纯源码派生, 可复现、可验证)。
+
+X 横切层是 INV-41 (分层依赖单向) 与 INV-42 (零重写审计) 的落点: 这两条不
+变量的实现本身就是 ``scripts/`` 下的静态审计脚本, 因此必须与十层一同登记,
+否则 42 条不变量的覆盖统计会缺项。
 
 用法:
     python scripts/gen_micro_instructions.py
@@ -34,6 +39,9 @@ PACKAGE_RANK = {
     "core": 0, "rng": 1, "models": 2, "engine": 3, "train": 4,
     "retrieval": 5, "agent": 6, "serve": 7, "eval": 8, "cli": 9, "sdk": 9,
 }
+# X 横切层: 不落在任何单一「层内模块」上的审计/门禁 (INV-41 / INV-42)
+CROSS_LAYER = 10
+
 LAYER_NAMES = {
     0: "L0 算子/内核 (Operator/Kernel)",
     1: "L1 张量/数值基础 (Tensor/Numeric)",
@@ -45,6 +53,7 @@ LAYER_NAMES = {
     7: "L7 服务/编排 (Service/Orchestration)",
     8: "L8 评估/对齐 (Evaluation/Alignment)",
     9: "L9 应用/接口 (Application/Interface)",
+    CROSS_LAYER: "X 横切审计 (Cross-cutting Audits)",
 }
 
 INV_RE = re.compile(r"INV[ -]?(\d{1,2})")
@@ -74,14 +83,18 @@ def layer_of(path: str) -> int:
 
 
 def extract_invs(text: str) -> set:
-    """提取文本中的 INV 编号, 支持单条与 `INV-01..09` 区间展开。"""
+    """提取文本中的 INV 编号, 支持单条与 `INV-01..09` 区间展开。
+
+    编号统一归一为**十进制整数字符串** (``"01"`` 与 ``"1"`` 视为同一条),
+    否则覆盖统计会因前导零而重复计数。
+    """
     found = set()
     for m in INV_RANGE_RE.finditer(text):
         a, b = int(m.group(1)), int(m.group(2))
         for x in range(min(a, b), max(a, b) + 1):
             found.add(str(x))
     for m in INV_RE.finditer(text):
-        found.add(m.group(1))
+        found.add(str(int(m.group(1))))
     return found
 
 
@@ -160,9 +173,14 @@ def _expr(n) -> str:
     return type(n).__name__
 
 
-def collect(root: str):
-    """返回 {layer: [entries]} 与全局统计。每个 entry 为 dict。"""
-    by_layer = {i: [] for i in range(10)}
+def collect(root: str, force_layer: int | None = None):
+    """返回 {layer: [entries]} 与全局统计。每个 entry 为 dict。
+
+    Args:
+        root: 源码根目录 (``ifai/`` 或 ``scripts/``)。
+        force_layer: 显式指定层号 (``scripts/`` 用 ``CROSS_LAYER`` = X 横切层)。
+    """
+    by_layer = {i: [] for i in range(CROSS_LAYER + 1)}
     total_func = 0
     total_steps = 0
     inv_hits = set()
@@ -176,8 +194,11 @@ def collect(root: str):
                 tree = ast.parse(src, filename=path)
             except (OSError, SyntaxError):
                 continue
-            layer = layer_of(path)
+            layer = force_layer if force_layer is not None else layer_of(path)
             rel = os.path.relpath(path, root)
+            if force_layer is not None:
+                # 横切层条目标注为仓库根相对路径, 与 ifai/ 内模块区分
+                rel = os.path.join(os.path.basename(os.path.normpath(root)), rel)
             module_doc_inv = extract_invs(ast.get_docstring(tree) or "")
 
             # 模块级函数
@@ -249,7 +270,8 @@ def render(by_layer, total_func, total_steps, inv_hits, out_path):
     lines = []
     lines.append("# 微指令级操作分解 (Micro-Instruction Decomposition)")
     lines.append("")
-    lines.append("> 由 `scripts/gen_micro_instructions.py` 对 `ifai/` 源码 AST 静态扫描自动生成。")
+    lines.append("> 由 `scripts/gen_micro_instructions.py` 对 `ifai/` (L0–L9) 与 `scripts/` "
+                 "(X 横切层) 源码 AST 静态扫描自动生成。")
     lines.append("> 零重写 · 集大成: 每条微指令标注其复用的世界顶级来源与所服务的可验证不变量 (INV)。")
     lines.append("")
     total_mi = total_func + total_steps
@@ -260,18 +282,19 @@ def render(by_layer, total_func, total_steps, inv_hits, out_path):
     lines.append("")
     lines.append("| 层 | 说明 | 功能级 | 步骤级 | 合计 |")
     lines.append("| --- | --- | ---: | ---: | ---: |")
-    for i in range(10):
+    for i in range(CROSS_LAYER + 1):
         entries = by_layer[i]
-        funcs = sum(1 for e in entries if not e["is_class"]) + sum(1 for e in entries if e["is_class"])
-        # 重新计: entries 已含 class + methods + 模块函数
+        # entries 已含 class + methods + 模块函数
         fcount = len(entries)
         scount = sum(len(e["steps"]) for e in entries)
-        lines.append(f"| L{i} | {LAYER_NAMES[i]} | {fcount} | {scount} | {fcount + scount} |")
+        tag = "X" if i == CROSS_LAYER else f"L{i}"
+        lines.append(f"| {tag} | {LAYER_NAMES[i]} | {fcount} | {scount} | {fcount + scount} |")
     lines.append("")
     mid = 1
-    for i in range(10):
+    for i in range(CROSS_LAYER + 1):
         entries = by_layer[i]
-        lines.append(f"## {LAYER_NAMES[i]}")
+        lines.append(f"## {LAYER_NAMES[i]}" if i == CROSS_LAYER
+                     else f"## L{i} {LAYER_NAMES[i].split(' ', 1)[1]}")
         lines.append("")
         for e in entries:
             tag = "【类】" if e["is_class"] else ""
@@ -296,14 +319,27 @@ def render(by_layer, total_func, total_steps, inv_hits, out_path):
 def main() -> int:
     ap = argparse.ArgumentParser(description="生成微指令级操作分解")
     ap.add_argument("--root", default=os.path.join(REPO, "ifai"))
+    ap.add_argument("--scripts-root", default=os.path.join(REPO, "scripts"),
+                    help="横切审计脚本根目录 (X 层, INV-41/INV-42 落点)")
     ap.add_argument("--out", default=os.path.join(REPO, "docs", "MICRO_INSTRUCTIONS.md"))
     args = ap.parse_args()
+
+    # 1) 十层: ifai/ 源码
     by_layer, total_func, total_steps, inv_hits = collect(args.root)
+    # 2) X 横切层: scripts/ 审计脚本 (INV-41 分层依赖 / INV-42 零重写审计)
+    if os.path.isdir(args.scripts_root):
+        x_layer, f_x, s_x, inv_x = collect(args.scripts_root, force_layer=CROSS_LAYER)
+        for k, entries in x_layer.items():
+            by_layer[k].extend(entries)
+        total_func += f_x
+        total_steps += s_x
+        inv_hits |= inv_x
     text, total_mi = render(by_layer, total_func, total_steps, inv_hits, args.out)
     print(f"功能级微指令: {total_func}")
     print(f"步骤级微指令: {total_steps}")
     print(f"总计微指令: {total_mi}  (目标 >= 1024)")
     print(f"覆盖 INV: {sorted(int(x) for x in inv_hits)}")
+    print(f"覆盖 INV 数: {len(inv_hits)}")
     print(f"输出: {args.out}")
     return 0
 

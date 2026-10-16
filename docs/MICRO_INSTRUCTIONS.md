@@ -1,9 +1,9 @@
 # 微指令级操作分解 (Micro-Instruction Decomposition)
 
-> 由 `scripts/gen_micro_instructions.py` 对 `ifai/` 源码 AST 静态扫描自动生成。
+> 由 `scripts/gen_micro_instructions.py` 对 `ifai/` (L0–L9) 与 `scripts/` (X 横切层) 源码 AST 静态扫描自动生成。
 > 零重写 · 集大成: 每条微指令标注其复用的世界顶级来源与所服务的可验证不变量 (INV)。
 
-**总计**: 功能级微指令 207 条 + 步骤级微指令 909 条 = **1116** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 26, 27, 28, 29, 30, 33, 34, 36, 37, 39, 40]。
+**总计**: 功能级微指令 333 条 + 步骤级微指令 1581 条 = **1914** 条; 覆盖 INV [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]。
 
 ## 分层汇总
 
@@ -11,20 +11,21 @@
 | --- | --- | ---: | ---: | ---: |
 | L0 | L0 算子/内核 (Operator/Kernel) | 16 | 107 | 123 |
 | L1 | L1 张量/数值基础 (Tensor/Numeric) | 4 | 9 | 13 |
-| L2 | L2 模型架构 (Model Architecture) | 30 | 150 | 180 |
-| L3 | L3 推理引擎 (Inference Engine) | 17 | 72 | 89 |
-| L4 | L4 训练/微调 (Training/Finetune) | 52 | 254 | 306 |
-| L5 | L5 检索/记忆 (Retrieval/Memory) | 28 | 126 | 154 |
-| L6 | L6 智能体 (Agent) | 32 | 97 | 129 |
-| L7 | L7 服务/编排 (Service/Orchestration) | 11 | 33 | 44 |
+| L2 | L2 模型架构 (Model Architecture) | 32 | 172 | 204 |
+| L3 | L3 推理引擎 (Inference Engine) | 31 | 127 | 158 |
+| L4 | L4 训练/微调 (Training/Finetune) | 61 | 328 | 389 |
+| L5 | L5 检索/记忆 (Retrieval/Memory) | 61 | 272 | 333 |
+| L6 | L6 智能体 (Agent) | 57 | 188 | 245 |
+| L7 | L7 服务/编排 (Service/Orchestration) | 29 | 102 | 131 |
 | L8 | L8 评估/对齐 (Evaluation/Alignment) | 10 | 38 | 48 |
 | L9 | L9 应用/接口 (Application/Interface) | 7 | 23 | 30 |
+| X | X 横切审计 (Cross-cutting Audits) | 25 | 215 | 240 |
 
 ## L0 算子/内核 (Operator/Kernel)
 
 ### MI-0001 logsumexp(x, axis, keepdims)
 - 模块: `core\numeric.py`
-- 用途: 数值稳定的 log(sum(exp(x)))。  ·  INV 08
+- 用途: 数值稳定的 log(sum(exp(x)))。  ·  INV 8
 - 微指令步骤 (6):
   - 赋值 x ← np.asarray(…)
   - 赋值 xmax ← np.max(…)
@@ -35,7 +36,7 @@
 
 ### MI-0002 stable_softmax(logits, axis)
 - 模块: `core\numeric.py`
-- 用途: 平移不变的 softmax (INV-09)。  ·  INV 09
+- 用途: 平移不变的 softmax (INV-09)。  ·  INV 9
 - 微指令步骤 (4):
   - 赋值 logits ← np.asarray(…)
   - 赋值 z ← logits sub np.max(…)
@@ -44,7 +45,7 @@
 
 ### MI-0003 safe_cross_entropy(logits, targets, ignore_index, label_smoothing)
 - 模块: `core\numeric.py`
-- 用途: 返回 (loss 标量, 对 logits 的梯度)。  ·  INV 08
+- 用途: 返回 (loss 标量, 对 logits 的梯度)。  ·  INV 8
 - 微指令步骤 (17):
   - 赋值 logits ← np.asarray(…)
   - 赋值 targets ← np.asarray(…)
@@ -75,7 +76,7 @@
 
 ### MI-0005 rms_norm(x, weight, eps)
 - 模块: `core\ops.py`
-- 用途: RMSNorm: x / sqrt(mean(x^2)+eps) * weight。INV-06 范数归一。  ·  INV 06  ·  复用 RMSNorm
+- 用途: RMSNorm: x / sqrt(mean(x^2)+eps) * weight。INV-06 范数归一。  ·  INV 6  ·  复用 RMSNorm
 - 微指令步骤 (3):
   - 赋值 x ← np.asarray(…)
   - 赋值 ms ← np.mean(…)
@@ -83,7 +84,7 @@
 
 ### MI-0006 _rope_freqs(dim, base, scaling)
 - 模块: `core\ops.py`
-- 用途: 生成旋转频率 (NTK-aware: 当 scaling≠1 拉伸 base)。  ·  INV 01,02,03,04,05,06,07  ·  复用 NTK
+- 用途: 生成旋转频率 (NTK-aware: 当 scaling≠1 拉伸 base)。  ·  INV 1,2,3,4,5,6,7  ·  复用 NTK
 - 微指令步骤 (4):
   - 赋值 half ← dim floordiv 2
   - 赋值 inv ← 1.0 div base pow np.arange(…) div half
@@ -92,7 +93,7 @@
 
 ### MI-0007 apply_rope(x, positions, dim, base, scaling)
 - 模块: `core\ops.py`
-- 用途: 对最后一维 (隐维) 施加旋转位置编码。  ·  INV 03,16
+- 用途: 对最后一维 (隐维) 施加旋转位置编码。  ·  INV 16,3
 - 微指令步骤 (18):
   - 赋值 x ← np.asarray(…)
   - 判断 Compare
@@ -115,7 +116,7 @@
 
 ### MI-0008 swiglu(x, w1, w2, b1, b2)
 - 模块: `core\ops.py`
-- 用途: SwiGLU(x) = (x·W1 + b1) ⊙ silu(x·W2 + b2) · W? — 这里实现 SwiGLU FFN 内核。  ·  INV 05  ·  复用 SwiGLU
+- 用途: SwiGLU(x) = (x·W1 + b1) ⊙ silu(x·W2 + b2) · W? — 这里实现 SwiGLU FFN 内核。  ·  INV 5  ·  复用 SwiGLU
 - 微指令步骤 (6):
   - 赋值 x ← np.asarray(…)
   - 赋值 (w1, w2) ← [np.asarray(…), np.asarray(…)]
@@ -126,7 +127,7 @@
 
 ### MI-0009 tiled_matmul(a, b, block)
 - 模块: `core\ops.py`
-- 用途: 分块矩阵乘 (INV-01 == a@b)。分块提升 cache 命中，复刻 BLAS 思想。  ·  INV 01
+- 用途: 分块矩阵乘 (INV-01 == a@b)。分块提升 cache 命中，复刻 BLAS 思想。  ·  INV 1
 - 微指令步骤 (7):
   - 赋值 a ← np.asarray(…)
   - 赋值 b ← np.asarray(…)
@@ -138,7 +139,7 @@
 
 ### MI-0010 attention_flash(q, k, v, scale, causal)
 - 模块: `core\ops.py`
-- 用途: 在线 softmax 的因果注意力 (INV-02 == 朴素)。  ·  INV 02  ·  复用 Dao
+- 用途: 在线 softmax 的因果注意力 (INV-02 == 朴素)。  ·  INV 2  ·  复用 Dao
 - 微指令步骤 (8):
   - 赋值 q ← np.asarray(…)
   - 赋值 k ← np.asarray(…)
@@ -151,7 +152,7 @@
 
 ### MI-0011 attention_naive(q, k, v, scale, causal)
 - 模块: `core\ops.py`
-- 用途: (无 docstring)  ·  INV 01,02,03,04,05,06,07
+- 用途: (无 docstring)  ·  INV 1,2,3,4,5,6,7
 - 微指令步骤 (7):
   - 赋值 q ← np.asarray(…)
   - 赋值 k ← np.asarray(…)
@@ -163,7 +164,7 @@
 
 ### MI-0012 quantize_int8_per_channel(x, axis)
 - 模块: `core\quant.py`
-- 用途: 对称 per-channel RTN 量化到 INT8。  ·  INV 03,07  ·  复用 int8
+- 用途: 对称 per-channel RTN 量化到 INT8。  ·  INV 3,7  ·  复用 int8
 - 微指令步骤 (5):
   - 赋值 x ← np.asarray(…)
   - 赋值 max_abs ← np.max(…)
@@ -173,13 +174,13 @@
 
 ### MI-0013 dequantize_int8(q, scale)
 - 模块: `core\quant.py`
-- 用途: (无 docstring)  ·  INV 03,07
+- 用途: (无 docstring)  ·  INV 3,7
 - 微指令步骤 (1):
   - 返回 np.asarray(…) mult np.asarray(…)
 
 ### MI-0014 pack_int4(x)
 - 模块: `core\quant.py`
-- 用途: 把 int8 范围 [-8,7] 的数组打包成 uint8 (每字节两个数, 低4位先)。  ·  INV 03,07  ·  复用 int8
+- 用途: 把 int8 范围 [-8,7] 的数组打包成 uint8 (每字节两个数, 低4位先)。  ·  INV 3,7  ·  复用 int8
 - 微指令步骤 (7):
   - 赋值 x ← Call.ravel(…)
   - 赋值 x ← Call.astype(…)
@@ -191,7 +192,7 @@
 
 ### MI-0015 unpack_int4(packed, n)
 - 模块: `core\quant.py`
-- 用途: 解包 int4 (符号扩展回 int8 范围 [-8,7])。  ·  INV 03,07  ·  复用 int4, int8
+- 用途: 解包 int4 (符号扩展回 int8 范围 [-8,7])。  ·  INV 3,7  ·  复用 int4, int8
 - 微指令步骤 (8):
   - 赋值 p ← np.asarray(…)
   - 赋值 lo ← BinOp.astype(…)
@@ -204,7 +205,7 @@
 
 ### MI-0016 quantize_fp16(x)
 - 模块: `core\quant.py`
-- 用途: 模拟 fp16 往返 (numpy 无纯 fp16 计算，这里用 float16 dtype 模拟量化误差)。  ·  INV 03,07
+- 用途: 模拟 fp16 往返 (numpy 无纯 fp16 计算，这里用 float16 dtype 模拟量化误差)。  ·  INV 3,7
 - 微指令步骤 (2):
   - 赋值 x ← np.asarray(…)
   - 返回 Call.astype(…)
@@ -414,8 +415,9 @@
 
 ### MI-0038 【类】Transformer.Transformer(类)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
-- 微指令步骤 (10):
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
+- 微指令步骤 (11):
+  - FunctionDef
   - FunctionDef
   - FunctionDef
   - FunctionDef
@@ -429,21 +431,21 @@
 
 ### MI-0039 Transformer.__init__(self, config)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (2):
   - 赋值 self.cfg ← config
   - 调用 self._init_params(…)
 
 ### MI-0040 Transformer._normal(self, *shape)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (2):
   - 赋值 r ← rng.get_rng(…)
   - 返回 BinOp.astype(…)
 
 ### MI-0041 Transformer._init_params(self)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (10):
   - 赋值 c ← self.cfg
   - 赋值 (V, d) ← [c.vocab_size, c.d_model]
@@ -458,21 +460,21 @@
 
 ### MI-0042 Transformer.tie_word_embeddings(self)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 装饰器: property
 - 微指令步骤 (1):
   - 返回 self.cfg.tie_word_embeddings
 
 ### MI-0043 Transformer.count_params(self)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (1):
   - 返回 int(…)
 
-### MI-0044 Transformer.forward(self, token_ids, return_hidden, position_ids, key_padding_mask)
+### MI-0044 Transformer.forward(self, token_ids, return_hidden, position_ids, key_padding_mask, past_kv, return_kv)
 - 模块: `models\transformer.py`
-- 用途: 前向。  ·  INV 16
-- 微指令步骤 (13):
+- 用途: 前向。  ·  INV 11,16,20
+- 微指令步骤 (14):
   - 赋值 c ← self.cfg
   - 赋值 ids ← np.asarray(…)
   - 判断 Compare
@@ -481,15 +483,29 @@
   - 赋值 scale ← 1.0 div dh pow 0.5
   - 判断 Compare
   - 赋值 x ← self.params[…][…]
+  - 声明并赋值 present ← []
   - 遍历 l ∈ range(…)
   - 赋值 x ← ops.rms_norm(…)
-  - 判断 return_hidden
-  - 赋值 logits ← x matmult self.params[…].T
-  - 返回 logits
+  - 赋值 out ← IfExp
+  - 判断 return_kv
+  - 返回 out
 
-### MI-0045 Transformer._moe(self, h2, pre, c)
+### MI-0045 Transformer._allow_mask(positions, B, T, T_k)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: 构造 ``[B|1, 1, T, T_k]`` 的可见性掩码: key 绝对位置 <= query 绝对位置。  ·  INV 11
+- 装饰器: staticmethod
+- 微指令步骤 (7):
+  - 赋值 pos ← np.asarray(…)
+  - 赋值 P ← T_k sub T
+  - 判断 Compare
+  - 赋值 allow_cur ← Compare
+  - 赋值 allow_past ← IfExp
+  - 赋值 allow ← np.concatenate(…)
+  - 返回 allow[…]
+
+### MI-0046 Transformer._moe(self, h2, pre, c)
+- 模块: `models\transformer.py`
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (8):
   - 赋值 (B, T, d) ← h2.shape
   - 赋值 router_logits ← h2 matmult self.params[…]
@@ -500,17 +516,17 @@
   - 遍历 e ∈ range(…)
   - 返回 out
 
-### MI-0046 Transformer.logits_next(self, token_ids)
+### MI-0047 Transformer.logits_next(self, token_ids)
 - 模块: `models\transformer.py`
-- 用途: 给定已生成序列, 返回最后一个位置的 logits [V]。  ·  INV 10,12,13,14
+- 用途: 给定已生成序列, 返回最后一个位置的 logits [V]。  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (3):
   - 赋值 logits ← self.forward(…)
   - 赋值 last ← logits[…]
   - 返回 last
 
-### MI-0047 Transformer.save(self, dir_path)
+### MI-0048 Transformer.save(self, dir_path)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (7):
   - 调用 os.makedirs(…)
   - 调用 np.savez(…)
@@ -520,9 +536,9 @@
   - 上下文管理 (with)
   - 返回 dir_path
 
-### MI-0048 Transformer.load(cls, dir_path, verify)
+### MI-0049 Transformer.load(cls, dir_path, verify)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 装饰器: classmethod
 - 微指令步骤 (12):
   - 上下文管理 (with)
@@ -538,21 +554,39 @@
   - Assert
   - 返回 model
 
-### MI-0049 save_model(model, dir_path)
+### MI-0050 verify_causal_mask(model, token_ids, position)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: INV-11 自检: 扰动 ``position`` 之后的 token, 之前位置的输出必须 bitwise 不变。  ·  INV 11  ·  复用 Radford, Vaswani
+- 微指令步骤 (13):
+  - 赋值 ids ← np.asarray(…)
+  - 判断 Compare
+  - 赋值 T ← ids.shape[…]
+  - 赋值 pos ← IfExp
+  - Assert
+  - 赋值 base ← np.asarray(…)
+  - 赋值 vocab ← int(…)
+  - 赋值 perturbed ← ids.copy(…)
+  - 遍历 j ∈ range(…)
+  - 赋值 after ← np.asarray(…)
+  - 赋值 prefix_equal ← bool(…)
+  - 赋值 n_changed ← int(…)
+  - 返回 [prefix_equal, n_changed]
+
+### MI-0051 save_model(model, dir_path)
+- 模块: `models\transformer.py`
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (1):
   - 返回 model.save(…)
 
-### MI-0050 load_model(dir_path, verify)
+### MI-0052 load_model(dir_path, verify)
 - 模块: `models\transformer.py`
-- 用途: (无 docstring)  ·  INV 10,12,13,14
+- 用途: (无 docstring)  ·  INV 10,11,12,13,14,20
 - 微指令步骤 (1):
   - 返回 Transformer.load(…)
 
 ## L3 推理引擎 (Inference Engine)
 
-### MI-0051 【类】PagedKVCache.PagedKVCache(类)
+### MI-0053 【类】PagedKVCache.PagedKVCache(类)
 - 模块: `engine\kvcache.py`
 - 用途: 按序列分块存储 K/V。K 与 V 各用独立 block 缓冲。  ·  INV 15
 - 微指令步骤 (6):
@@ -563,7 +597,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0052 PagedKVCache.__init__(self, block_size, kv_dim, max_blocks)
+### MI-0054 PagedKVCache.__init__(self, block_size, kv_dim, max_blocks)
 - 模块: `engine\kvcache.py`
 - 用途: (无 docstring)  ·  INV 15
 - 微指令步骤 (9):
@@ -577,7 +611,7 @@
   - 赋值 self._free ← list(…)
   - 赋值 self._next_seq ← 0
 
-### MI-0053 PagedKVCache.new_sequence(self)
+### MI-0055 PagedKVCache.new_sequence(self)
 - 模块: `engine\kvcache.py`
 - 用途: (无 docstring)  ·  INV 15
 - 微指令步骤 (5):
@@ -587,13 +621,13 @@
   - 赋值 self.seq_len[…] ← 0
   - 返回 sid
 
-### MI-0054 PagedKVCache._ensure_block(self, sid)
+### MI-0056 PagedKVCache._ensure_block(self, sid)
 - 模块: `engine\kvcache.py`
 - 用途: (无 docstring)  ·  INV 15
 - 微指令步骤 (1):
   - 判断 Compare
 
-### MI-0055 PagedKVCache.append(self, sid, k, v)
+### MI-0057 PagedKVCache.append(self, sid, k, v)
 - 模块: `engine\kvcache.py`
 - 用途: 追加单个 token 的 K,V (各 [kv_dim])。  ·  INV 15
 - 微指令步骤 (8):
@@ -606,7 +640,7 @@
   - 赋值 self.v_blocks[…] ← v
   - 累算 self.seq_len[…] add 1
 
-### MI-0056 PagedKVCache.get_kv(self, sid)
+### MI-0058 PagedKVCache.get_kv(self, sid)
 - 模块: `engine\kvcache.py`
 - 用途: 返回该序列截至当前的稠密 K,V [L, kv_dim] (INV-15 等价性来源)。  ·  INV 15
 - 微指令步骤 (5):
@@ -616,14 +650,140 @@
   - 遍历 l ∈ range(…)
   - 返回 [K, V]
 
-### MI-0057 PagedKVCache.memory_blocks_used(self)
+### MI-0059 PagedKVCache.memory_blocks_used(self)
 - 模块: `engine\kvcache.py`
 - 用途: (无 docstring)  ·  INV 15
 - 装饰器: property
 - 微指令步骤 (1):
   - 返回 self.max_blocks sub len(…)
 
-### MI-0058 【类】Sampler.Sampler(类)
+### MI-0060 【类】PrefillResult.PrefillResult(类)
+- 模块: `engine\prefill.py`
+- 用途: 一次 prefill 的产物。  ·  INV 11,15,20
+- 微指令步骤 (6):
+  - 声明并赋值 logits ← ∅
+  - 声明并赋值 kv_cache ← field(…)
+  - 声明并赋值 n_chunks ← 1
+  - 声明并赋值 chunk_size ← 0
+  - FunctionDef
+  - FunctionDef
+
+### MI-0061 PrefillResult.n_tokens(self)
+- 模块: `engine\prefill.py`
+- 用途: prefill 的 token 数 (不含批维)。  ·  INV 11,15,20
+- 装饰器: property
+- 微指令步骤 (1):
+  - 返回 int(…)
+
+### MI-0062 PrefillResult.last_logits(self)
+- 模块: `engine\prefill.py`
+- 用途: 返回最后一个位置的 logits ``[B, V]`` (decode 的起点)。  ·  INV 11,15,20
+- 微指令步骤 (1):
+  - 返回 self.logits[…]
+
+### MI-0063 【类】ChunkedPrefill.ChunkedPrefill(类)
+- 模块: `engine\prefill.py`
+- 用途: 分块 prefill 与整段 prefill 的统一入口 (INV-20)。  ·  INV 20
+- 微指令步骤 (6):
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0064 ChunkedPrefill.__init__(self, model, chunk_size, tol)
+- 模块: `engine\prefill.py`
+- 用途: (无 docstring)  ·  INV 11,15,20
+- 微指令步骤 (4):
+  - 判断 Compare
+  - 赋值 self.model ← model
+  - 赋值 self.chunk_size ← int(…)
+  - 赋值 self.tol ← float(…)
+
+### MI-0065 ChunkedPrefill.run(self, token_ids, chunk_size, return_hidden)
+- 模块: `engine\prefill.py`
+- 用途: 分块累积前向: 每块只看历史 KV, 峰值激活与块长成正比。  ·  INV 11,15,20
+- 微指令步骤 (11):
+  - 赋值 ids ← np.asarray(…)
+  - 判断 Compare
+  - 赋值 (B, T) ← ids.shape
+  - 赋值 cs ← IfExp
+  - 赋值 cs ← max(…)
+  - 声明并赋值 kv ← None
+  - 声明并赋值 parts ← []
+  - 赋值 n_chunks ← 0
+  - 遍历 start ∈ range(…)
+  - 赋值 logits ← IfExp
+  - 返回 PrefillResult(…)
+
+### MI-0066 ChunkedPrefill.run_whole(self, token_ids, return_hidden)
+- 模块: `engine\prefill.py`
+- 用途: 整段一次性前向 (INV-20 的对照基准)。  ·  INV 20
+- 微指令步骤 (5):
+  - 赋值 ids ← np.asarray(…)
+  - 判断 Compare
+  - 赋值 T ← ids.shape[…]
+  - 赋值 (out, present) ← self.model.forward(…)
+  - 返回 PrefillResult(…)
+
+### MI-0067 ChunkedPrefill.last_logits(self, token_ids, chunk_size)
+- 模块: `engine\prefill.py`
+- 用途: 分块 prefill 后取末位 logits ``[B, V]`` (供 decode 使用)。  ·  INV 11,15,20
+- 微指令步骤 (1):
+  - 返回 Call.last_logits(…)
+
+### MI-0068 ChunkedPrefill.verify(self, token_ids, chunk_size, tol)
+- 模块: `engine\prefill.py`
+- 用途: 对比分块 prefill 与整段 prefill, 返回可断言的报告。  ·  INV 11,15,20
+- 微指令步骤 (5):
+  - 赋值 tol ← IfExp
+  - 赋值 chunked ← self.run(…)
+  - 赋值 whole ← self.run_whole(…)
+  - 赋值 diff ← max_abs_diff(…)
+  - 返回 Dict
+
+### MI-0069 ChunkedPrefill.verify_kv(self, token_ids, chunk_size, tol)
+- 模块: `engine\prefill.py`
+- 用途: 分块与整段两条路径的 KV cache 是否逐位等价 (INV-20 的更强判据)。  ·  INV 16,20
+- 微指令步骤 (7):
+  - 赋值 tol ← IfExp
+  - 赋值 chunked ← self.run(…)
+  - 赋值 whole ← self.run_whole(…)
+  - 声明并赋值 diffs ← []
+  - 遍历 ((kc, vc), (kw, vw)) ∈ zip(…)
+  - 赋值 worst ← IfExp
+  - 返回 Dict
+
+### MI-0070 max_abs_diff(a, b)
+- 模块: `engine\prefill.py`
+- 用途: 两个数组的最大绝对差 (形状不一致时返回 ``inf``)。  ·  INV 11,15,20
+- 微指令步骤 (5):
+  - 赋值 a ← np.asarray(…)
+  - 赋值 b ← np.asarray(…)
+  - 判断 Compare
+  - 判断 Compare
+  - 返回 float(…)
+
+### MI-0071 chunked_prefill(model, token_ids, chunk_size)
+- 模块: `engine\prefill.py`
+- 用途: 函数式入口: 一次分块 prefill。  ·  INV 11,15,20
+- 微指令步骤 (1):
+  - 返回 Call.run(…)
+
+### MI-0072 full_prefill(model, token_ids)
+- 模块: `engine\prefill.py`
+- 用途: 函数式入口: 整段 prefill (基准)。  ·  INV 11,15,20
+- 微指令步骤 (1):
+  - 返回 Call.run_whole(…)
+
+### MI-0073 verify_prefill(model, token_ids, chunk_size, tol)
+- 模块: `engine\prefill.py`
+- 用途: 函数式入口: INV-20 等价性报告。  ·  INV 20
+- 微指令步骤 (1):
+  - 返回 Call.verify(…)
+
+### MI-0074 【类】Sampler.Sampler(类)
 - 模块: `engine\sampler.py`
 - 用途: (无 docstring)  ·  INV 18,19
 - 微指令步骤 (4):
@@ -632,13 +792,13 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0059 Sampler.__init__(self, seed)
+### MI-0075 Sampler.__init__(self, seed)
 - 模块: `engine\sampler.py`
 - 用途: (无 docstring)  ·  INV 18,19
 - 微指令步骤 (1):
   - 赋值 self._rng ← IfExp
 
-### MI-0060 Sampler.probs(self, logits, temperature, top_k, top_p, min_p, repetition_penalty, forbidden)
+### MI-0076 Sampler.probs(self, logits, temperature, top_k, top_p, min_p, repetition_penalty, forbidden)
 - 模块: `engine\sampler.py`
 - 用途: (无 docstring)  ·  INV 18,19
 - 微指令步骤 (11):
@@ -654,7 +814,7 @@
   - 赋值 s ← probs.sum(…)
   - 返回 probs div s
 
-### MI-0061 Sampler.greedy(self, logits, forbidden)
+### MI-0077 Sampler.greedy(self, logits, forbidden)
 - 模块: `engine\sampler.py`
 - 用途: (无 docstring)  ·  INV 18,19
 - 微指令步骤 (3):
@@ -662,7 +822,7 @@
   - 判断 forbidden
   - 返回 int(…)
 
-### MI-0062 Sampler.sample(self, logits, temperature, top_k, top_p, min_p, repetition_penalty, forbidden)
+### MI-0078 Sampler.sample(self, logits, temperature, top_k, top_p, min_p, repetition_penalty, forbidden)
 - 模块: `engine\sampler.py`
 - 用途: (无 docstring)  ·  INV 18,19
 - 微指令步骤 (3):
@@ -670,20 +830,20 @@
   - 判断 Compare
   - 返回 int(…)
 
-### MI-0063 【类】ContinuousScheduler.ContinuousScheduler(类)
+### MI-0079 【类】ContinuousScheduler.ContinuousScheduler(类)
 - 模块: `engine\scheduler.py`
 - 用途: 对同一批 prompt 做并行贪心生成。  ·  INV 16
 - 微指令步骤 (2):
   - FunctionDef
   - FunctionDef
 
-### MI-0064 ContinuousScheduler.__init__(self, model_forward)
+### MI-0080 ContinuousScheduler.__init__(self, model_forward)
 - 模块: `engine\scheduler.py`
 - 用途: (无 docstring)  ·  INV 16
 - 微指令步骤 (1):
   - 赋值 self.fwd ← model_forward
 
-### MI-0065 ContinuousScheduler.generate(self, prompts, max_new_tokens, eos_id, greedy, pad_id)
+### MI-0081 ContinuousScheduler.generate(self, prompts, max_new_tokens, eos_id, greedy, pad_id)
 - 模块: `engine\scheduler.py`
 - 用途: (无 docstring)  ·  INV 16
 - 微指令步骤 (5):
@@ -693,7 +853,7 @@
   - 遍历 _ ∈ range(…)
   - 返回 ListComp
 
-### MI-0066 speculative_decode(target_next, draft_next, prompt, gamma, max_new_tokens, eos_id, greedy, temperature)
+### MI-0082 speculative_decode(target_next, draft_next, prompt, gamma, max_new_tokens, eos_id, greedy, temperature)
 - 模块: `engine\speculative.py`
 - 用途: 返回新生成的 token 列表 (不含 prompt)。  ·  INV 17
 - 微指令步骤 (4):
@@ -702,7 +862,7 @@
   - 当 Compare 循环
   - 返回 seq[…]
 
-### MI-0067 _softmax(x)
+### MI-0083 _softmax(x)
 - 模块: `engine\speculative.py`
 - 用途: (无 docstring)  ·  INV 17
 - 微指令步骤 (3):
@@ -712,7 +872,7 @@
 
 ## L4 训练/微调 (Training/Finetune)
 
-### MI-0068 _unbroadcast(grad, shape)
+### MI-0084 _unbroadcast(grad, shape)
 - 模块: `train\autodiff.py`
 - 用途: 把梯度累加值收缩回 ``shape`` (处理 numpy 广播的反向, INV-22)。  ·  INV 22
 - 微指令步骤 (4):
@@ -721,7 +881,7 @@
   - 遍历 i ∈ range(…)
   - 返回 grad
 
-### MI-0069 【类】Tensor.Tensor(类)
+### MI-0085 【类】Tensor.Tensor(类)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (25):
@@ -751,7 +911,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0070 Tensor.__init__(self, data, _children, _op, requires_grad)
+### MI-0086 Tensor.__init__(self, data, _children, _op, requires_grad)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -761,20 +921,20 @@
   - 赋值 self._backward ← Lambda
   - 赋值 self._prev ← list(…)
 
-### MI-0071 Tensor.shape(self)
+### MI-0087 Tensor.shape(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 装饰器: property
 - 微指令步骤 (1):
   - 返回 self.data.shape
 
-### MI-0072 Tensor._set(self, val)
+### MI-0088 Tensor._set(self, val)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (1):
   - 赋值 self.data ← np.asarray(…)
 
-### MI-0073 Tensor.__add__(self, other)
+### MI-0089 Tensor.__add__(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -784,7 +944,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0074 Tensor.__mul__(self, other)
+### MI-0090 Tensor.__mul__(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -794,14 +954,14 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0075 Tensor.__sub__(self, other)
+### MI-0091 Tensor.__sub__(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (2):
   - 赋值 other ← IfExp
   - 返回 self add UnaryOp
 
-### MI-0076 Tensor.__truediv__(self, other)
+### MI-0092 Tensor.__truediv__(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -811,7 +971,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0077 Tensor.__rtruediv__(self, other)
+### MI-0093 Tensor.__rtruediv__(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -821,7 +981,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0078 Tensor.__neg__(self)
+### MI-0094 Tensor.__neg__(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -830,7 +990,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0079 Tensor.matmul(self, other)
+### MI-0095 Tensor.matmul(self, other)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -839,7 +999,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0080 Tensor.transpose(self, axes)
+### MI-0096 Tensor.transpose(self, axes)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -848,7 +1008,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0081 Tensor.reshape(self, *shape)
+### MI-0097 Tensor.reshape(self, *shape)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -857,7 +1017,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0082 Tensor.sigmoid(self)
+### MI-0098 Tensor.sigmoid(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -867,7 +1027,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0083 Tensor.tanh(self)
+### MI-0099 Tensor.tanh(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -877,7 +1037,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0084 Tensor.relu(self)
+### MI-0100 Tensor.relu(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -887,7 +1047,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0085 Tensor.exp(self)
+### MI-0101 Tensor.exp(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (5):
@@ -897,7 +1057,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0086 Tensor.log(self)
+### MI-0102 Tensor.log(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -906,7 +1066,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0087 Tensor.mean(self, axis, keepdims)
+### MI-0103 Tensor.mean(self, axis, keepdims)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -915,7 +1075,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0088 Tensor.sum(self, axis, keepdims)
+### MI-0104 Tensor.sum(self, axis, keepdims)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -924,7 +1084,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0089 Tensor.max(self, axis, keepdims)
+### MI-0105 Tensor.max(self, axis, keepdims)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -933,7 +1093,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0090 Tensor.pow(self, p)
+### MI-0106 Tensor.pow(self, p)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -942,7 +1102,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0091 Tensor.__getitem__(self, idx)
+### MI-0107 Tensor.__getitem__(self, idx)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (4):
@@ -951,7 +1111,7 @@
   - 赋值 out._backward ← _b
   - 返回 out
 
-### MI-0092 Tensor.backward(self)
+### MI-0108 Tensor.backward(self)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 微指令步骤 (6):
@@ -962,21 +1122,100 @@
   - 赋值 self.grad ← np.ones_like(…)
   - 遍历 v ∈ reversed(…)
 
-### MI-0093 Tensor.zeros(*shape)
+### MI-0109 Tensor.zeros(*shape)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 装饰器: staticmethod
 - 微指令步骤 (1):
   - 返回 Tensor(…)
 
-### MI-0094 Tensor.parameter(data)
+### MI-0110 Tensor.parameter(data)
 - 模块: `train\autodiff.py`
 - 用途: (无 docstring)  ·  INV 22
 - 装饰器: staticmethod
 - 微指令步骤 (1):
   - 返回 Tensor(…)
 
-### MI-0095 【类】LoRALinear.LoRALinear(类)
+### MI-0111 _topo_from(root)
+- 模块: `train\checkpoint.py`
+- 用途: 拓扑排序: 保证子节点先于父节点被反向调用。  ·  INV 25
+- 微指令步骤 (5):
+  - 声明并赋值 topo ← []
+  - 赋值 visited ← set(…)
+  - FunctionDef
+  - 调用 build(…)
+  - 返回 topo
+
+### MI-0112 backward_from(root, grad)
+- 模块: `train\checkpoint.py`
+- 用途: 从 ``root`` 以给定上游梯度做**局部**反向 (不重置全局图)。  ·  INV 25
+- 微指令步骤 (3):
+  - 赋值 grad ← np.asarray(…)
+  - 赋值 root.grad ← Call.copy(…)
+  - 遍历 node ∈ reversed(…)
+
+### MI-0113 checkpoint(fn, *args, enabled)
+- 模块: `train\checkpoint.py`
+- 用途: 以检查点方式执行 ``fn(*args)``: 前向丢弃段内激活, 反向时重算。  ·  INV 25
+- 微指令步骤 (8):
+  - 判断 UnaryOp
+  - 赋值 out ← fn(…)
+  - 判断 UnaryOp
+  - 赋值 y ← Tensor(…)
+  - 赋值 y._prev ← []
+  - FunctionDef
+  - 赋值 y._backward ← _recompute_backward
+  - 返回 y
+
+### MI-0114 checkpointed(fn, enabled)
+- 模块: `train\checkpoint.py`
+- 用途: 装饰器版本: ``@checkpointed`` 令整个函数体走检查点路径。  ·  INV 25
+- 微指令步骤 (3):
+  - FunctionDef
+  - 判断 Compare
+  - 返回 wrap
+
+### MI-0115 grad_diff(a, b)
+- 模块: `train\checkpoint.py`
+- 用途: 两组同名参数梯度的最大绝对差 (INV-25 判据之一)。  ·  INV 25
+- 微指令步骤 (3):
+  - 赋值 worst ← 0.0
+  - 遍历 key ∈ sorted(…)
+  - 返回 worst
+
+### MI-0116 verify_checkpoint(loss_fn, params_fn, tol)
+- 模块: `train\checkpoint.py`
+- 用途: INV-25 一键自检: 开/关检查点两次前向反向, 对比 loss 与梯度。  ·  INV 25
+- 微指令步骤 (18):
+  - FunctionDef
+  - 赋值 plain_params ← params_fn(…)
+  - 调用 zero_grad(…)
+  - 赋值 loss_plain_t ← loss_fn(…)
+  - 调用 loss_plain_t.backward(…)
+  - 赋值 loss_plain ← float(…)
+  - 赋值 plain_snapshot ← DictComp
+  - 赋值 ckpt_params ← params_fn(…)
+  - 调用 zero_grad(…)
+  - 赋值 loss_ckpt_t ← loss_fn(…)
+  - 调用 loss_ckpt_t.backward(…)
+  - 赋值 loss_ckpt ← float(…)
+  - 赋值 ckpt_snapshot ← DictComp
+  - 赋值 gd ← 0.0
+  - 遍历 key ∈ sorted(…)
+  - 赋值 ld ← abs(…)
+  - 赋值 ok ← bool(…)
+  - 返回 [ok, Dict]
+
+### MI-0117 checkpoint_segments(n_items, n_segments)
+- 模块: `train\checkpoint.py`
+- 用途: 把 ``n_items`` 项 (如层) 均分为 ``n_segments`` 个检查点段, 返回区间列表。  ·  INV 25
+- 微指令步骤 (4):
+  - 判断 Compare
+  - 赋值 n_segments ← max(…)
+  - 赋值 bounds ← ListComp
+  - 返回 ListComp
+
+### MI-0118 【类】LoRALinear.LoRALinear(类)
 - 模块: `train\lora.py`
 - 用途: (无 docstring)  ·  INV 24
 - 微指令步骤 (5):
@@ -986,7 +1225,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0096 LoRALinear.__init__(self, W, r, alpha)
+### MI-0119 LoRALinear.__init__(self, W, r, alpha)
 - 模块: `train\lora.py`
 - 用途: (无 docstring)  ·  INV 24
 - 微指令步骤 (8):
@@ -999,14 +1238,14 @@
   - 赋值 rng ← np.random.default_rng(…)
   - 赋值 self.A.data ← rng.standard_normal(…) mult 0.01
 
-### MI-0097 LoRALinear.trainable_params(self)
+### MI-0120 LoRALinear.trainable_params(self)
 - 模块: `train\lora.py`
 - 用途: (无 docstring)  ·  INV 24
 - 装饰器: property
 - 微指令步骤 (1):
   - 返回 [self.A, self.B]
 
-### MI-0098 LoRALinear.forward(self, x)
+### MI-0121 LoRALinear.forward(self, x)
 - 模块: `train\lora.py`
 - 用途: (无 docstring)  ·  INV 24
 - 微指令步骤 (3):
@@ -1014,26 +1253,26 @@
   - 赋值 lora ← Call.matmul(…) mult self.scale
   - 返回 base add lora
 
-### MI-0099 LoRALinear.merge(self)
+### MI-0122 LoRALinear.merge(self)
 - 模块: `train\lora.py`
 - 用途: 合并低秩增量到原权重, 返回新 W (INV-24)。  ·  INV 24
 - 微指令步骤 (1):
   - 返回 self.W.data add self.scale mult self.B.data matmult self.A.data
 
-### MI-0100 LoRALinear.merged_linear(self, x)
+### MI-0123 LoRALinear.merged_linear(self, x)
 - 模块: `train\lora.py`
 - 用途: (无 docstring)  ·  INV 24
 - 微指令步骤 (1):
   - 返回 x.matmul(…)
 
-### MI-0101 【类】GlobalStep.GlobalStep(类)
+### MI-0124 【类】GlobalStep.GlobalStep(类)
 - 模块: `train\optim.py`
 - 用途: 学习率调度状态机 (线性预热 + 余弦退火)。  ·  INV 21,23
 - 微指令步骤 (2):
   - FunctionDef
   - FunctionDef
 
-### MI-0102 GlobalStep.__init__(self, lr, total_steps, warmup_steps, min_lr)
+### MI-0125 GlobalStep.__init__(self, lr, total_steps, warmup_steps, min_lr)
 - 模块: `train\optim.py`
 - 用途: (无 docstring)  ·  INV 21,23
 - 微指令步骤 (5):
@@ -1043,7 +1282,7 @@
   - 赋值 self.min_lr ← min_lr
   - 赋值 self.t ← 0
 
-### MI-0103 GlobalStep.step(self)
+### MI-0126 GlobalStep.step(self)
 - 模块: `train\optim.py`
 - 用途: (无 docstring)  ·  INV 21,23
 - 微指令步骤 (3):
@@ -1051,7 +1290,7 @@
   - 累算 self.t add 1
   - 返回 lr
 
-### MI-0104 cosine_schedule(lr0, step, total, warmup, min_lr)
+### MI-0127 cosine_schedule(lr0, step, total, warmup, min_lr)
 - 模块: `train\optim.py`
 - 用途: 线性预热 + 余弦退火。解析公式, 供 INV(R-L4-02) 对照。  ·  INV 21,23
 - 微指令步骤 (4):
@@ -1060,7 +1299,7 @@
   - 赋值 progress ← step sub warmup div max(…)
   - 返回 min_lr add 0.5 mult lr0 sub min_lr mult 1.0 add np.cos(…)
 
-### MI-0105 【类】AdamW.AdamW(类)
+### MI-0128 【类】AdamW.AdamW(类)
 - 模块: `train\optim.py`
 - 用途: 解耦权重衰减 AdamW。  ·  INV 21,23  ·  复用 AdamW
 - 微指令步骤 (3):
@@ -1068,7 +1307,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0106 AdamW.__init__(self, params, lr, betas, eps, weight_decay)
+### MI-0129 AdamW.__init__(self, params, lr, betas, eps, weight_decay)
 - 模块: `train\optim.py`
 - 用途: (无 docstring)  ·  INV 21,23
 - 微指令步骤 (8):
@@ -1081,7 +1320,7 @@
   - 赋值 self.v ← ListComp
   - 赋值 self.step_count ← 0
 
-### MI-0107 AdamW.step(self)
+### MI-0130 AdamW.step(self)
 - 模块: `train\optim.py`
 - 用途: (无 docstring)  ·  INV 21,23
 - 微指令步骤 (4):
@@ -1090,13 +1329,13 @@
   - 赋值 bc2 ← 1 sub self.b2 pow self.step_count
   - 遍历 (i, p) ∈ enumerate(…)
 
-### MI-0108 AdamW.zero_grad(self)
+### MI-0131 AdamW.zero_grad(self)
 - 模块: `train\optim.py`
 - 用途: (无 docstring)  ·  INV 21,23
 - 微指令步骤 (1):
   - 遍历 p ∈ self.params
 
-### MI-0109 clip_global_norm(params, max_norm, norm_type)
+### MI-0132 clip_global_norm(params, max_norm, norm_type)
 - 模块: `train\optim.py`
 - 用途: 全局范数裁剪。返回 (total_norm, triggered)。INV-23。  ·  INV 23
 - 微指令步骤 (4):
@@ -1105,10 +1344,12 @@
   - 判断 BoolOp
   - 返回 [total, False]
 
-### MI-0110 【类】TinyTrainer.TinyTrainer(类)
+### MI-0133 【类】TinyTrainer.TinyTrainer(类)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
-- 微指令步骤 (9):
+- 用途: (无 docstring)  ·  INV 25,26
+- 微指令步骤 (11):
+  - FunctionDef
+  - FunctionDef
   - FunctionDef
   - FunctionDef
   - FunctionDef
@@ -1119,25 +1360,26 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0111 TinyTrainer.__init__(self, config)
+### MI-0134 TinyTrainer.__init__(self, config)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
-- 微指令步骤 (3):
+- 用途: (无 docstring)  ·  INV 25,26
+- 微指令步骤 (4):
   - 赋值 self.cfg ← config
   - 声明并赋值 self.params ← Dict
+  - 赋值 self.gradient_checkpointing ← False
   - 调用 self._build(…)
 
-### MI-0112 TinyTrainer._P(self, name, shape)
+### MI-0135 TinyTrainer._P(self, name, shape)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (3):
   - 赋值 r ← rng.get_rng(…)
   - 赋值 data ← BinOp.astype(…)
   - 赋值 self.params[…] ← Tensor(…)
 
-### MI-0113 TinyTrainer._build(self)
+### MI-0136 TinyTrainer._build(self)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (7):
   - 赋值 c ← self.cfg
   - 赋值 (V, d) ← [c.vocab_size, c.d_model]
@@ -1147,9 +1389,9 @@
   - 赋值 n_kv ← c.n_kv_heads
   - 遍历 l ∈ range(…)
 
-### MI-0114 TinyTrainer._rope(self, x, pos, dim)
+### MI-0137 TinyTrainer._rope(self, x, pos, dim)
 - 模块: `train\trainer.py`
-- 用途: RoPE 旋转 (偶数维旋转, 支持反向传播)。  ·  INV 26  ·  复用 RoPE
+- 用途: RoPE 旋转 (偶数维旋转, 支持反向传播)。  ·  INV 25,26  ·  复用 RoPE
 - 微指令步骤 (15):
   - 赋值 freqs ← 1.0 div self.cfg.rope_base pow np.arange(…) div dim floordiv 2
   - 赋值 angles ← np.outer(…)
@@ -1167,14 +1409,51 @@
   - 赋值 out._prev ← [x]
   - 返回 out
 
-### MI-0115 TinyTrainer.forward(self, ids)
+### MI-0138 TinyTrainer.enable_gradient_checkpointing(self, enabled)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
-- 微指令步骤 (10):
+- 用途: 开启/关闭梯度检查点 (INV-25)。  ·  INV 25
+- 微指令步骤 (1):
+  - 赋值 self.gradient_checkpointing ← bool(…)
+
+### MI-0139 TinyTrainer._layer_forward(self, x, layer)
+- 模块: `train\trainer.py`
+- 用途: 单层 DecoderBlock 前向 (供梯度检查点按层分段重算, INV-25)。  ·  INV 25
+- 微指令步骤 (27):
   - 赋值 c ← self.cfg
-  - 赋值 (B, T) ← ids.shape
+  - 赋值 (B, T) ← [x.data.shape[…], x.data.shape[…]]
   - 赋值 (d, dh, n_h, n_kv) ← [c.d_model, c.d_head, c.n_heads]
   - 赋值 pos ← np.arange(…)
+  - 赋值 p ← JoinedStr
+  - 赋值 ms ← BinOp.mean(…)
+  - 赋值 h ← x div BinOp.pow(…) mult self.params[…]
+  - 赋值 q ← h.matmul(…)
+  - 赋值 k ← h.matmul(…)
+  - 赋值 v ← h.matmul(…)
+  - 赋值 q ← Call.data.reshape(…)
+  - 赋值 k ← Call.data.reshape(…)
+  - 赋值 v ← v.data.reshape(…)
+  - 赋值 ctx ← np.zeros(…)
+  - 赋值 scale ← 1.0 div dh pow 0.5
+  - 遍历 b ∈ range(…)
+  - 赋值 ctx_t ← Tensor(…)
+  - 赋值 o ← ctx_t.matmul(…)
+  - 赋值 x ← x add o
+  - 赋值 ms2 ← BinOp.mean(…)
+  - 赋值 h2 ← x div BinOp.pow(…) mult self.params[…]
+  - 赋值 g ← h2.matmul(…)
+  - 赋值 u ← h2.matmul(…)
+  - 赋值 silu ← g mult g.sigmoid(…)
+  - 赋值 ff ← BinOp.matmul(…)
+  - 赋值 x ← x add ff
+  - 返回 x
+
+### MI-0140 TinyTrainer.forward(self, ids)
+- 模块: `train\trainer.py`
+- 用途: (无 docstring)  ·  INV 25,26
+- 微指令步骤 (9):
+  - 赋值 c ← self.cfg
+  - 赋值 ids ← np.asarray(…)
+  - 判断 Compare
   - 赋值 x ← self.params[…][…]
   - 遍历 l ∈ range(…)
   - 赋值 ms3 ← BinOp.mean(…)
@@ -1182,9 +1461,9 @@
   - 赋值 logits ← x.matmul(…)
   - 返回 logits
 
-### MI-0116 TinyTrainer.loss(self, ids, targets)
+### MI-0141 TinyTrainer.loss(self, ids, targets)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (10):
   - 赋值 logits ← self.forward(…)
   - 赋值 logits_flat ← logits.reshape(…)
@@ -1197,9 +1476,9 @@
   - 赋值 nll ← UnaryOp
   - 返回 nll
 
-### MI-0117 TinyTrainer.train(self, ids_corpus, steps, lr, batch_size, seq_len, grad_clip, warmup)
+### MI-0142 TinyTrainer.train(self, ids_corpus, steps, lr, batch_size, seq_len, grad_clip, warmup)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (7):
   - 赋值 params ← ListComp
   - 赋值 opt ← AdamW(…)
@@ -1209,18 +1488,18 @@
   - 遍历 s ∈ range(…)
   - 返回 losses
 
-### MI-0118 TinyTrainer.to_numpy_params(self)
+### MI-0143 TinyTrainer.to_numpy_params(self)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (4):
   - 赋值 out ← Dict
   - 遍历 (k, v) ∈ self.params.items(…)
   - 判断 self.cfg.tie_word_embeddings
   - 返回 out
 
-### MI-0119 TinyTrainer.save(self, dir_path)
+### MI-0144 TinyTrainer.save(self, dir_path)
 - 模块: `train\trainer.py`
-- 用途: (无 docstring)  ·  INV 26
+- 用途: (无 docstring)  ·  INV 25,26
 - 微指令步骤 (7):
   - 调用 os.makedirs(…)
   - 赋值 params ← self.to_numpy_params(…)
@@ -1232,7 +1511,7 @@
 
 ## L5 检索/记忆 (Retrieval/Memory)
 
-### MI-0120 【类】BM25.BM25(类)
+### MI-0145 【类】BM25.BM25(类)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 微指令步骤 (5):
@@ -1242,7 +1521,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0121 BM25.__init__(self, k1, b)
+### MI-0146 BM25.__init__(self, k1, b)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 微指令步骤 (7):
@@ -1254,7 +1533,7 @@
   - 赋值 self.avgdl ← 0.0
   - 赋值 self.doc_len ← []
 
-### MI-0122 BM25.fit(self, corpus)
+### MI-0147 BM25.fit(self, corpus)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 微指令步骤 (7):
@@ -1266,7 +1545,7 @@
   - 遍历 (w, f) ∈ self.df.items(…)
   - 返回 self
 
-### MI-0123 BM25._score(self, query, doc_idx)
+### MI-0148 BM25._score(self, query, doc_idx)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 微指令步骤 (5):
@@ -1276,7 +1555,7 @@
   - 遍历 w ∈ query
   - 返回 score
 
-### MI-0124 BM25.search(self, query, top_k)
+### MI-0149 BM25.search(self, query, top_k)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 微指令步骤 (3):
@@ -1284,7 +1563,7 @@
   - 调用 scores.sort(…)
   - 返回 scores[…]
 
-### MI-0125 BM25.reference(corpus, query, k1, b)
+### MI-0150 BM25.reference(corpus, query, k1, b)
 - 模块: `retrieval\bm25.py`
 - 用途: (无 docstring)  ·  INV 27
 - 装饰器: staticmethod
@@ -1299,7 +1578,155 @@
   - 遍历 (i, d) ∈ enumerate(…)
   - 返回 sorted(…)
 
-### MI-0126 【类】DenseIndex.DenseIndex(类)
+### MI-0151 【类】Chunk.Chunk(类)
+- 模块: `retrieval\chunk.py`
+- 用途: 一个文本块。  ·  INV 31
+- 微指令步骤 (9):
+  - 声明并赋值 text ← ∅
+  - 声明并赋值 start ← ∅
+  - 声明并赋值 end ← ∅
+  - 声明并赋值 index ← ∅
+  - 声明并赋值 meta ← field(…)
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0152 Chunk.__len__(self)
+- 模块: `retrieval\chunk.py`
+- 用途: (无 docstring)  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 len(…)
+
+### MI-0153 Chunk.length(self)
+- 模块: `retrieval\chunk.py`
+- 用途: 块长度 (字符数)。  ·  INV 31
+- 装饰器: property
+- 微指令步骤 (1):
+  - 返回 len(…)
+
+### MI-0154 Chunk.to_dict(self)
+- 模块: `retrieval\chunk.py`
+- 用途: (无 docstring)  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 Dict
+
+### MI-0155 Chunk.from_dict(cls, d)
+- 模块: `retrieval\chunk.py`
+- 用途: (无 docstring)  ·  INV 31
+- 装饰器: classmethod
+- 微指令步骤 (1):
+  - 返回 cls(…)
+
+### MI-0156 normalize_text(text)
+- 模块: `retrieval\chunk.py`
+- 用途: 归一化: 折叠所有空白为单空格并去首尾 (INV-31 判据用的比较口径)。  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 Call.strip(…)
+
+### MI-0157 reconstruct(chunks)
+- 模块: `retrieval\chunk.py`
+- 用途: 按 offset 去重叠拼接块文本, 还原原文 (INV-31)。  ·  INV 31
+- 微指令步骤 (4):
+  - 声明并赋值 parts ← []
+  - 声明并赋值 prev_end ← None
+  - 遍历 ch ∈ chunks
+  - 返回 Constant.join(…)
+
+### MI-0158 _snap_end(text, start, end, separators, min_keep)
+- 模块: `retrieval\chunk.py`
+- 用途: 把切分点 ``end`` 回退到最近的语义分隔符之后 (递归字符切分的核心)。  ·  INV 31
+- 微指令步骤 (7):
+  - 判断 Compare
+  - 赋值 (best, best_len) ← [UnaryOp, 0]
+  - 遍历 sep ∈ separators
+  - 判断 Compare
+  - 赋值 cand ← best add best_len
+  - 判断 Compare
+  - 返回 cand
+
+### MI-0159 chunk_text(text, chunk_size, overlap, strategy, separators)
+- 模块: `retrieval\chunk.py`
+- 用途: 把 ``text`` 切成覆盖完整的块 (INV-31)。  ·  INV 31
+- 微指令步骤 (12):
+  - 判断 Compare
+  - 判断 UnaryOp
+  - 判断 Compare
+  - 赋值 text ← str(…)
+  - 赋值 seps ← IfExp
+  - 判断 UnaryOp
+  - 赋值 min_keep ← IfExp
+  - 声明并赋值 chunks ← []
+  - 赋值 start ← 0
+  - 赋值 n ← len(…)
+  - 当 Compare 循环
+  - 返回 chunks
+
+### MI-0160 verify_coverage(text, chunks, normalized)
+- 模块: `retrieval\chunk.py`
+- 用途: INV-31 判据: 拼接后的文本是否 == 原文。  ·  INV 31
+- 微指令步骤 (3):
+  - 赋值 joined ← reconstruct(…)
+  - 判断 normalized
+  - 返回 Compare
+
+### MI-0161 coverage_report(text, chunks)
+- 模块: `retrieval\chunk.py`
+- 用途: 返回覆盖完整性报告, 便于断言与调试。  ·  INV 31
+- 微指令步骤 (7):
+  - 赋值 n ← len(…)
+  - 赋值 covered ← 0
+  - 赋值 prev_end ← 0
+  - 赋值 contiguous ← True
+  - 赋值 offsets_valid ← True
+  - 遍历 ch ∈ chunks
+  - 返回 Dict
+
+### MI-0162 【类】TextChunker.TextChunker(类)
+- 模块: `retrieval\chunk.py`
+- 用途: 面向对象封装: 固定配置复用, 并提供覆盖自检。  ·  INV 31
+- 微指令步骤 (5):
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0163 TextChunker.__init__(self, chunk_size, overlap, strategy, separators)
+- 模块: `retrieval\chunk.py`
+- 用途: (无 docstring)  ·  INV 31
+- 微指令步骤 (4):
+  - 赋值 self.chunk_size ← int(…)
+  - 赋值 self.overlap ← int(…)
+  - 赋值 self.strategy ← strategy
+  - 赋值 self.separators ← separators
+
+### MI-0164 TextChunker.split(self, text)
+- 模块: `retrieval\chunk.py`
+- 用途: 切分文本为覆盖完整的块 (INV-31)。  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 chunk_text(…)
+
+### MI-0165 TextChunker.reconstruct(self, chunks)
+- 模块: `retrieval\chunk.py`
+- 用途: 去重叠拼接还原原文。  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 reconstruct(…)
+
+### MI-0166 TextChunker.verify(self, text, chunks)
+- 模块: `retrieval\chunk.py`
+- 用途: 覆盖完整性报告 (块未提供时内部先切分)。  ·  INV 31
+- 微指令步骤 (2):
+  - 赋值 cs ← IfExp
+  - 返回 coverage_report(…)
+
+### MI-0167 TextChunker.split_many(self, texts)
+- 模块: `retrieval\chunk.py`
+- 用途: 批量切分 (便于构建语料级索引)。  ·  INV 31
+- 微指令步骤 (1):
+  - 返回 ListComp
+
+### MI-0168 【类】DenseIndex.DenseIndex(类)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 微指令步骤 (5):
@@ -1309,7 +1736,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0127 DenseIndex.__init__(self, dim, seed)
+### MI-0169 DenseIndex.__init__(self, dim, seed)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 微指令步骤 (3):
@@ -1317,7 +1744,7 @@
   - 赋值 self.rng ← np.random.default_rng(…)
   - 赋值 self.proj ← self.rng.standard_normal(…)
 
-### MI-0128 DenseIndex._embed(self, tokens)
+### MI-0170 DenseIndex._embed(self, tokens)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 微指令步骤 (4):
@@ -1326,7 +1753,7 @@
   - 赋值 n ← np.linalg.norm(…)
   - 返回 IfExp
 
-### MI-0129 DenseIndex.fit(self, corpus)
+### MI-0171 DenseIndex.fit(self, corpus)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 微指令步骤 (3):
@@ -1334,7 +1761,7 @@
   - 赋值 self.matrix ← IfExp
   - 返回 self
 
-### MI-0130 DenseIndex.search(self, query, top_k)
+### MI-0172 DenseIndex.search(self, query, top_k)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 微指令步骤 (5):
@@ -1344,7 +1771,7 @@
   - 赋值 idx ← np.argsort(…)[…]
   - 返回 ListComp
 
-### MI-0131 DenseIndex.brute(matrix, q, top_k)
+### MI-0173 DenseIndex.brute(matrix, q, top_k)
 - 模块: `retrieval\dense.py`
 - 用途: (无 docstring)  ·  INV 29
 - 装饰器: staticmethod
@@ -1353,7 +1780,7 @@
   - 赋值 idx ← np.argsort(…)[…]
   - 返回 ListComp
 
-### MI-0132 【类】HNSW.HNSW(类)
+### MI-0174 【类】HNSW.HNSW(类)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (9):
@@ -1367,7 +1794,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0133 HNSW.__init__(self, M, ef_construction, ef_search, ml, seed)
+### MI-0175 HNSW.__init__(self, M, ef_construction, ef_search, ml, seed)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (9):
@@ -1381,19 +1808,19 @@
   - 赋值 self.max_level ← UnaryOp
   - 赋值 self.enter ← None
 
-### MI-0134 HNSW._dist(self, a, b)
+### MI-0176 HNSW._dist(self, a, b)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (1):
   - 返回 float(…)
 
-### MI-0135 HNSW._level(self)
+### MI-0177 HNSW._level(self)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (1):
   - 返回 int(…)
 
-### MI-0136 HNSW.add(self, vec)
+### MI-0178 HNSW.add(self, vec)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (8):
@@ -1406,7 +1833,7 @@
   - 遍历 lc ∈ range(…)
   - 返回 idx
 
-### MI-0137 HNSW._connect(self, a, b, layer)
+### MI-0179 HNSW._connect(self, a, b, layer)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (4):
@@ -1415,7 +1842,7 @@
   - 判断 Compare
   - 判断 Compare
 
-### MI-0138 HNSW._search_layer(self, q, entry, ef, layer)
+### MI-0180 HNSW._search_layer(self, q, entry, ef, layer)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (7):
@@ -1427,20 +1854,20 @@
   - 当 candidates 循环
   - 返回 ListComp
 
-### MI-0139 HNSW._dist_id(self, q, i)
+### MI-0181 HNSW._dist_id(self, q, i)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (1):
   - 返回 float(…)
 
-### MI-0140 HNSW.build(self, data)
+### MI-0182 HNSW.build(self, data)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (2):
   - 遍历 v ∈ data
   - 返回 self
 
-### MI-0141 HNSW.search(self, q, k)
+### MI-0183 HNSW.search(self, q, k)
 - 模块: `retrieval\hnsw.py`
 - 用途: (无 docstring)  ·  INV 28
 - 微指令步骤 (4):
@@ -1449,7 +1876,174 @@
   - 赋值 out ← ListComp
   - 返回 sorted(…)[…]
 
-### MI-0142 【类】CrossEncoderReranker.CrossEncoderReranker(类)
+### MI-0184 【类】Hit.Hit(类)
+- 模块: `retrieval\persist.py`
+- 用途: 一条检索结果。  ·  INV 32  ·  复用 Cormack, RRF
+- 微指令步骤 (6):
+  - 声明并赋值 doc_id ← ∅
+  - 声明并赋值 score ← ∅
+  - 声明并赋值 text ← ""
+  - 声明并赋值 meta ← field(…)
+  - FunctionDef
+  - FunctionDef
+
+### MI-0185 Hit.key(self)
+- 模块: `retrieval\persist.py`
+- 用途: 用于一致性比对的键 (INV-32: id + 分数逐项相同)。  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 [self.doc_id, float(…), self.text]
+
+### MI-0186 Hit.to_dict(self)
+- 模块: `retrieval\persist.py`
+- 用途: (无 docstring)  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 Dict
+
+### MI-0187 【类】PersistentIndex.PersistentIndex(类)
+- 模块: `retrieval\persist.py`
+- 用途: BM25 + 稠密双路 RRF 融合索引, 支持落盘与重载 (INV-32)。  ·  INV 32  ·  复用 BM25, RRF, SSE
+- 微指令步骤 (9):
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0188 PersistentIndex.__init__(self, dim, seed, k1, b, rrf_k)
+- 模块: `retrieval\persist.py`
+- 用途: (无 docstring)  ·  INV 32
+- 微指令步骤 (10):
+  - 赋值 self.dim ← int(…)
+  - 赋值 self.seed ← int(…)
+  - 赋值 self.k1 ← float(…)
+  - 赋值 self.b ← float(…)
+  - 赋值 self.rrf_k ← int(…)
+  - 声明并赋值 self.bm25 ← None
+  - 声明并赋值 self.dense ← None
+  - 声明并赋值 self.corpus ← []
+  - 声明并赋值 self.texts ← []
+  - 声明并赋值 self.metas ← []
+
+### MI-0189 PersistentIndex.fit(self, corpus, texts, metas)
+- 模块: `retrieval\persist.py`
+- 用途: 用分词后的语料构建索引。  ·  INV 32
+- 微指令步骤 (6):
+  - 赋值 self.corpus ← ListComp
+  - 赋值 self.texts ← IfExp
+  - 赋值 self.metas ← IfExp
+  - 赋值 self.bm25 ← Call.fit(…)
+  - 赋值 self.dense ← Call.fit(…)
+  - 返回 self
+
+### MI-0190 PersistentIndex.search(self, query, top_k)
+- 模块: `retrieval\persist.py`
+- 用途: 双路检索 + RRF 融合, 返回 Top-K (INV-32 的比对对象)。  ·  INV 32  ·  复用 RRF
+- 微指令步骤 (7):
+  - 判断 BoolOp
+  - 判断 UnaryOp
+  - 赋值 pool ← max(…)
+  - 赋值 bm ← self.bm25.search(…)
+  - 赋值 dn ← self.dense.search(…)
+  - 赋值 fused ← reciprocal_rank_fusion(…)
+  - 返回 ListComp
+
+### MI-0191 PersistentIndex.search_keys(self, query, top_k)
+- 模块: `retrieval\persist.py`
+- 用途: 检索结果的紧凑键 ``[(doc_id, score), ...]`` (便于一致性断言)。  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 ListComp
+
+### MI-0192 PersistentIndex.save(self, dir_path)
+- 模块: `retrieval\persist.py`
+- 用途: 落盘: ``index.json`` (稀疏侧状态 + 原文) + ``vectors.npz`` (稠密侧)。  ·  INV 32
+- 微指令步骤 (11):
+  - 判断 BoolOp
+  - 调用 os.makedirs(…)
+  - 赋值 state ← Dict
+  - 赋值 idx_path ← os.path.join(…)
+  - 上下文管理 (with)
+  - 赋值 vec_path ← os.path.join(…)
+  - 调用 np.savez(…)
+  - 赋值 manifest ← Dict
+  - 遍历 name ∈ ["index.json", "vectors.npz"]
+  - 上下文管理 (with)
+  - 返回 dir_path
+
+### MI-0193 PersistentIndex._bm25_state(self)
+- 模块: `retrieval\persist.py`
+- 用途: 导出 BM25 的完整状态 (docs / df / idf / doc_len / avgdl)。  ·  INV 32  ·  复用 BM25
+- 微指令步骤 (2):
+  - Assert
+  - 返回 Dict
+
+### MI-0194 PersistentIndex.load(cls, dir_path, verify)
+- 模块: `retrieval\persist.py`
+- 用途: 重载索引; 重载后检索结果与落盘前 100% 一致 (INV-32)。  ·  INV 32  ·  复用 SSE
+- 装饰器: classmethod
+- 微指令步骤 (15):
+  - 上下文管理 (with)
+  - 判断 verify
+  - 上下文管理 (with)
+  - 赋值 obj ← cls(…)
+  - 赋值 obj.corpus ← ListComp
+  - 赋值 obj.texts ← list(…)
+  - 赋值 obj.metas ← ListComp
+  - 赋值 obj.bm25 ← cls._bm25_from_state(…)
+  - 赋值 data ← np.load(…)
+  - 赋值 dense ← DenseIndex(…)
+  - 赋值 dense.proj ← np.asarray(…)
+  - 赋值 dense.docs ← ListComp
+  - 赋值 dense.matrix ← np.asarray(…)
+  - 赋值 obj.dense ← dense
+  - 返回 obj
+
+### MI-0195 PersistentIndex._bm25_from_state(st)
+- 模块: `retrieval\persist.py`
+- 用途: 按保存的状态逐字段重建 BM25 (不重新 fit, 保证分数逐位相同)。  ·  INV 32  ·  复用 BM25
+- 装饰器: staticmethod
+- 微指令步骤 (7):
+  - 赋值 m ← BM25(…)
+  - 赋值 m.docs ← ListComp
+  - 赋值 m.doc_len ← ListComp
+  - 赋值 m.avgdl ← float(…)
+  - 赋值 m.df ← Counter(…)
+  - 赋值 m.idf ← DictComp
+  - 返回 m
+
+### MI-0196 PersistentIndex.verify_reload(self, dir_path, queries, top_k)
+- 模块: `retrieval\persist.py`
+- 用途: 落盘 → 重载 → 逐 query 比对 Top-K, 返回一致性报告。  ·  INV 32
+- 微指令步骤 (6):
+  - 调用 self.save(…)
+  - 赋值 reloaded ← PersistentIndex.load(…)
+  - 声明并赋值 mismatches ← []
+  - 赋值 worst ← 0.0
+  - 遍历 (qi, q) ∈ enumerate(…)
+  - 返回 Dict
+
+### MI-0197 save_index(index, dir_path)
+- 模块: `retrieval\persist.py`
+- 用途: 函数式入口: 落盘。  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 index.save(…)
+
+### MI-0198 load_index(dir_path, verify)
+- 模块: `retrieval\persist.py`
+- 用途: 函数式入口: 重载 (INV-32)。  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 PersistentIndex.load(…)
+
+### MI-0199 verify_persistence(index, dir_path, queries, top_k)
+- 模块: `retrieval\persist.py`
+- 用途: 函数式入口: INV-32 一致性报告。  ·  INV 32
+- 微指令步骤 (1):
+  - 返回 index.verify_reload(…)
+
+### MI-0200 【类】CrossEncoderReranker.CrossEncoderReranker(类)
 - 模块: `retrieval\rerank.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1458,14 +2052,14 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0143 CrossEncoderReranker.__init__(self, dim, seed)
+### MI-0201 CrossEncoderReranker.__init__(self, dim, seed)
 - 模块: `retrieval\rerank.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 赋值 self.dim ← dim
   - 赋值 self.seed ← seed
 
-### MI-0144 CrossEncoderReranker._token_vec(self, t)
+### MI-0202 CrossEncoderReranker._token_vec(self, t)
 - 模块: `retrieval\rerank.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1474,7 +2068,7 @@
   - 赋值 n ← np.linalg.norm(…)
   - 返回 IfExp
 
-### MI-0145 CrossEncoderReranker._feat(self, tokens)
+### MI-0203 CrossEncoderReranker._feat(self, tokens)
 - 模块: `retrieval\rerank.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1483,7 +2077,7 @@
   - 赋值 n ← np.linalg.norm(…)
   - 返回 IfExp
 
-### MI-0146 CrossEncoderReranker.rerank(self, query, docs, top_k)
+### MI-0204 CrossEncoderReranker.rerank(self, query, docs, top_k)
 - 模块: `retrieval\rerank.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1492,7 +2086,7 @@
   - 调用 scored.sort(…)
   - 返回 scored[…]
 
-### MI-0147 reciprocal_rank_fusion(rank_lists, k)
+### MI-0205 reciprocal_rank_fusion(rank_lists, k)
 - 模块: `retrieval\rrf.py`
 - 用途: rank_lists: 多个检索器各自的(已排序)文档 id 列表。返回融合排序。  ·  INV 30
 - 微指令步骤 (3):
@@ -1502,14 +2096,14 @@
 
 ## L6 智能体 (Agent)
 
-### MI-0148 【类】Episode.Episode(类)
+### MI-0206 【类】Episode.Episode(类)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 声明并赋值 ts ← ∅
   - 声明并赋值 text ← ∅
 
-### MI-0149 【类】MemoryStore.MemoryStore(类)
+### MI-0207 【类】MemoryStore.MemoryStore(类)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (6):
@@ -1520,45 +2114,45 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0150 MemoryStore.__init__(self)
+### MI-0208 MemoryStore.__init__(self)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 声明并赋值 self.episodic ← []
   - 声明并赋值 self.semantic ← Dict
 
-### MI-0151 MemoryStore.remember_event(self, text)
+### MI-0209 MemoryStore.remember_event(self, text)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (1):
   - 调用 self.episodic.append(…)
 
-### MI-0152 MemoryStore.remember_fact(self, key, value)
+### MI-0210 MemoryStore.remember_fact(self, key, value)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (1):
   - 赋值 self.semantic[…] ← value
 
-### MI-0153 MemoryStore.recall_events(self, query, limit)
+### MI-0211 MemoryStore.recall_events(self, query, limit)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 赋值 out ← ListComp
   - 返回 out[…]
 
-### MI-0154 MemoryStore.recall_fact(self, key)
+### MI-0212 MemoryStore.recall_fact(self, key)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (1):
   - 返回 self.semantic.get(…)
 
-### MI-0155 MemoryStore.__len__(self)
+### MI-0213 MemoryStore.__len__(self)
 - 模块: `agent\memory.py`
 - 用途: (无 docstring)
 - 微指令步骤 (1):
   - 返回 len(…) add len(…)
 
-### MI-0156 【类】ReActAgent.ReActAgent(类)
+### MI-0214 【类】ReActAgent.ReActAgent(类)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 微指令步骤 (5):
@@ -1568,7 +2162,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0157 ReActAgent.__init__(self, llm_fn, tools, max_steps, memory)
+### MI-0215 ReActAgent.__init__(self, llm_fn, tools, max_steps, memory)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 微指令步骤 (5):
@@ -1578,7 +2172,7 @@
   - 赋值 self.memory ← memory
   - 声明并赋值 self.history ← []
 
-### MI-0158 ReActAgent._system(self)
+### MI-0216 ReActAgent._system(self)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1587,7 +2181,7 @@
   - 调用 lines.append(…)
   - 返回 Constant.join(…)
 
-### MI-0159 ReActAgent._parse_action(self, text)
+### MI-0217 ReActAgent._parse_action(self, text)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 微指令步骤 (5):
@@ -1597,7 +2191,7 @@
   - 判断 m
   - 返回 ["none", None, text.strip(…)]
 
-### MI-0160 ReActAgent._parse_args(raw)
+### MI-0218 ReActAgent._parse_args(raw)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1607,7 +2201,7 @@
   - 遍历 kv ∈ re.findall(…)
   - 返回 args
 
-### MI-0161 ReActAgent.run(self, question, reflexion)
+### MI-0219 ReActAgent.run(self, question, reflexion)
 - 模块: `agent\react.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1616,7 +2210,7 @@
   - 判断 reflexion
   - 返回 "未能在步数内完成。"
 
-### MI-0162 【类】SafeCodeExecutor.SafeCodeExecutor(类)
+### MI-0220 【类】SafeCodeExecutor.SafeCodeExecutor(类)
 - 模块: `agent\sandbox.py`
 - 用途: (无 docstring)  ·  INV 34
 - 微指令步骤 (3):
@@ -1624,14 +2218,14 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0163 SafeCodeExecutor.__init__(self, timeout, workdir)
+### MI-0221 SafeCodeExecutor.__init__(self, timeout, workdir)
 - 模块: `agent\sandbox.py`
 - 用途: (无 docstring)  ·  INV 34
 - 微指令步骤 (2):
   - 赋值 self.timeout ← timeout
   - 赋值 self.workdir ← BoolOp
 
-### MI-0164 SafeCodeExecutor.static_check(self, code)
+### MI-0222 SafeCodeExecutor.static_check(self, code)
 - 模块: `agent\sandbox.py`
 - 用途: 返回违规列表 (非空 ⇒ 拒绝执行)。  ·  INV 34
 - 微指令步骤 (4):
@@ -1640,7 +2234,7 @@
   - 遍历 node ∈ ast.walk(…)
   - 返回 violations
 
-### MI-0165 SafeCodeExecutor.run(self, code)
+### MI-0223 SafeCodeExecutor.run(self, code)
 - 模块: `agent\sandbox.py`
 - 用途: (无 docstring)  ·  INV 34
 - 微指令步骤 (4):
@@ -1649,7 +2243,7 @@
   - 赋值 runner ← "import sys, json…"
   - 异常保护 (try/except)
 
-### MI-0166 【类】ToolSpec.ToolSpec(类)
+### MI-0224 【类】ToolSpec.ToolSpec(类)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (6):
@@ -1660,13 +2254,13 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0167 ToolSpec.validate(self, args)
+### MI-0225 ToolSpec.validate(self, args)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (1):
   - 返回 validate_args(…)
 
-### MI-0168 ToolSpec.__call__(self, args)
+### MI-0226 ToolSpec.__call__(self, args)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (3):
@@ -1674,7 +2268,7 @@
   - 判断 errs
   - 返回 self.func(…)
 
-### MI-0169 validate_args(schema, args)
+### MI-0227 validate_args(schema, args)
 - 模块: `agent\tools.py`
 - 用途: 极简 JSON Schema 校验 (type / required / enum / minimum)。INV-33。  ·  INV 33
 - 微指令步骤 (6):
@@ -1685,7 +2279,7 @@
   - 遍历 (k, v) ∈ args.items(…)
   - 返回 errs
 
-### MI-0170 【类】Calculator.Calculator(类)
+### MI-0228 【类】Calculator.Calculator(类)
 - 模块: `agent\tools.py`
 - 用途: 安全算术计算器 (仅允许四则 + 括号, 经 AST 白名单)。  ·  INV 33
 - 微指令步骤 (3):
@@ -1693,7 +2287,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0171 Calculator._eval(node, names)
+### MI-0229 Calculator._eval(node, names)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 装饰器: staticmethod
@@ -1704,7 +2298,7 @@
   - 判断 isinstance(…)
   - 抛出异常
 
-### MI-0172 Calculator.run(cls, expression)
+### MI-0230 Calculator.run(cls, expression)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 装饰器: classmethod
@@ -1713,7 +2307,7 @@
   - 遍历 node ∈ ast.walk(…)
   - 返回 float(…)
 
-### MI-0173 【类】ToolRegistry.ToolRegistry(类)
+### MI-0231 【类】ToolRegistry.ToolRegistry(类)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (5):
@@ -1723,38 +2317,38 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0174 ToolRegistry.__init__(self)
+### MI-0232 ToolRegistry.__init__(self)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (1):
   - 声明并赋值 self.tools ← Dict
 
-### MI-0175 ToolRegistry.register(self, spec)
+### MI-0233 ToolRegistry.register(self, spec)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (1):
   - 赋值 self.tools[…] ← spec
 
-### MI-0176 ToolRegistry.get(self, name)
+### MI-0234 ToolRegistry.get(self, name)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (1):
   - 返回 self.tools.get(…)
 
-### MI-0177 ToolRegistry.call(self, name, args)
+### MI-0235 ToolRegistry.call(self, name, args)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (2):
   - 赋值 spec ← self.tools[…]
   - 返回 spec(…)
 
-### MI-0178 ToolRegistry.describe(self)
+### MI-0236 ToolRegistry.describe(self)
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (1):
   - 返回 ListComp
 
-### MI-0179 default_registry()
+### MI-0237 default_registry()
 - 模块: `agent\tools.py`
 - 用途: (无 docstring)  ·  INV 33
 - 微指令步骤 (3):
@@ -1762,22 +2356,243 @@
   - 调用 reg.register(…)
   - 返回 reg
 
+### MI-0238 _stable_hash(text)
+- 模块: `agent\trace.py`
+- 用途: 跨进程稳定的字符串哈希 (避免内置 ``hash()`` 的 PYTHONHASHSEED 随机化)。  ·  INV 35,40
+- 微指令步骤 (1):
+  - 返回 int(…)
+
+### MI-0239 _extract_thought(raw)
+- 模块: `agent\trace.py`
+- 用途: 从 LLM 原始输出中抽取 ``Thought:`` 内容 (缺失时返回空串)。  ·  INV 35,40
+- 微指令步骤 (2):
+  - 赋值 m ← _THOUGHT_RE.search(…)
+  - 返回 IfExp
+
+### MI-0240 【类】TraceStep.TraceStep(类)
+- 模块: `agent\trace.py`
+- 用途: 一步 ReAct 记录: Thought / Action / Observation。  ·  INV 35,40  ·  复用 ReAct
+- 微指令步骤 (10):
+  - 声明并赋值 index ← ∅
+  - 声明并赋值 thought ← ∅
+  - 声明并赋值 action ← ∅
+  - 声明并赋值 action_args ← field(…)
+  - 声明并赋值 observation ← ""
+  - 声明并赋值 raw ← ""
+  - 声明并赋值 ts ← None
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0241 TraceStep.key(self)
+- 模块: `agent\trace.py`
+- 用途: 语义键 (排除时间戳), 用于逐步比对。  ·  INV 35,40
+- 微指令步骤 (1):
+  - 返回 [int(…), self.thought, self.action]
+
+### MI-0242 TraceStep.to_dict(self)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (1):
+  - 返回 Dict
+
+### MI-0243 TraceStep.from_dict(cls, d)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 装饰器: classmethod
+- 微指令步骤 (1):
+  - 返回 cls(…)
+
+### MI-0244 【类】Trace.Trace(类)
+- 模块: `agent\trace.py`
+- 用途: 一次 ReAct 运行的完整轨迹。  ·  INV 35,40  ·  复用 ReAct
+- 微指令步骤 (12):
+  - 声明并赋值 question ← ∅
+  - 声明并赋值 seed ← 0
+  - 声明并赋值 steps ← field(…)
+  - 声明并赋值 final_answer ← ""
+  - 声明并赋值 trace_id ← ""
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0245 Trace.__len__(self)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (1):
+  - 返回 len(…)
+
+### MI-0246 Trace.fingerprint(self)
+- 模块: `agent\trace.py`
+- 用途: 轨迹指纹: 逐步语义键的 sha256 (INV-35 的主判据)。  ·  INV 35
+- 微指令步骤 (2):
+  - 赋值 payload ← json.dumps(…)
+  - 返回 Call.hexdigest(…)
+
+### MI-0247 Trace.same_steps(self, other)
+- 模块: `agent\trace.py`
+- 用途: 逐步比对 (排除时间戳), 与 :meth:`fingerprint` 互为双保险。  ·  INV 35,40
+- 微指令步骤 (2):
+  - 判断 Compare
+  - 返回 all(…)
+
+### MI-0248 Trace.to_dict(self)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (1):
+  - 返回 Dict
+
+### MI-0249 Trace.from_dict(cls, d)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 装饰器: classmethod
+- 微指令步骤 (1):
+  - 返回 cls(…)
+
+### MI-0250 Trace.to_json(self, path)
+- 模块: `agent\trace.py`
+- 用途: 序列化为 JSON (``path`` 给出时同时落盘)。  ·  INV 35,40
+- 微指令步骤 (3):
+  - 赋值 s ← json.dumps(…)
+  - 判断 path
+  - 返回 s
+
+### MI-0251 Trace.from_json(cls, source)
+- 模块: `agent\trace.py`
+- 用途: 从 JSON 字符串或文件路径重建轨迹。  ·  INV 35,40
+- 装饰器: classmethod
+- 微指令步骤 (2):
+  - 判断 BoolOp
+  - 返回 cls.from_dict(…)
+
+### MI-0252 【类】SeededLLM.SeededLLM(类)
+- 模块: `agent\trace.py`
+- 用途: 确定性 LLM 存根: 由 ``(seed, 步序, 上下文)`` 经 PCG64 决定 Thought/Action。  ·  INV 35,40
+- 微指令步骤 (4):
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0253 SeededLLM.__init__(self, tools, seed, max_steps, finish_prob)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (4):
+  - 赋值 self.tools ← tools
+  - 赋值 self.seed ← int(…)
+  - 赋值 self.max_steps ← int(…)
+  - 赋值 self.finish_prob ← float(…)
+
+### MI-0254 SeededLLM.__call__(self, messages)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (13):
+  - 赋值 step ← sum(…)
+  - 赋值 ctx ← IfExp
+  - 赋值 r ← np.random.default_rng(…)
+  - 赋值 specs ← self.tools.describe(…)
+  - 赋值 name ← IfExp
+  - 赋值 thought ← JoinedStr
+  - 赋值 last_obs ← ""
+  - 遍历 m ∈ reversed(…)
+  - 判断 BoolOp
+  - 赋值 spec ← self.tools.get(…)
+  - 赋值 args ← IfExp
+  - 赋值 args_str ← Constant.join(…)
+  - 返回 JoinedStr
+
+### MI-0255 SeededLLM._answer(last_obs)
+- 模块: `agent\trace.py`
+- 用途: 由最近一次 Observation 生成确定性最终答案。  ·  INV 35,40
+- 装饰器: staticmethod
+- 微指令步骤 (2):
+  - 赋值 m ← re.search(…)
+  - 返回 BoolOp
+
+### MI-0256 SeededLLM._plan_args(schema, r, ctx)
+- 模块: `agent\trace.py`
+- 用途: 按 JSON Schema 生成确定性参数 (INV-33 保证可被校验通过)。  ·  INV 33
+- 装饰器: staticmethod
+- 微指令步骤 (4):
+  - 声明并赋值 args ← Dict
+  - 赋值 props ← schema.get(…)
+  - 遍历 (key, spec) ∈ props.items(…)
+  - 返回 args
+
+### MI-0257 【类】TracedReActAgent.TracedReActAgent(类)
+- 模块: `agent\trace.py`
+- 用途: ReAct 智能体的"带轨迹"版本: 逐步记录 Thought/Action/Observation (INV-35)。  ·  INV 35  ·  复用 ReAct
+- 微指令步骤 (2):
+  - FunctionDef
+  - FunctionDef
+
+### MI-0258 TracedReActAgent.__init__(self, llm_fn, tools, max_steps, memory)
+- 模块: `agent\trace.py`
+- 用途: (无 docstring)  ·  INV 35,40
+- 微指令步骤 (2):
+  - 调用 Call.__init__(…)
+  - 声明并赋值 self.trace ← None
+
+### MI-0259 TracedReActAgent.run_traced(self, question, seed, reflexion)
+- 模块: `agent\trace.py`
+- 用途: 运行并逐步记录轨迹。  ·  INV 35,40  ·  复用 Reflexion, Shinn
+- 微指令步骤 (8):
+  - 赋值 self.history ← [Dict, Dict]
+  - 声明并赋值 steps ← []
+  - 赋值 final ← ""
+  - 遍历 step ∈ range(…)
+  - 判断 BoolOp
+  - 赋值 trace ← Trace(…)
+  - 赋值 self.trace ← trace
+  - 返回 trace
+
+### MI-0260 replay_trace(trace, tools, max_steps)
+- 模块: `agent\trace.py`
+- 用途: 按轨迹记录的 Action 重放 (不再让 LLM 重新决策), 返回重放轨迹。  ·  INV 35
+- 微指令步骤 (4):
+  - 声明并赋值 script ← DictComp
+  - FunctionDef
+  - 赋值 agent ← TracedReActAgent(…)
+  - 返回 agent.run_traced(…)
+
+### MI-0261 compare_traces(a, b)
+- 模块: `agent\trace.py`
+- 用途: INV-35 判据: 两条轨迹是否 100% 一致 (指纹 + 逐步双判据)。  ·  INV 35
+- 微指令步骤 (1):
+  - 返回 BoolOp
+
+### MI-0262 record_and_replay(question, tools, seed, max_steps)
+- 模块: `agent\trace.py`
+- 用途: 一键自检: 同 seed 录制 → 重放 → JSON 往返, 返回一致性报告。  ·  INV 35,40
+- 微指令步骤 (7):
+  - 赋值 agent ← TracedReActAgent(…)
+  - 赋值 original ← agent.run_traced(…)
+  - 赋值 again ← Call.run_traced(…)
+  - 赋值 replayed ← replay_trace(…)
+  - 赋值 restored ← Trace.from_json(…)
+  - 赋值 fps ← SetComp
+  - 返回 Dict
+
 ## L7 服务/编排 (Service/Orchestration)
 
-### MI-0180 format_messages(messages)
+### MI-0263 format_messages(messages)
 - 模块: `serve\api.py`
 - 用途: 将 OpenAI chat messages 拼接为单条 prompt (逐行 "role: content")。  ·  INV 36,37  ·  复用 OpenAI
 - 微指令步骤 (1):
   - 返回 Constant.join(…)
 
-### MI-0181 chat_completion(text, model_name)
+### MI-0264 chat_completion(text, model_name)
 - 模块: `serve\api.py`
 - 用途: 构造 OpenAI 严格的 ``chat.completion`` 响应体 (INV-36)。  ·  INV 36,37  ·  复用 OpenAI
 - 微指令步骤 (2):
   - 赋值 n ← len(…)
   - 返回 Dict
 
-### MI-0182 【类】OpenAIServer.OpenAIServer(类)
+### MI-0265 【类】OpenAIServer.OpenAIServer(类)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (6):
@@ -1788,7 +2603,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0183 OpenAIServer.__init__(self, model, tokenizer, max_new_tokens, seed)
+### MI-0266 OpenAIServer.__init__(self, model, tokenizer, max_new_tokens, seed)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (5):
@@ -1798,7 +2613,7 @@
   - 赋值 self.sampler ← Sampler(…)
   - 赋值 self.model_name ← "ifai-flagship"
 
-### MI-0184 OpenAIServer._gen_tokens(self, prompt, max_new, temperature, top_p, stream)
+### MI-0267 OpenAIServer._gen_tokens(self, prompt, max_new, temperature, top_p, stream)
 - 模块: `serve\api.py`
 - 用途: 生成 token 迭代器。stream 仅决定调用方是否增量消费;  ·  INV 37
 - 微指令步骤 (3):
@@ -1806,7 +2621,7 @@
   - 判断 UnaryOp
   - 遍历 _ ∈ range(…)
 
-### MI-0185 OpenAIServer.completions(self, prompt, temperature, top_p, max_tokens, stream)
+### MI-0268 OpenAIServer.completions(self, prompt, temperature, top_p, max_tokens, stream)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (4):
@@ -1815,7 +2630,7 @@
   - 赋值 obj ← Dict
   - 返回 obj
 
-### MI-0186 OpenAIServer.chat(self, messages, **kw)
+### MI-0269 OpenAIServer.chat(self, messages, **kw)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (3):
@@ -1823,13 +2638,13 @@
   - 赋值 comp ← self.completions(…)
   - 返回 chat_completion(…)
 
-### MI-0187 OpenAIServer.models(self)
+### MI-0270 OpenAIServer.models(self)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (1):
   - 返回 Dict
 
-### MI-0188 OpenAIServer.route(self, method, path, body)
+### MI-0271 OpenAIServer.route(self, method, path, body)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (4):
@@ -1838,23 +2653,183 @@
   - 判断 BoolOp
   - 返回 [404, Dict]
 
-### MI-0189 create_handler(server)
+### MI-0272 create_handler(server)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (2):
   - ClassDef
   - 返回 Handler
 
-### MI-0190 serve(server, host, port)
+### MI-0273 serve(server, host, port)
 - 模块: `serve\api.py`
 - 用途: (无 docstring)  ·  INV 36,37
 - 微指令步骤 (2):
   - 赋值 httpd ← ThreadingHTTPServer(…)
   - 调用 httpd.serve_forever(…)
 
+### MI-0274 normalize(text, leet)
+- 模块: `serve\guardrail.py`
+- 用途: 归一化: 去零宽字符 → NFKC → 小写 → leetspeak 还原 → 折叠空白。  ·  INV 38
+- 微指令步骤 (5):
+  - 赋值 t ← str(…)
+  - 遍历 ch ∈ _ZERO_WIDTH
+  - 赋值 t ← Call.lower(…)
+  - 判断 leet
+  - 返回 Call.strip(…)
+
+### MI-0275 【类】Rule.Rule(类)
+- 模块: `serve\guardrail.py`
+- 用途: 一条护栏规则。  ·  INV 38
+- 微指令步骤 (5):
+  - 声明并赋值 category ← ∅
+  - 声明并赋值 severity ← ∅
+  - 声明并赋值 pattern ← ∅
+  - 声明并赋值 reason ← ∅
+  - 声明并赋值 on_raw ← False
+
+### MI-0276 _rule(category, severity, pattern, reason, on_raw)
+- 模块: `serve\guardrail.py`
+- 用途: (无 docstring)  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 Rule(…)
+
+### MI-0277 【类】GuardrailVerdict.GuardrailVerdict(类)
+- 模块: `serve\guardrail.py`
+- 用途: 护栏判定结果 (结构化, 便于审计与分级处置)。  ·  INV 38
+- 微指令步骤 (8):
+  - 声明并赋值 allowed ← ∅
+  - 声明并赋值 risk ← 0.0
+  - 声明并赋值 categories ← field(…)
+  - 声明并赋值 reasons ← field(…)
+  - 声明并赋值 sanitized_text ← ""
+  - 声明并赋值 stage ← "input"
+  - FunctionDef
+  - FunctionDef
+
+### MI-0278 GuardrailVerdict.blocked(self)
+- 模块: `serve\guardrail.py`
+- 用途: 是否拦截 (``allowed`` 的反义, 便于断言)。  ·  INV 38
+- 装饰器: property
+- 微指令步骤 (1):
+  - 返回 UnaryOp
+
+### MI-0279 GuardrailVerdict.to_dict(self)
+- 模块: `serve\guardrail.py`
+- 用途: (无 docstring)  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 Dict
+
+### MI-0280 【类】Guardrail.Guardrail(类)
+- 模块: `serve\guardrail.py`
+- 用途: 规则护栏: 输入注入/有害检测 + 输出泄露/PII 过滤 (INV-38)。  ·  INV 38
+- 微指令步骤 (5):
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+  - FunctionDef
+
+### MI-0281 Guardrail.__init__(self, max_prompt_chars, min_block_severity, enable_leet, extra_rules)
+- 模块: `serve\guardrail.py`
+- 用途: (无 docstring)  ·  INV 38
+- 微指令步骤 (5):
+  - 赋值 self.max_prompt_chars ← int(…)
+  - 赋值 self.min_block_severity ← float(…)
+  - 赋值 self.enable_leet ← bool(…)
+  - 声明并赋值 self.input_rules ← list(…) add list(…)
+  - 声明并赋值 self.output_rules ← list(…)
+
+### MI-0282 Guardrail.check_input(self, text)
+- 模块: `serve\guardrail.py`
+- 用途: 对用户输入做护栏检查 (INV-38 的红队/误杀统计口径)。  ·  INV 38
+- 微指令步骤 (9):
+  - 赋值 raw ← str(…)
+  - 赋值 norms ← IfExp
+  - 声明并赋值 cats ← []
+  - 声明并赋值 reasons ← []
+  - 赋值 worst ← 0.0
+  - 遍历 r ∈ self.input_rules
+  - 判断 Compare
+  - 赋值 risk ← min(…)
+  - 返回 GuardrailVerdict(…)
+
+### MI-0283 Guardrail.check_output(self, text)
+- 模块: `serve\guardrail.py`
+- 用途: 对模型输出做泄露/PII 过滤, 并给出脱敏后的文本。  ·  INV 38
+- 微指令步骤 (10):
+  - 赋值 raw ← str(…)
+  - 赋值 norms ← IfExp
+  - 声明并赋值 cats ← []
+  - 声明并赋值 reasons ← []
+  - 赋值 worst ← 0.0
+  - 遍历 r ∈ self.output_rules
+  - 赋值 masked ← raw
+  - 遍历 (pat, repl) ∈ _PII_MASK
+  - 赋值 risk ← min(…)
+  - 返回 GuardrailVerdict(…)
+
+### MI-0284 Guardrail.check(self, text)
+- 模块: `serve\guardrail.py`
+- 用途: :meth:`check_input` 的别名 (统一入口)。  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 self.check_input(…)
+
+### MI-0285 Guardrail.guard(self, fn)
+- 模块: `serve\guardrail.py`
+- 用途: 装饰器: 包裹生成函数, 返回 ``(allowed, text_or_reason)``。  ·  INV 38
+- 微指令步骤 (2):
+  - FunctionDef
+  - 返回 wrapped
+
+### MI-0286 _repetition_flood(text, threshold)
+- 模块: `serve\guardrail.py`
+- 用途: 检测重复字符洪水 (同一字符连续出现 ``threshold`` 次以上)。  ·  INV 38
+- 微指令步骤 (3):
+  - 判断 UnaryOp
+  - 赋值 m ← re.search(…)
+  - 返回 Compare
+
+### MI-0287 load_cases(path)
+- 模块: `serve\guardrail.py`
+- 用途: 加载 jsonl 用例集 (每行一个 JSON 对象, 含 ``text`` 字段)。  ·  INV 38
+- 微指令步骤 (3):
+  - 声明并赋值 cases ← []
+  - 上下文管理 (with)
+  - 返回 cases
+
+### MI-0288 evaluate(guardrail, redteam, benign)
+- 模块: `serve\guardrail.py`
+- 用途: INV-38 统计: 红队拦截率与正常提示误杀率。  ·  INV 38  ·  复用 SSE
+- 微指令步骤 (7):
+  - 赋值 red ← IfExp
+  - 赋值 ben ← IfExp
+  - 声明并赋值 missed ← []
+  - 遍历 c ∈ red
+  - 声明并赋值 fps ← []
+  - 遍历 c ∈ ben
+  - 返回 Dict
+
+### MI-0289 default_guardrail()
+- 模块: `serve\guardrail.py`
+- 用途: 返回默认配置护栏 (供 L7 服务与 L9 CLI 直接复用)。  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 Guardrail(…)
+
+### MI-0290 redteam_path()
+- 模块: `serve\guardrail.py`
+- 用途: 内置红队数据集路径 (100 条)。  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 os.path.join(…)
+
+### MI-0291 benign_path()
+- 模块: `serve\guardrail.py`
+- 用途: 内置正常提示数据集路径 (100 条)。  ·  INV 38
+- 微指令步骤 (1):
+  - 返回 os.path.join(…)
+
 ## L8 评估/对齐 (Evaluation/Alignment)
 
-### MI-0191 benchmark_generation(generate_fn, prompt, max_new_tokens, runs)
+### MI-0292 benchmark_generation(generate_fn, prompt, max_new_tokens, runs)
 - 模块: `eval\benchmark.py`
 - 用途: generate_fn(prompt, n) -> 生成的 token 数; 返回吞吐统计。
 - 微指令步骤 (6):
@@ -1865,14 +2840,14 @@
   - 赋值 cv ← IfExp
   - 返回 Dict
 
-### MI-0192 write_baseline(path, stats)
+### MI-0293 write_baseline(path, stats)
 - 模块: `eval\benchmark.py`
 - 用途: (无 docstring)
 - 微指令步骤 (2):
   - 赋值 lines ← ["# 性能基线 (BASELINE…", "", JoinedStr]
   - 上下文管理 (with)
 
-### MI-0193 【类】GSM8K_Mini.GSM8K_Mini(类)
+### MI-0294 【类】GSM8K_Mini.GSM8K_Mini(类)
 - 模块: `eval\harness.py`
 - 用途: 内置 20 道极简算术题 (离线, 不随仓下载)。
 - 微指令步骤 (3):
@@ -1880,7 +2855,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0194 GSM8K_Mini.extract_number(text)
+### MI-0295 GSM8K_Mini.extract_number(text)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1888,7 +2863,7 @@
   - 赋值 nums ← re.findall(…)
   - 返回 IfExp
 
-### MI-0195 GSM8K_Mini.evaluate(self, answer_fn)
+### MI-0296 GSM8K_Mini.evaluate(self, answer_fn)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 微指令步骤 (4):
@@ -1897,14 +2872,14 @@
   - 遍历 (q, gold) ∈ self.DATA
   - 返回 Dict
 
-### MI-0196 【类】RegressionBaseline.RegressionBaseline(类)
+### MI-0297 【类】RegressionBaseline.RegressionBaseline(类)
 - 模块: `eval\harness.py`
 - 用途: 回归门禁: 当前吞吐相对 BASELINE.md 掉落 >15% ⇒ 红灯。
 - 微指令步骤 (2):
   - FunctionDef
   - FunctionDef
 
-### MI-0197 RegressionBaseline.parse_baseline(path)
+### MI-0298 RegressionBaseline.parse_baseline(path)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1913,7 +2888,7 @@
   - 异常保护 (try/except)
   - 返回 out
 
-### MI-0198 RegressionBaseline.check(current, baseline_path, threshold)
+### MI-0299 RegressionBaseline.check(current, baseline_path, threshold)
 - 模块: `eval\harness.py`
 - 用途: (无 docstring)
 - 装饰器: staticmethod
@@ -1924,7 +2899,7 @@
   - 赋值 status ← IfExp
   - 返回 Dict
 
-### MI-0199 perplexity(model, token_ids)
+### MI-0300 perplexity(model, token_ids)
 - 模块: `eval\perplexity.py`
 - 用途: 给定 token 序列计算困惑度 (逐 token 用 logits_next, 因果)。  ·  INV 39
 - 微指令步骤 (6):
@@ -1935,7 +2910,7 @@
   - 赋值 mean_nll ← total_nll div max(…)
   - 返回 float(…)
 
-### MI-0200 perplexity_manual(model, token_ids)
+### MI-0301 perplexity_manual(model, token_ids)
 - 模块: `eval\perplexity.py`
 - 用途: 纯手工 exp(mean NLL) 参考 (INV-39 对照)。  ·  INV 39
 - 微指令步骤 (5):
@@ -1947,7 +2922,7 @@
 
 ## L9 应用/接口 (Application/Interface)
 
-### MI-0201 【类】IFAI.IFAI(类)
+### MI-0302 【类】IFAI.IFAI(类)
 - 模块: `sdk.py`
 - 用途: 旗舰 AI 高层客户端。
 - 微指令步骤 (6):
@@ -1958,7 +2933,7 @@
   - FunctionDef
   - FunctionDef
 
-### MI-0202 IFAI.__init__(self, model_dir, seed)
+### MI-0303 IFAI.__init__(self, model_dir, seed)
 - 模块: `sdk.py`
 - 用途: 载入模型与分词器。
 - 微指令步骤 (5):
@@ -1968,7 +2943,7 @@
   - 赋值 self.model ← load_model(…)
   - 赋值 self.sampler ← Sampler(…)
 
-### MI-0203 IFAI._generate(self, prompt, max_new, temperature)
+### MI-0304 IFAI._generate(self, prompt, max_new, temperature)
 - 模块: `sdk.py`
 - 用途: 内部单一生成原语: 逐 token 前向 + 贪心/采样, 返回续写文本。  ·  复用 OpenAI
 - 微指令步骤 (4):
@@ -1977,30 +2952,372 @@
   - 遍历 _ ∈ range(…)
   - 返回 Constant.join(…)
 
-### MI-0204 IFAI.chat(self, prompt, max_new, temperature)
+### MI-0305 IFAI.chat(self, prompt, max_new, temperature)
 - 模块: `sdk.py`
 - 用途: 生成续写文本 (贪心/采样)。temperature=0 走贪心 (可复现)。
 - 微指令步骤 (1):
   - 返回 BoolOp
 
-### MI-0205 IFAI.chat_completion(self, messages, max_new, temperature)
+### MI-0306 IFAI.chat_completion(self, messages, max_new, temperature)
 - 模块: `sdk.py`
 - 用途: OpenAI 严格兼容的 chat 接口, 返回 ``chat.completion`` dict (INV-36)。  ·  INV 36,37  ·  复用 OpenAI
 - 微指令步骤 (2):
   - 赋值 text ← self._generate(…)
   - 返回 chat_completion(…)
 
-### MI-0206 IFAI.search(self, query, corpus, top_k)
+### MI-0307 IFAI.search(self, query, corpus, top_k)
 - 模块: `sdk.py`
 - 用途: BM25 检索, 返回 [(doc_idx, score)...]。  ·  复用 BM25
 - 微指令步骤 (2):
   - 赋值 bm25 ← Call.fit(…)
   - 返回 bm25.search(…)
 
-### MI-0207 IFAI.run(self, question, max_steps)
+### MI-0308 IFAI.run(self, question, max_steps)
 - 模块: `sdk.py`
 - 用途: 运行 ReAct 智能体 (内置计算器工具)。  ·  复用 ReAct
 - 微指令步骤 (3):
   - FunctionDef
   - 赋值 agent ← ReActAgent(…)
   - 返回 agent.run(…)
+
+## X 横切审计 (Cross-cutting Audits)
+
+### MI-0309 file_has_citation(path)
+- 模块: `scripts\audit_no_reinvention.py`
+- 用途: (无 docstring)  ·  INV 42
+- 微指令步骤 (2):
+  - 异常保护 (try/except)
+  - 返回 any(…)
+
+### MI-0310 resolve_files(root, pattern)
+- 模块: `scripts\audit_no_reinvention.py`
+- 用途: (无 docstring)  ·  INV 42
+- 微指令步骤 (3):
+  - 赋值 out ← []
+  - 判断 pattern.endswith(…)
+  - 返回 out
+
+### MI-0311 collect_citations(root)
+- 模块: `scripts\audit_no_reinvention.py`
+- 用途: 返回全代码库命中到的不同引用标记名集合。  ·  INV 42
+- 微指令步骤 (3):
+  - 声明并赋值 hit ← set(…)
+  - 遍历 (base, _, files) ∈ os.walk(…)
+  - 返回 hit
+
+### MI-0312 main()
+- 模块: `scripts\audit_no_reinvention.py`
+- 用途: (无 docstring)  ·  INV 42
+- 微指令步骤 (19):
+  - 赋值 ap ← argparse.ArgumentParser(…)
+  - 调用 ap.add_argument(…)
+  - 赋值 args ← ap.parse_args(…)
+  - 赋值 root ← args.root
+  - 判断 UnaryOp
+  - 判断 UnaryOp
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 赋值 layer_ok ← True
+  - 遍历 (lid, name, patterns) ∈ LAYERS
+  - 赋值 hits ← collect_citations(…)
+  - 赋值 citation_ok ← Compare
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 判断 BoolOp
+  - 调用 print(…)
+  - 返回 1
+
+### MI-0313 find_markdown(root)
+- 模块: `scripts\check_docs.py`
+- 用途: (无 docstring)
+- 微指令步骤 (3):
+  - 赋值 out ← []
+  - 遍历 (base, _, files) ∈ os.walk(…)
+  - 返回 sorted(…)
+
+### MI-0314 check_links(path, problems)
+- 模块: `scripts\check_docs.py`
+- 用途: (无 docstring)
+- 微指令步骤 (3):
+  - 异常保护 (try/except)
+  - 赋值 base_dir ← os.path.dirname(…)
+  - 遍历 m ∈ _LINK_RE.findall(…)
+
+### MI-0315 check_readme_sections(path, problems)
+- 模块: `scripts\check_docs.py`
+- 用途: (无 docstring)
+- 微指令步骤 (6):
+  - 异常保护 (try/except)
+  - 赋值 headings ← Constant.join(…)
+  - 赋值 headings_lower ← headings.lower(…)
+  - 赋值 missing ← []
+  - 遍历 (pat, label) ∈ README_SECTIONS
+  - 判断 missing
+
+### MI-0316 main()
+- 模块: `scripts\check_docs.py`
+- 用途: (无 docstring)
+- 微指令步骤 (26):
+  - 赋值 ap ← argparse.ArgumentParser(…)
+  - 调用 ap.add_argument(…)
+  - 赋值 args ← ap.parse_args(…)
+  - 赋值 root ← args.root
+  - 判断 UnaryOp
+  - 赋值 root ← os.path.abspath(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 声明并赋值 problems ← []
+  - 调用 print(…)
+  - 遍历 f ∈ REQUIRED_FILES add DESIGN_FILES
+  - 调用 print(…)
+  - 赋值 md_files ← find_markdown(…)
+  - 声明并赋值 link_problems ← []
+  - 遍历 p ∈ md_files
+  - 判断 link_problems
+  - 调用 print(…)
+  - 赋值 readme ← os.path.join(…)
+  - 声明并赋值 section_problems ← []
+  - 调用 check_readme_sections(…)
+  - 判断 section_problems
+  - 调用 print(…)
+  - 判断 problems
+  - 调用 print(…)
+  - 返回 0
+
+### MI-0317 rank_of(path)
+- 模块: `scripts\check_layering.py`
+- 用途: 返回文件所属包的层秩; 根目录 (ifai/__init__.py 等) 视为应用层 9。  ·  INV 41
+- 微指令步骤 (5):
+  - 赋值 rel ← os.path.relpath(…)
+  - 赋值 parts ← rel.split(…)
+  - 判断 Compare
+  - 赋值 pkg ← parts[…]
+  - 返回 PACKAGE_RANK.get(…)
+
+### MI-0318 imports_of(path)
+- 模块: `scripts\check_layering.py`
+- 用途: (无 docstring)  ·  INV 41
+- 微指令步骤 (4):
+  - 上下文管理 (with)
+  - 赋值 targets ← []
+  - 遍历 node ∈ ast.walk(…)
+  - 返回 targets
+
+### MI-0319 main()
+- 模块: `scripts\check_layering.py`
+- 用途: (无 docstring)  ·  INV 41
+- 微指令步骤 (16):
+  - 赋值 ap ← argparse.ArgumentParser(…)
+  - 调用 ap.add_argument(…)
+  - 赋值 args ← ap.parse_args(…)
+  - 赋值 root ← args.root
+  - 判断 UnaryOp
+  - 判断 UnaryOp
+  - 赋值 violations ← []
+  - 赋值 scanned ← 0
+  - 遍历 (base, _, files) ∈ os.walk(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 判断 violations
+  - 调用 print(…)
+  - 返回 0
+
+### MI-0320 build_model(out_dir)
+- 模块: `scripts\gen_baseline.py`
+- 用途: (无 docstring)
+- 微指令步骤 (9):
+  - 调用 os.makedirs(…)
+  - 调用 rng.seed(…)
+  - 赋值 cfg ← ModelConfig(…)
+  - 赋值 tok ← Call.train(…)
+  - 调用 tok.to_json(…)
+  - 赋值 trainer ← TinyTrainer(…)
+  - 调用 trainer.train(…)
+  - 调用 trainer.save(…)
+  - 返回 [load_model(…), tok]
+
+### MI-0321 bench(model, tok)
+- 模块: `scripts\gen_baseline.py`
+- 用途: (无 docstring)
+- 微指令步骤 (8):
+  - 赋值 ids ← BoolOp[…]
+  - 当 Compare 循环
+  - 赋值 ids ← ids[…]
+  - 赋值 (prefill_ms, decode_ms) ← [[], []]
+  - 遍历 _ ∈ range(…)
+  - 赋值 prefill ← statistics.mean(…)
+  - 赋值 tpot ← statistics.mean(…)
+  - 返回 Dict
+
+### MI-0322 write_baseline(metrics, repo_root)
+- 模块: `scripts\gen_baseline.py`
+- 用途: (无 docstring)
+- 微指令步骤 (5):
+  - 赋值 md ← os.path.join(…)
+  - 赋值 js ← os.path.join(…)
+  - 上下文管理 (with)
+  - 赋值 lines ← ["# 性能基线 (BASELINE…", "", "> 由 `scripts/gen…"]
+  - 上下文管理 (with)
+
+### MI-0323 main()
+- 模块: `scripts\gen_baseline.py`
+- 用途: (无 docstring)
+- 微指令步骤 (11):
+  - 赋值 ap ← argparse.ArgumentParser(…)
+  - 调用 ap.add_argument(…)
+  - 调用 ap.add_argument(…)
+  - 赋值 args ← ap.parse_args(…)
+  - 赋值 root ← args.out
+  - 赋值 metrics ← bench(…)
+  - 判断 args.check
+  - 调用 write_baseline(…)
+  - 调用 print(…)
+  - 遍历 (k, v) ∈ metrics.items(…)
+  - 返回 0
+
+### MI-0324 layer_of(path)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (5):
+  - 赋值 rel ← os.path.relpath(…)
+  - 赋值 parts ← rel.split(…)
+  - 判断 Compare
+  - 赋值 pkg ← parts[…]
+  - 返回 PACKAGE_RANK.get(…)
+
+### MI-0325 extract_invs(text)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: 提取文本中的 INV 编号, 支持单条与 `INV-01..09` 区间展开。  ·  INV 1,2,3,4,5,6,7,8,9
+- 微指令步骤 (4):
+  - 赋值 found ← set(…)
+  - 遍历 m ∈ INV_RANGE_RE.finditer(…)
+  - 遍历 m ∈ INV_RE.finditer(…)
+  - 返回 found
+
+### MI-0326 args_sig(node)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (5):
+  - 赋值 names ← ListComp
+  - 判断 node.vararg
+  - 累算 names add ListComp
+  - 判断 node.kwarg
+  - 返回 Constant.join(…)
+
+### MI-0327 describe_stmt(stmt)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (14):
+  - 赋值 t ← Call.__name__
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 BoolOp
+  - 判断 isinstance(…)
+  - 返回 t
+
+### MI-0328 _name(n)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (5):
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 返回 Call.__name__
+
+### MI-0329 _expr(n)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (9):
+  - 判断 Compare
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 isinstance(…)
+  - 判断 BoolOp
+  - 返回 Call.__name__
+
+### MI-0330 collect(root, force_layer)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: 返回 {layer: [entries]} 与全局统计。每个 entry 为 dict。  ·  INV 41,42
+- 微指令步骤 (6):
+  - 赋值 by_layer ← DictComp
+  - 赋值 total_func ← 0
+  - 赋值 total_steps ← 0
+  - 赋值 inv_hits ← set(…)
+  - 遍历 (base, _, files) ∈ os.walk(…)
+  - 返回 [by_layer, total_func, total_steps]
+
+### MI-0331 _entry(rel, func, cls, src, module_doc_inv, methods)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (9):
+  - 判断 Compare
+  - 赋值 first_line ← IfExp
+  - 赋值 func_inv ← extract_invs(…)
+  - 赋值 inv ← IfExp
+  - 赋值 src_hits ← sorted(…)
+  - 赋值 steps ← []
+  - 遍历 stmt ∈ body
+  - 判断 UnaryOp
+  - 返回 Dict
+
+### MI-0332 render(by_layer, total_func, total_steps, inv_hits, out_path)
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (20):
+  - 赋值 lines ← []
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 赋值 total_mi ← total_func add total_steps
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 调用 lines.append(…)
+  - 遍历 i ∈ range(…)
+  - 调用 lines.append(…)
+  - 赋值 mid ← 1
+  - 遍历 i ∈ range(…)
+  - 赋值 text ← Constant.join(…)
+  - 上下文管理 (with)
+  - 返回 [text, total_mi]
+
+### MI-0333 main()
+- 模块: `scripts\gen_micro_instructions.py`
+- 用途: (无 docstring)  ·  INV 41,42
+- 微指令步骤 (15):
+  - 赋值 ap ← argparse.ArgumentParser(…)
+  - 调用 ap.add_argument(…)
+  - 调用 ap.add_argument(…)
+  - 调用 ap.add_argument(…)
+  - 赋值 args ← ap.parse_args(…)
+  - 赋值 (by_layer, total_func, total_steps, inv_hits) ← collect(…)
+  - 判断 os.path.isdir(…)
+  - 赋值 (text, total_mi) ← render(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 调用 print(…)
+  - 返回 0

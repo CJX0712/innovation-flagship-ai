@@ -4,7 +4,15 @@
 产出与 ``ifai.models.Transformer`` 完全兼容的参数文件 (同名 + 同结构),
 使 ``ifai demo`` 可直接加载推理。
 
-零重写: 训练循环范式参考 Karpathy "nanogpt" (极简 GPT 训练循环)。
+零重写: 训练循环范式参考 Karpathy "nanogpt" (极简 GPT 训练循环);
+梯度检查点 (INV-25) 复用 Chen et al. 2016 的重计算思想, 见
+``ifai/train/checkpoint.py``。
+
+可验证不变量:
+- INV-25 梯度检查点: loss/grad ≡ 无检查点 (``diff ≤ 1e-5``), 由
+  ``gradient_checkpointing`` 开关与 ``ifai.train.checkpoint.verify_checkpoint``
+  自检。
+- INV-26 训练损失单调性 (滑动平滑后)。
 """
 from __future__ import annotations
 
@@ -19,6 +27,7 @@ from .. import rng
 from ..core import numeric, ops
 from ..models.config import ModelConfig
 from .autodiff import Tensor
+from .checkpoint import checkpoint
 from .optim import AdamW, GlobalStep, clip_global_norm
 
 
@@ -26,6 +35,8 @@ class TinyTrainer:
     def __init__(self, config: ModelConfig):
         self.cfg = config
         self.params: Dict[str, Tensor] = {}
+        # 梯度检查点开关 (INV-25): 开启后每层前向不保留层内激活, 反向时重算
+        self.gradient_checkpointing = False
         self._build()
 
     def _P(self, name, shape):
@@ -84,46 +95,63 @@ class TinyTrainer:
         out._prev = [x]
         return out
 
-    def forward(self, ids: np.ndarray) -> Tensor:
+    def enable_gradient_checkpointing(self, enabled: bool = True) -> None:
+        """开启/关闭梯度检查点 (INV-25)。"""
+        self.gradient_checkpointing = bool(enabled)
+
+    def _layer_forward(self, x: Tensor, layer: int) -> Tensor:
+        """单层 DecoderBlock 前向 (供梯度检查点按层分段重算, INV-25)。"""
         c = self.cfg
-        B, T = ids.shape
+        B, T = x.data.shape[0], x.data.shape[1]
         d, dh, n_h, n_kv = c.d_model, c.d_head, c.n_heads, c.n_kv_heads
         pos = np.arange(T)
+        p = f"layer{layer}."
+        # RMSNorm
+        ms = (x * x).mean(axis=-1, keepdims=True)
+        h = x / (ms + c.norm_eps).pow(0.5) * self.params[p + "attn_norm"]
+        q = h.matmul(self.params[p + "q_proj"])
+        k = h.matmul(self.params[p + "k_proj"])
+        v = h.matmul(self.params[p + "v_proj"])
+        q = self._rope(q, pos, d).data.reshape(B, T, n_h, dh)
+        k = self._rope(Tensor(k.data), pos, n_kv * dh).data.reshape(B, T, n_kv, dh)
+        v = v.data.reshape(B, T, n_kv, dh)
+        # 注意力 (单头循环, 微型模型足够)
+        ctx = np.zeros((B, T, d))
+        scale = 1.0 / dh ** 0.5
+        for b in range(B):
+            for head in range(n_h):
+                qq = q[b, :, head, :]      # [T,dh]
+                kvh = head // c.n_repeats   # GQA: 多个 q 头共享同一 kv 头
+                kk = k[b, :, kvh, :]
+                vv = v[b, :, kvh, :]
+                scores = (qq @ kk.T) * scale          # [T,T]
+                scores = np.where(np.triu(np.ones((T, T), bool), 1), -1e30, scores)
+                p_att = numeric.stable_softmax(scores, axis=-1)
+                ctx[b, :, head * dh:(head + 1) * dh] = p_att @ vv
+        ctx_t = Tensor(ctx)
+        o = ctx_t.matmul(self.params[p + "o_proj"])
+        x = x + o
+        ms2 = (x * x).mean(axis=-1, keepdims=True)
+        h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
+        g = h2.matmul(self.params[p + "ffn_gate"])
+        u = h2.matmul(self.params[p + "ffn_up"])
+        silu = g * g.sigmoid()                          # SwiGLU 门控
+        ff = (silu * u).matmul(self.params[p + "ffn_down"])
+        x = x + ff
+        return x
+
+    def forward(self, ids: np.ndarray) -> Tensor:
+        c = self.cfg
+        ids = np.asarray(ids)
+        if ids.ndim == 1:
+            ids = ids[None]
         x = self.params["embed"][ids]                        # [B,T,d]
         for l in range(c.n_layers):
-            p = f"layer{l}."
-            # RMSNorm
-            ms = (x * x).mean(axis=-1, keepdims=True)
-            h = x / (ms + c.norm_eps).pow(0.5) * self.params[p + "attn_norm"]
-            q = h.matmul(self.params[p + "q_proj"])
-            k = h.matmul(self.params[p + "k_proj"])
-            v = h.matmul(self.params[p + "v_proj"])
-            q = self._rope(q, pos, d).data.reshape(B, T, n_h, dh)
-            k = self._rope(Tensor(k.data), pos, n_kv * dh).data.reshape(B, T, n_kv, dh)
-            v = v.data.reshape(B, T, n_kv, dh)
-            # 注意力 (单头循环, 微型模型足够)
-            ctx = np.zeros((B, T, d))
-            scale = 1.0 / dh ** 0.5
-            for b in range(B):
-                for head in range(n_h):
-                    qq = q[b, :, head, :]      # [T,dh]
-                    kvh = head // c.n_repeats   # GQA: 多个 q 头共享同一 kv 头
-                    kk = k[b, :, kvh, :]
-                    vv = v[b, :, kvh, :]
-                    scores = (qq @ kk.T) * scale          # [T,T]
-                    scores = np.where(np.triu(np.ones((T, T), bool), 1), -1e30, scores)
-                    p_att = numeric.stable_softmax(scores, axis=-1)
-                    ctx[b, :, head * dh:(head + 1) * dh] = p_att @ vv
-            ctx_t = Tensor(ctx)
-            o = ctx_t.matmul(self.params[p + "o_proj"])
-            x = x + o
-            ms2 = (x * x).mean(axis=-1, keepdims=True)
-            h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
-            g = h2.matmul(self.params[p + "ffn_gate"])
-            u = h2.matmul(self.params[p + "ffn_up"])
-            silu = g * g.sigmoid()                          # SwiGLU 门控
-            ff = (silu * u).matmul(self.params[p + "ffn_down"])
-            x = x + ff
+            if self.gradient_checkpointing:
+                # 按层检查点: 前向丢弃层内激活, 反向时重算 (INV-25)
+                x = checkpoint(lambda t, i=l: self._layer_forward(t, i), x)
+            else:
+                x = self._layer_forward(x, l)
         ms3 = (x * x).mean(axis=-1, keepdims=True)
         x = x / (ms3 + c.norm_eps).pow(0.5) * self.params["final_norm"]
         logits = x.matmul(self.params["lm_head"].transpose())     # [B,T,V]
