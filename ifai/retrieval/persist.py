@@ -143,9 +143,10 @@ class PersistentIndex:
         with open(idx_path, "w", encoding="utf-8") as f:
             json.dump(state, f, ensure_ascii=False, indent=1)
         vec_path = os.path.join(dir_path, "vectors.npz")
+        # v0.7.13: 移除死字段 proj (编码由 sha256 稳定派生, 无随机投影);
+        # schema 变更 — 向量本身逐位不变 (sha256 稳定哈希下重 fit 亦逐位一致)
         np.savez(vec_path,
-                 matrix=np.asarray(self.dense.matrix, dtype=np.float64),
-                 proj=np.asarray(self.dense.proj, dtype=np.float64))
+                 matrix=np.asarray(self.dense.matrix, dtype=np.float64))
         manifest = {
             "version": INDEX_VERSION,
             "n_docs": len(self.corpus),
@@ -202,7 +203,6 @@ class PersistentIndex:
         obj.bm25 = cls._bm25_from_state(state["bm25"])
         data = np.load(os.path.join(dir_path, "vectors.npz"))
         dense = DenseIndex(dim=obj.dim, seed=obj.seed)
-        dense.proj = np.asarray(data["proj"], dtype=np.float64)
         dense.docs = [np.asarray(data["matrix"][i], dtype=np.float64)
                       for i in range(data["matrix"].shape[0])]
         dense.matrix = np.asarray(data["matrix"], dtype=np.float64)

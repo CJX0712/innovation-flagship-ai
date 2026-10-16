@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from .dense import stable_hash
+
 
 class CrossEncoderReranker:
     def __init__(self, dim: int = 256, seed: int = 0):
@@ -20,8 +22,9 @@ class CrossEncoderReranker:
         self.seed = seed
 
     def _token_vec(self, t: str) -> np.ndarray:
-        # 词 → 稳定单位向量 (由词哈希派生, 确定性)
-        h = (hash(t) & 0xFFFFFFFF) ^ (self.seed & 0xFFFFFFFF)
+        # 词 → 稳定单位向量 (由 sha256 稳定哈希派生, 确定性可复现 — v0.7.13
+        # 修复内建 hash() 受 PYTHONHASHSEED 随机化导致的跨进程漂移)
+        h = (stable_hash(t) & 0xFFFFFFFF) ^ (self.seed & 0xFFFFFFFF)
         v = np.random.default_rng(h).standard_normal(self.dim)
         n = np.linalg.norm(v)
         return v / n if n > 0 else v

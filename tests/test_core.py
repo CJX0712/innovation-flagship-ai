@@ -201,6 +201,38 @@ def test_int4_model_quantization_inference():
     assert np.isfinite(err) and err <= 0.06, f"INT4 前向误差失控: {err:.3e}"
 
 
+def test_fp16_model_quantization_inference():
+    """FP16 模型量化接入推理 (v0.7.13): 整模型半精度往返后
+    1) 逐权重误差 |orig−dq| ≤ 1e-3·|orig| + 1e-7 (fp16 round-to-nearest:
+       ulp/2 相对 ≈ 4.88e-4; 子正规 flush 绝对粒度 ~6e-8);
+    2) top-1 决策不翻转;
+    3) 前向误差 ≪ INT8 (实测 7.6e-5, 界 1e-3)。
+    补齐 README L0 承诺 "int8/int4/fp16 量化" 的最后一档模型级路径
+    (接线 L0 死代码 quantize_fp16)。
+    """
+    rng.seed(123)
+    cfg = ModelConfig(
+        vocab_size=64, d_model=16, n_layers=2, n_heads=4, n_kv_heads=2,
+        ffn_mult=2, tie_word_embeddings=True,
+    )
+    model = Transformer(cfg)
+    ids = rng.get_rng().integers(0, cfg.vocab_size, size=(2, 8))
+    fp64_out = model.forward(ids)
+    info = model.quantize_fp16()
+    q_out = model.forward(ids)
+    # 1) 逐权重半精度误差界
+    for k, orig in info.items():
+        dq = model.params[k]
+        assert np.all(np.abs(orig - dq) <= 1e-3 * np.abs(orig) + 1e-7), (
+            f"{k} 违反 FP16 误差界")
+    # 2) top-1 决策不变
+    assert np.array_equal(fp64_out.argmax(-1), q_out.argmax(-1)), (
+        "FP16 往返翻转了模型 top-1 决策")
+    # 3) 前向误差受控 (远优于 INT8/INT4)
+    err = float(np.max(np.abs(fp64_out - q_out)))
+    assert np.isfinite(err) and err <= 1e-3, f"FP16 前向误差失控: {err:.3e}"
+
+
 def test_safe_cross_entropy_vs_manual():
     """safe_cross_entropy ≡ 手工 log-softmax NLL; 梯度 == p − onehot。"""
     logits = rng.get_rng().standard_normal((6, 5)) * 3

@@ -38,11 +38,29 @@ def test_dense_equals_brute():
 
 
 def test_hnsw_recall():
-    """INV-28: HNSW 召回 ⊇ 近似暴力枚举 (recall@10 ≥ 0.95)。"""
+    """INV-28: HNSW 召回 ⊇ 近似暴力枚举 (recall@10 ≥ 0.95, PRD R-L5-03 规定参数
+    M=16 / efC=200 / efS=64)。
+
+    v0.7.13 真 bug 修复回归: 旧实现当新节点提升 max_level 时 enter 跳到零边
+    孤立点 (插入搜索从"它自己"出发 → 自环无真实边) → 图不连通, 400 节点实测
+    40 个失联, recall 恒 0.900 (恰 = 可达比例) 且 efS 拉满无效。修复 (插入
+    统一以旧 enter 为入口 + 自环守卫) 后全连通且 recall = 1.000 (5 seed)。
+    """
+    from collections import deque
     rng_np = rng.get_rng()
     data = rng_np.standard_normal((400, 32))
     data /= np.linalg.norm(data, axis=1, keepdims=True)
-    hnsw = HNSW(M=24, ef_construction=120, ef_search=120, seed=0).build(data)
+    hnsw = HNSW(M=16, ef_construction=200, ef_search=64, seed=0).build(data)
+    # 回归守卫: 图必须全连通 (历史 bug 的直接可观测信号)
+    seen = {hnsw.enter}
+    dq = deque([hnsw.enter])
+    while dq:
+        cur = dq.popleft()
+        for nb in hnsw.layers.get(cur, []):
+            if nb not in seen:
+                seen.add(nb)
+                dq.append(nb)
+    assert len(seen) == len(data), f"图不连通: 仅 {len(seen)}/{len(data)} 可达"
     # 暴力 top10
     queries = rng_np.standard_normal((40, 32))
     queries /= np.linalg.norm(queries, axis=1, keepdims=True)
@@ -55,7 +73,42 @@ def test_hnsw_recall():
         hits += len(true & pred)
         total += k
     recall = hits / total
-    assert recall >= 0.90, f"recall={recall:.3f}"
+    assert recall >= 0.95, f"recall={recall:.3f}"
+
+
+def test_dense_rerank_cross_process_reproducible(tmp_path):
+    """v0.7.13 真 bug 回归: 检索编码必须跨进程可复现。
+
+    旧实现 DenseIndex/CrossEncoderReranker 用 Python 内建 ``hash()`` — 受
+    PYTHONHASHSEED 随机化影响, 同语料跨进程 fit 出不同向量, 违反自身
+    「确定性可复现」声明。sha256 稳定哈希修复后, 不同 PYTHONHASHSEED 的两个
+    子进程必须产出逐位一致结果。
+    """
+    import json
+    import os
+    import subprocess
+    import sys
+
+    script = (
+        "import json;"
+        "from ifai.retrieval.dense import DenseIndex;"
+        "from ifai.retrieval.rerank import CrossEncoderReranker;"
+        "corpus=[['人工智能','模型'],['检索','向量'],['注意力','机制']];"
+        "di=DenseIndex(dim=64,seed=0).fit(corpus);"
+        "r1=di.search(['人工智能'],3);"
+        "rr=CrossEncoderReranker(dim=64,seed=0);"
+        "r2=rr.rerank(['人工智能'],corpus,2);"
+        "print(json.dumps([r1,r2]))"
+    )
+    outs = []
+    for seed_env in ("0", "42"):
+        env = {**os.environ, "PYTHONHASHSEED": seed_env}
+        p = subprocess.run([sys.executable, "-c", script], env=env,
+                           capture_output=True, text=True)
+        assert p.returncode == 0, f"子进程失败 (PYTHONHASHSEED={seed_env}): {p.stderr}"
+        outs.append(p.stdout.strip())
+    assert outs[0] == outs[1], (
+        f"跨进程不可复现 (PYTHONHASHSEED 0 vs 42):\n{outs[0]}\nvs\n{outs[1]}")
 
 
 def test_rrf_formula():

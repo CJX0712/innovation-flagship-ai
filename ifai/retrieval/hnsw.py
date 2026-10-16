@@ -40,18 +40,24 @@ class HNSW:
         self.data.append(np.asarray(vec, dtype=np.float64))
         level = self._level()
         self.layers[idx] = []
+        # v0.7.13 真 bug 修复 (图不连通 → recall 恰 = 可达节点比例):
+        # 旧实现当新节点提升 max_level 时 enter=idx, 且插入搜索从"它自己"
+        # (零边) 出发 → 候选=自身 → 自环、无真实边 → enter 跳到孤立点,
+        # 此后所有插入连进新分量, 旧分量整体失联 (400 节点实测 40 个不可达,
+        # recall 恒 0.900 且 efS 拉满无效)。修复: 先捕获旧 enter 作为
+        # 各层插入搜索的统一入口 — 新节点经旧 enter 的连通分量建立真实边。
+        prev_enter = self.enter
         if self.enter is None or level > self.max_level:
             self.max_level = max(self.max_level, level)
             self.enter = idx
-        # 从顶层向下插入
-        ep = [self.enter] if self.enter is not None and self.enter != idx else []
+        ep = [prev_enter] if prev_enter is not None else []
         for lc in range(min(level, self.max_level), -1, -1):
             if not ep:
                 ep = [self.enter] if self.enter is not None else []
             # 贪心搜 efC 候选
             candidates = self._search_layer(self.data[idx], ep, self.efC, lc)
-            # 连接 M 最近邻
-            neighbors = candidates[:self.M]
+            # 连接 M 最近邻 (排除自身, 防自环)
+            neighbors = [e for e in candidates if e != idx][:self.M]
             self.layers[idx] = self.layers.get(idx, [])  # 占位
             for nb in neighbors:
                 self._connect(idx, nb, lc)
@@ -60,6 +66,8 @@ class HNSW:
 
     def _connect(self, a: int, b: int, layer: int):
         # 简易双向连接 (未做邻居裁剪, 足以保证高召回)
+        if a == b:
+            return  # v0.7.13: 自环守卫 (自环不提供导航边, 且污染邻居列表)
         self.layers.setdefault(a, [])
         self.layers.setdefault(b, [])
         if b not in self.layers[a]:

@@ -165,3 +165,32 @@ def test_sampler_edge_branches():
     assert kept.tolist() == [0, 1, 2], f"核集应为 top-3: {kept}"
     assert (p_nuc * logits).sum() > 0 and abs(p_nuc.sum() - 1.0) <= 1e-9
     assert p_nuc[:3].sum() >= 0.9, "核集累计质量必须 ≥ top_p"
+
+
+def test_scheduler_sampling_branch_live():
+    """v0.7.13 真 bug 回归: greedy=False 必须走采样。
+
+    旧实现 ``scheduler.py`` 的 else 分支与贪心分支逐字相同 (均 argmax),
+    ``greedy=False`` 形同虚设。均匀 logits 下 argmax 恒为 token 0, 而采样
+    (不同 seed) 必须产生不同序列 — 证明采样分支真实激活。
+    """
+    V = 20
+
+    def uniform_fwd(ids, position_ids=None, key_padding_mask=None):
+        return np.zeros((ids.shape[0], ids.shape[1], V))
+
+    # 贪心: 恒 argmax = 0 (均匀分布)
+    out_greedy = ContinuousScheduler(uniform_fwd).generate(
+        [[5]], max_new_tokens=4, greedy=True)
+    assert out_greedy == [[0, 0, 0, 0]]
+
+    # 非贪心: 采样激活 — 同 seed 可复现, 异 seed 产生不同序列
+    outs = []
+    for seed in range(8):
+        sched = ContinuousScheduler(uniform_fwd, sampler=Sampler(seed=seed))
+        o1 = sched.generate([[5]], max_new_tokens=4, greedy=False)
+        o2 = ContinuousScheduler(uniform_fwd, sampler=Sampler(seed=seed)).generate(
+            [[5]], max_new_tokens=4, greedy=False)
+        assert o1 == o2, f"seed={seed} 同 seed 两次采样不一致"
+        outs.append(tuple(o1[0]))
+    assert len(set(outs)) >= 2, f"非贪心 8 个 seed 全部同输出 — 采样分支仍死: {outs}"

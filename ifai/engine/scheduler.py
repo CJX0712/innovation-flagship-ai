@@ -13,15 +13,27 @@ from typing import Callable, List
 
 import numpy as np
 
+from .sampler import Sampler
+
 
 class ContinuousScheduler:
-    """对同一批 prompt 做并行贪心生成。
+    """对同一批 prompt 做并行贪心/采样生成。
 
     ``model_forward(ids: np.ndarray[B,T]) -> logits[B,T,V]`` 为统一前向接口。
+    ``sampler`` 为可选 L3 采样器 (temperature/top_p/min_p 等); ``greedy=False``
+    时走采样 — v0.7.13 修复历史 bug: 旧实现 else 分支与贪心逐字相同,
+    ``greedy=False`` 恒 argmax (采样参数形同虚设)。
     """
 
-    def __init__(self, model_forward: Callable[[np.ndarray], np.ndarray]):
+    def __init__(self, model_forward: Callable[[np.ndarray], np.ndarray],
+                 sampler: Sampler | None = None):
         self.fwd = model_forward
+        self.sampler = sampler
+
+    def _sample(self, logits_1d: np.ndarray) -> int:
+        if self.sampler is None:
+            self.sampler = Sampler()
+        return int(self.sampler.sample(logits_1d))
 
     def generate(self, prompts: List[List[int]], max_new_tokens: int,
                  eos_id: int | None = None, greedy: bool = True,
@@ -48,7 +60,7 @@ class ContinuousScheduler:
                               key_padding_mask=key_padding_mask)   # [B, T, V]
             last = logits[:, -1, :]
             for row, i in enumerate(live):
-                nxt = int(np.argmax(last[row])) if greedy else int(np.argmax(last[row]))
+                nxt = int(np.argmax(last[row])) if greedy else self._sample(last[row])
                 seqs[i].append(nxt)
                 produced[i] += 1
                 if (eos_id is not None and nxt == eos_id) or produced[i] >= max_new_tokens:

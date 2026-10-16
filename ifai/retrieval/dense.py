@@ -8,20 +8,32 @@
 """
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
+
+
+def stable_hash(t: str) -> int:
+    """跨进程稳定的词项哈希 (sha256 派生)。
+
+    v0.7.13 真 bug 修复: 旧实现用 Python 内建 ``hash()`` — 受 PYTHONHASHSEED
+    随机化影响, 同语料跨进程 fit 出不同向量, 违反本项目「确定性可复现」声明。
+    sha256 派生在任意进程/任意种子下逐位一致。
+    """
+    return int.from_bytes(hashlib.sha256(t.encode("utf-8")).digest()[:8], "little")
 
 
 class DenseIndex:
     def __init__(self, dim: int = 256, seed: int = 0):
         self.dim = dim
-        self.rng = np.random.default_rng(seed)
-        # 随机投影矩阵 (固定种子 ⇒ 可复现)
-        self.proj = self.rng.standard_normal((dim,))
+        # seed 仅为 API 兼容保留 (persist.py 序列化用); 编码由 sha256 稳定派生,
+        # 不依赖任何随机性 — v0.7.13 移除从未被使用的死属性 rng/proj。
+        self.seed = seed
 
     def _embed(self, tokens: list[str]) -> np.ndarray:
         vec = np.zeros(self.dim)
         for t in tokens:
-            h = hash(t) % self.dim
+            h = stable_hash(t) % self.dim
             vec[h] += 1.0
         # L2 归一化
         n = np.linalg.norm(vec)

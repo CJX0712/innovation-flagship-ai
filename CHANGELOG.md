@@ -2,6 +2,42 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.13] — 2026-10-17
+
+### 修复 (Fixed) — 全栈真缺口审计驱动: 1 旗舰级算法 bug + 2 可复现性 bug + 1 断言放水
+本轮由 **3 个并行只读审计 agent 对全栈十层做「声明 vs 实现」落差扫描**驱动,
+按价值排序落地四项修复:
+
+- **HNSW 图不连通 (旗舰级算法 bug, 根因修复)**: `retrieval/hnsw.py::add` 旧实现
+  当新节点提升 `max_level` 时 `enter=idx`, 且插入搜索从"它自己"(此刻零边)出发 →
+  候选=自身 → 自环、无真实边 → **enter 跳到孤立点, 此后所有插入连进新分量, 旧分量
+  整体失联**。400 节点实测 40 个不可达 (恰为前 ~35 个早期节点, 度 25-28 但邻居全
+  同岛), recall 恒 0.900 (= 可达比例) 且 efS 拉满无效; 测试亦因迁就现实使用偏离
+  PRD 的参数并放水至 0.90。修复: 插入统一以**旧 enter** 为搜索入口 + `_connect`
+  自环守卫 + neighbors 过滤自身。**修后全连通 400/400, PRD 规定参数
+  (M=16/efC=200/efS=64) 下 recall@10 = 1.000 (5 seed 全部)**; INV-28 测试对齐
+  PRD 参数与 0.95 断言, 并新增全连通回归守卫。
+- **检索编码跨进程不可复现 (违反自身「确定性可复现」声明)**: `DenseIndex`/
+  `CrossEncoderReranker` 用 Python 内建 `hash()` — 受 PYTHONHASHSEED 随机化,
+  同语料跨进程 fit 出不同向量。修复: 换 sha256 派生稳定哈希 (`dense.stable_hash`);
+  移除从未参与计算的死属性 `rng/proj` 并同步清理持久化 schema (vectors.npz 死
+  字段 proj, save/load 两侧一致)。新增双子进程 (PYTHONHASHSEED 0 vs 42) 逐位
+  一致性回归测试。
+- **ContinuousScheduler 采样分支死代码 (1 行真 bug)**: `scheduler.py` 的
+  `greedy=False` 分支与贪心分支逐字相同 (均 argmax) — 采样形同虚设。修复:
+  构造器接入可选 `Sampler`, else 分支真实采样; 新增回归测试 (均匀 logits 下
+  8 seed 采样必须产生 ≥2 种不同序列, 同 seed 逐位可复现)。
+- **FP16 模型量化接入 (README 最后一档空头支票)**: README L0 宣称
+  "int8/int4/fp16 量化", 但 `quantize_fp16` 是零调用死代码。新增
+  `Transformer.quantize_fp16` (与 int8/int4 同范式, tie 安全) + 测试:
+  逐权重误差 ≤1e-3·|orig|+1e-7、top-1 零翻转、前向误差 7.6e-5 (≪ INT8 1.8e-3)。
+
+- 全量测试 263 → **266** (净 +3), selftest 4 门禁 ALL GREEN, INV 42/42 双侧达成。
+- 审计发现但本轮未动的更高成本缺口 (已排序待后续): RAG 管线接入 `ifai search`/
+  新增 `ifai index` (L5 五组件中 4 个测试专属)、SSE 流式落地 (stream 参数被静默
+  忽略, INV-37 假绿色)、护栏接入 serve (guardrail.py 427 行零接线)、L3 五大件
+  接入用户入口 (serve 朴素 O(n²) 循环)、回归门禁双轨分裂 (gen_baseline vs harness)。
+
 ## [0.7.12] — 2026-10-17
 
 ### 文档 (Documentation) — README / L4 设计文档同步 (v0.7.4–v0.7.11 功能债清偿)

@@ -318,6 +318,27 @@ class Transformer:
             self.params["lm_head"] = self.params["embed"]       # 维持 INV-12 绑定
         return info
 
+    # ---------------- FP16 量化 (推理端, 半精度模拟) ----------------
+    def quantize_fp16(self) -> Dict[str, np.ndarray]:
+        """对全部线性权重做 FP16 往返量化 (IEEE 754 半精度模拟), 与
+        :meth:`quantize_int8` / :meth:`quantize_int4` 同范式 — 接线 L0 死代码
+        ``quantize_fp16`` (v0.7.13 前 README 宣称 "int8/int4/fp16 量化" 但
+        模型级 fp16 路径不存在)。误差界: |orig − fp16(orig)| ≤ ulp/2 (相对
+        ≈ 4.88e-4) + 子正规绝对粒度 (~6e-8), 远优于 INT8/INT4。
+
+        返回 ``{name: orig}`` 供逐权重相对误差界校验; 1D 参数不量化; tie 下
+        ``lm_head`` 与 ``embed`` 同一数组, 量化一次并维持绑定。
+        """
+        info: Dict[str, np.ndarray] = {}
+        for k in [k2 for k2, v in self.params.items() if v.ndim == 2]:
+            if self.cfg.tie_word_embeddings and k == "lm_head":
+                continue  # 与 embed 同一数组, 量化一次即可
+            v = self.params[k]
+            self.params[k] = quant.quantize_fp16(v).astype(np.float64)
+            info[k] = np.array(v, dtype=np.float64)
+        if self.cfg.tie_word_embeddings:
+            self.params["lm_head"] = self.params["embed"]       # 维持 INV-12 绑定
+        return info
     # ---------------- INT4 量化 (推理端, INV-07-int4) ----------------
     def quantize_int4(self, axis: int = -1) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
         """对全部线性权重做 per-channel INT4 RTN 量化 (对称 [-7,7], 15 电平),
