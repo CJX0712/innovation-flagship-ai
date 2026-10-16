@@ -2,6 +2,22 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.1] — 2026-10-17
+
+### 修复 (Fixed) — 训练/推理 RoPE 分叉 (可复现性隐患)
+- **训练端 `_rope` 忽略 `rope_scaling`** (`train/trainer.py`): 旧实现用
+  `1/base**(arange/half)` 生成频率, 完全未应用 `cfg.rope_scaling`。
+  推理端 `ops.apply_rope` 在 `scaling≠1` 时做 NTK-aware 拉伸
+  (`inv *= scaling**(half/(half-1))`) —— 二者分叉导致 `TinyTrainer`
+  训练后 `save` → `Transformer.load` 推理结果偏差 > 1e-9, 违反可复现。
+  修复: 训练端复用同一 `ops._rope_freqs` (零重写, 口径统一), 默认
+  `scaling=1.0` 路径数值不变。
+- **验证**: `test_attention_grad.py` 新增 9 项参数化
+  (n_kv∈{None,2,1} × scaling∈{1,2,4}), 训练端前向 vs 推理端
+  save→load 对照 max|diff| ≤ 1e-9, 覆盖 NTK 拉伸下的对齐。
+
+### 测试 (Tests) — 195 → 204 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.0] — 2026-10-17
 
 ### 修复 (Fixed) — 训练器注意力梯度链断裂 (真 bug, 被 INV-26 通过掩盖)

@@ -77,7 +77,10 @@ class TinyTrainer:
         ``_prev`` 漏 rot1/rot2 致 q/k 梯度全零的缺陷 (已修复并回归防护)。
         """
         half = dim // 2
-        freqs = 1.0 / (self.cfg.rope_base ** (np.arange(0, half) / half))
+        # 零重写: 复用推理端同一 NTK-aware 频率生成 (INV-03 解析对照口径一致),
+        # 避免训练/推理 RoPE 分叉导致 save→load 后可复现性破坏 (rope_scaling≠1 时)。
+        freqs = ops._rope_freqs(dim, base=self.cfg.rope_base,
+                                scaling=self.cfg.rope_scaling)
         angles = np.outer(pos, freqs)                       # [T, half]
         cos = np.cos(angles)[None]                          # [1,T,half]
         sin = np.sin(angles)[None]

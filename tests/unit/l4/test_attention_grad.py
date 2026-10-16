@@ -50,6 +50,25 @@ def test_forward_matches_inference_engine(tmp_path, n_kv):
     assert diff <= 1e-9, f"trainer 与推理端前向不一致: max|diff|={diff:.3e}"
 
 
+@pytest.mark.parametrize("n_kv", [None, 2, 1])          # MHA / GQA / MQA
+@pytest.mark.parametrize("scaling", [1.0, 2.0, 4.0])     # NTK-aware 拉伸因子
+def test_rope_scaling_matches_inference(tmp_path, n_kv, scaling):
+    """训练端 RoPE (含 rope_scaling) 与推理端 apply_rope 须逐位一致 —
+    否则 save→load 后可复现性破坏 (v0.7.1 修复: trainer 旧实现忽略 rope_scaling)。"""
+    rng.seed(80 + (0 if n_kv is None else n_kv))
+    cfg = _make_cfg(n_kv)
+    cfg.rope_scaling = scaling
+    tr = TinyTrainer(cfg)
+    ids = rng.get_rng().integers(0, cfg.vocab_size, size=(2, 8))
+    out_trainer = np.array(tr.forward(ids).data)
+
+    model = Transformer.load(tr.save(str(tmp_path / "m")), verify=True)
+    out_infer = model.forward(ids)
+    diff = float(np.max(np.abs(out_trainer - out_infer)))
+    assert diff <= 1e-9, (
+        f"rope_scaling={scaling} 训练/推理 RoPE 分叉: max|diff|={diff:.3e}")
+
+
 # ---------------- 2. 注意力参数梯度非零 ----------------
 
 @pytest.mark.parametrize("n_kv", [None, 2, 1])

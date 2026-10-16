@@ -1440,7 +1440,7 @@
 - 用途: RoPE 旋转 (单节点自定义算子, 反向 = 正交旋转转置)。  ·  INV 25,26  ·  复用 RoPE, Su et al
 - 微指令步骤 (14):
   - 赋值 half ← dim floordiv 2
-  - 赋值 freqs ← 1.0 div self.cfg.rope_base pow np.arange(…) div half
+  - 赋值 freqs ← ops._rope_freqs(…)
   - 赋值 angles ← np.outer(…)
   - 赋值 cos ← np.cos(…)[…]
   - 赋值 sin ← np.sin(…)[…]
