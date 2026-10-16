@@ -31,6 +31,24 @@ def dequantize_int8(q: np.ndarray, scale: np.ndarray) -> np.ndarray:
     return np.asarray(q, dtype=np.float64) * np.asarray(scale, dtype=np.float64)
 
 
+def quantize_int4_per_channel(x: np.ndarray, axis: int = -1):
+    """对称 per-channel RTN 量化到 INT4 (范围 [-7, 7], 15 电平)。
+
+    返回 (q, scale) — q 以 int8 容器存放 int4 值 ([-7,7]); scale 为每通道
+    绝对值最大值 / 7。与 ``pack_int4`` 配合可获得 4-bit 存储 (先量化后打包)。
+    重建误差界同 INV-07 形式: |x − dequant| ≤ scale/2。
+    """
+    x = np.asarray(x, dtype=np.float64)
+    max_abs = np.max(np.abs(x), axis=axis, keepdims=True)
+    scale = np.where(max_abs == 0, 1.0, max_abs) / 7.0
+    q = np.clip(np.round(x / scale), -7, 7).astype(np.int8)
+    return q, scale.astype(np.float64)
+
+
+def dequantize_int4(q: np.ndarray, scale: np.ndarray) -> np.ndarray:
+    return np.asarray(q, dtype=np.float64) * np.asarray(scale, dtype=np.float64)
+
+
 def pack_int4(x: np.ndarray) -> np.ndarray:
     """把 int8 范围 [-8,7] 的数组打包成 uint8 (每字节两个数, 低4位先)。"""
     x = np.asarray(x, dtype=np.int8).ravel()

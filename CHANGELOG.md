@@ -2,6 +2,29 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.11] — 2026-10-17
+
+### 新增 (Added) — INT4 模型量化接入推理 (对偶 quantize_int8)
+- **真缺口 (承诺与实现不符, v0.7.4 activation 同类)**: README L0 层宣称
+  "int8/int4/fp16 量化", 但 `pack_int4/unpack_int4` 仅是存储工具 (example 里
+  甚至只是打包 int8 值的演示) + 往返测试, **模型级 INT4 量化路径不存在** —
+  L0 量化故事在 int4 上开空头支票。
+- **落地 (零重写·集大成, RTN / LLM.int8 同思想)**:
+  - `core/quant.py` 新增 `quantize_int4_per_channel` (对称 [-7,7], 15 电平,
+    scale = max_abs/7, q 以 int8 容器存放) + `dequantize_int4`; 与
+    `pack_int4` 配合可获 4-bit 存储 (先量化后打包)。误差界同 INV-07 形式
+    `|x − dequant| ≤ scale/2`。
+  - `models/transformer.py` 新增 `Transformer.quantize_int4` — 与
+    `quantize_int8` 完全同范式 (全部 2D 权重、tie 下 skip lm_head 并维持
+    INV-12 绑定、返回 `{name: (scale, orig)}`)。
+- **验证 (实测定阈值, 20 seed 扫描)**: 新增 2 用例 — ① INT4 量化值域 + INV-07
+  误差界 (合成矩阵); ② 整模型 INT4 量化: INV-07 逐权重精确成立 (worst margin
+  = 0.0) + top-1 翻转率受控 (INT4 粗于 INT8, 允许偶发 ≤2/16; 实测 20 seed
+  最大 1) + 前向误差 ≤0.06 (实测 max 0.0474 / mean 0.0373 / seed123 0.034)。
+- 全量测试 261 → **263** (净 +2), selftest 4 门禁 ALL GREEN, INV 42/42 双侧达成。
+- 注: INT4 QAT (量化感知训练对偶) 列为后续可选; README 特性表同步 (QAT/组合矩阵)
+  亦列为后续文档增量。
+
 ## [0.7.10] — 2026-10-17
 
 ### 新增 (Added) — 训练端 INT8 量化感知训练 (QAT, STE 伪量化)

@@ -318,6 +318,29 @@ class Transformer:
             self.params["lm_head"] = self.params["embed"]       # 维持 INV-12 绑定
         return info
 
+    # ---------------- INT4 量化 (推理端, INV-07-int4) ----------------
+    def quantize_int4(self, axis: int = -1) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
+        """对全部线性权重做 per-channel INT4 RTN 量化 (对称 [-7,7], 15 电平),
+        与 :meth:`quantize_int8` 同范式 (LLM.int8 / RTN 思想, INV-07 同形式
+        误差界 ``|orig − dequant| ≤ scale/2``)。INT4 为边缘部署常用格式
+        (GPTQ/AWQ 的 RTN 基线); 误差大于 INT8, 由测试以 INT4 口径把关。
+
+        返回 ``{name: (scale, orig)}``; 1D 参数不量化; tie 下 ``lm_head``
+        与 ``embed`` 同一数组, 量化一次并维持绑定。
+        """
+        info: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+        for k in [k2 for k2, v in self.params.items() if v.ndim == 2]:
+            if self.cfg.tie_word_embeddings and k == "lm_head":
+                continue  # 与 embed 同一数组, 量化一次即可
+            v = self.params[k]
+            q, scale = quant.quantize_int4_per_channel(v, axis=axis)
+            self.params[k] = quant.dequantize_int4(q, scale)     # 反量化后原地替换
+            info[k] = (np.asarray(scale, dtype=np.float64),
+                       np.array(v, dtype=np.float64))
+        if self.cfg.tie_word_embeddings:
+            self.params["lm_head"] = self.params["embed"]       # 维持 INV-12 绑定
+        return info
+
 
 def verify_causal_mask(model: Transformer, token_ids: np.ndarray,
                        position: int | None = None) -> tuple[bool, int]:

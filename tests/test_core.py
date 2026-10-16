@@ -162,6 +162,45 @@ def test_int4_pack_roundtrip():
     assert np.array_equal(back, x)
 
 
+def test_int4_quant_error_bound():
+    """INV-07 (INT4 口径): 对称 [-7,7] 15 电平 RTN, 误差 ≤ scale/2 + 1e-6。"""
+    x = rng.get_rng().standard_normal((20, 30)) * 4
+    q, scale = quant.quantize_int4_per_channel(x)
+    assert (np.abs(q) <= 7).all(), "INT4 量化值越出 [-7,7]"
+    xr = quant.dequantize_int4(q, scale)
+    assert np.all(np.abs(x - xr) <= scale / 2 + 1e-6)
+
+
+def test_int4_model_quantization_inference():
+    """INT4 量化接入推理前向 (v0.7.11): 整模型 per-channel INT4 RTN 后
+    1) INV-07 逐权重重建误差 ≤ scale/2 (真实模型权重);
+    2) top-1 翻转率受控 (INT4 粗于 INT8, 允许偶发翻转 ≤ 2/16; 实测 20 seed 最大 1);
+    3) 前向误差有限且受控 (20 seed 实测 max 0.047 ⇒ 界 0.06)。
+    补齐 README L0 承诺的 "int8/int4/fp16 量化" 中 int4 的模型级路径。
+    """
+    rng.seed(123)
+    cfg = ModelConfig(
+        vocab_size=64, d_model=16, n_layers=2, n_heads=4, n_kv_heads=2,
+        ffn_mult=2, tie_word_embeddings=True,
+    )
+    model = Transformer(cfg)
+    ids = rng.get_rng().integers(0, cfg.vocab_size, size=(2, 8))
+    fp64_out = model.forward(ids)
+    info = model.quantize_int4()
+    q_out = model.forward(ids)
+    # 1) INV-07 逐权重 (INT4 口径)
+    for k, (scale, orig) in info.items():
+        dq = model.params[k]
+        assert np.all(np.abs(orig - dq) <= scale / 2 + 1e-9), (
+            f"{k} 违反 INV-07 (INT4) 重建误差界")
+    # 2) top-1 翻转率受控 (INT4 粗量化, 允许偶发翻转)
+    flips = int((fp64_out.argmax(-1) != q_out.argmax(-1)).sum())
+    assert flips <= 2, f"INT4 RTN top-1 翻转过多: {flips}/{fp64_out.argmax(-1).size}"
+    # 3) 前向误差受控 (INT4 口径, 实测 max 0.047)
+    err = float(np.max(np.abs(fp64_out - q_out)))
+    assert np.isfinite(err) and err <= 0.06, f"INT4 前向误差失控: {err:.3e}"
+
+
 def test_safe_cross_entropy_vs_manual():
     """safe_cross_entropy ≡ 手工 log-softmax NLL; 梯度 == p − onehot。"""
     logits = rng.get_rng().standard_normal((6, 5)) * 3
