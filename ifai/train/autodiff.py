@@ -5,7 +5,8 @@
 并驱动可训练微型 Transformer 的训练。
 
 实现算子: matmul, add, mul, sub, neg, sigmoid, tanh, relu, exp, log,
-mean, sum, transpose, pow, getitem, concat。每个算子实现精确解析梯度。
+mean, sum, transpose, pow, getitem, softmax, repeat。每个算子实现精确
+解析梯度。
 """
 from __future__ import annotations
 
@@ -259,6 +260,77 @@ class Tensor:
                 g = np.zeros_like(self.data)
                 g[idx] = out.grad
                 self.grad += g
+        out._backward = _b
+        return out
+
+    def softmax(self, axis: int = -1):
+        """可微 softmax (数值稳定: max 作为常数 detach)。
+
+        反向解析式 (Bridle 1990 / 标准反向模式): ``dL/dx = p ⊙ (g − Σ(g·p))``。
+        掩码位 (输入 -1e30 → p=0) 反向自动归零, 与因果掩码天然兼容。
+        """
+        m = self.data.max(axis=axis, keepdims=True)
+        e = np.exp(self.data - m)
+        p = e / e.sum(axis=axis, keepdims=True)
+        out = Tensor(p, (self,), "softmax")
+
+        def _b():
+            if self.requires_grad:
+                g = p * (out.grad - (out.grad * p).sum(axis=axis, keepdims=True))
+                self.grad += g
+        out._backward = _b
+        return out
+
+    def repeat(self, repeats: int, axis: int):
+        """沿 ``axis`` 把每个元素连续重复 ``repeats`` 次 (np.repeat 语义)。
+
+        反向: 把梯度 reshape 为 ``(…, n, repeats, …)`` 后沿 repeats 轴求和。
+        用途: GQA 的 kv 头扩展 (与推理端 ``np.repeat`` 同语义, INV-10)。
+        """
+        out = Tensor(np.repeat(self.data, repeats, axis=axis), (self,), "repeat")
+
+        def _b():
+            if self.requires_grad:
+                g = out.grad
+                n = self.data.shape[axis]
+                new_shape = g.shape[:axis] + (n, repeats) + g.shape[axis + 1:]
+                self.grad += g.reshape(new_shape).sum(axis=axis + 1)
+        out._backward = _b
+        return out
+
+    @staticmethod
+    def attention(q: "Tensor", k: "Tensor", v: "Tensor", scale: float,
+                  bias: np.ndarray | None = None) -> "Tensor":
+        """批量缩放点积注意力 (自定义单节点: BLAS 前向 + 标准解析反向)。
+
+        q/k/v: ``[B,H,T,dh]``; ``bias``: ``[T,T]`` 掩码偏置 (如因果 -1e30)。
+        前向: ``scores = (q·kᵀ)·scale + bias; P = softmax(scores); ctx = P·v``。
+        反向 (标准 reverse-mode 解析式, Vaswani et al. 2017 / 所有主流框架
+        同款): ``dV = Pᵀ·g; dP = g·Vᵀ; dS = P⊙(dP − Σ(dP⊙P));
+        dQ = dS·K·scale; dK = dSᵀ·Q·scale``。
+        掩码位 P=0 ⇒ dS=0, bias 为常数无需梯度。
+        """
+        qd, kd, vd = q.data, k.data, v.data
+        s = (qd @ kd.swapaxes(-1, -2)) * scale                     # [B,H,T,T]
+        if bias is not None:
+            s = s + bias
+        m = s.max(axis=-1, keepdims=True)
+        e = np.exp(s - m)
+        p = e / e.sum(axis=-1, keepdims=True)
+        ctx = p @ vd
+        out = Tensor(ctx, (q, k, v), "attention")
+
+        def _b():
+            g = out.grad
+            if v.requires_grad:
+                v.grad += p.swapaxes(-1, -2) @ g
+            if q.requires_grad or k.requires_grad:
+                dp = g @ vd.swapaxes(-1, -2)
+                ds = p * (dp - (dp * p).sum(axis=-1, keepdims=True))
+                if q.requires_grad:
+                    q.grad += (ds @ kd) * scale
+                if k.requires_grad:
+                    k.grad += (ds.swapaxes(-1, -2) @ qd) * scale
         out._backward = _b
         return out
 

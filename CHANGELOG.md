@@ -2,6 +2,41 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.0] — 2026-10-17
+
+### 修复 (Fixed) — 训练器注意力梯度链断裂 (真 bug, 被 INV-26 通过掩盖)
+- **注意力参数从未被训练** (`train/trainer.py`): 旧 `_layer_forward` 经
+  `.data` 取 raw numpy 后以 `Tensor(ctx)` 重建叶子, 切断了
+  `attn_norm/q_proj/k_proj/v_proj` 的 autograd 梯度链 — 这些参数梯度恒零,
+  损失下降全靠 FFN/embed 路径 (INV-26 单调性仍可通过, 缺陷被掩盖)。
+  另: 旧 `_rope` 的 `_prev=[x]` 漏掉 rot1/rot2 — 它们不在拓扑序,
+  即使保留 Tensor 链 q/k 梯度也会在 RoPE 节点被吞。双重修复后注意力
+  参数获得精确解析梯度。
+- **验证**: 新增 `tests/unit/l4/test_attention_grad.py` 三重硬校验 —
+  ① trainer 前向与推理端 `Transformer` (MHA/GQA/MQA 三种头配置)
+  save→load 对照 max|diff| ≤ 1e-9; ② 注意力参数一步 backward 后梯度
+  非 None 且范数 > 0; ③ 有限差分梯度校验 (中心差分, rel < 1e-5)。
+
+### 性能 (Performance) — 批量可微注意力, 正确性零速度税
+- **注意力单节点自定义算子** `Tensor.attention` (`train/autodiff.py`):
+  BLAS 批量前向 + 标准 softmax-attention 解析反向
+  (`dV=Pᵀg; dS=P⊙(dP−Σ dP⊙P); dQ=dS·K·s; dK=dSᵀ·Q·s`), 一个节点替代
+  ~15 个通用算子节点; 逐头 Python 双重循环 (B×H) 删除。
+- **RoPE 融合单节点**: 反向 = 正交旋转转置 (`dx1=g1·cos+g2·sin;
+  dx2=−g1·sin+g2·cos`), 11 节点 → 1 节点。
+- **新增可微算子**: `softmax` (数值稳定, 掩码位反向自动归零)、
+  `repeat` (GQA kv 头扩展, 与推理端 `np.repeat` 同语义, INV-10);
+  修正 autodiff docstring 谎报的 `concat` (从未实现)。
+- **基准** (`scripts/bench_trainer.py`, d=128 L=4 H=8 n_kv=2 B=8 T=32):
+  同机同条件对照 — 旧梯度断裂版 160.3 ms/step vs 新梯度贯通版
+  **160.0 ms/step**: 批量融合完全吸收新增反向计算 (6 个投影 matmul
+  反向 + attention 反向) 的代价, 正确性零速度税。训练正确性提升
+  (5 类注意力参数首次参与学习) 而吞吐持平。
+
+### 测试 (Tests) — 186 → 195 项, 覆盖率 87% 维持
+- 微指令分解 1920 → **1942** 条 (L4 +22, X +0), INV 覆盖 42/42 保持;
+  selftest 4 门禁 ALL GREEN。
+
 ## [0.6.1] — 2026-10-17
 
 ### 修复 (Fixed) — 均由覆盖率驱动测试发现

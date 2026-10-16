@@ -68,39 +68,65 @@ class TinyTrainer:
 
     # ---------------- autograd 前向 ----------------
     def _rope(self, x: Tensor, pos: np.ndarray, dim: int) -> Tensor:
-        """RoPE 旋转 (偶数维旋转, 支持反向传播)。
+        """RoPE 旋转 (单节点自定义算子, 反向 = 正交旋转转置)。
 
-        用可微算子表达: rot1 = x1*cos - x2*sin, rot2 = x1*sin + x2*cos,
-        再交织回原顺序 (反向时按位分流)。
+        前向: 偶/奇交织两路 ``rot1 = x1·cos − x2·sin, rot2 = x1·sin + x2·cos``
+        (Su et al. 2021 RoFormer)。旋转矩阵正交 ⇒ 反向即转置:
+        ``dx1 = g1·cos + g2·sin, dx2 = −g1·sin + g2·cos``。
+        v0.7.0: 融合为单节点 — 旧 11 节点表达版除节点开销外还存在
+        ``_prev`` 漏 rot1/rot2 致 q/k 梯度全零的缺陷 (已修复并回归防护)。
         """
-        freqs = 1.0 / (self.cfg.rope_base ** (np.arange(0, dim // 2) / (dim // 2)))
+        half = dim // 2
+        freqs = 1.0 / (self.cfg.rope_base ** (np.arange(0, half) / half))
         angles = np.outer(pos, freqs)                       # [T, half]
-        cos = Tensor(np.cos(angles).reshape(1, len(pos), dim // 2))   # [1,T,half]
-        sin = Tensor(np.sin(angles).reshape(1, len(pos), dim // 2))
-        x1 = x[..., 0::2]
-        x2 = x[..., 1::2]
-        rot1 = x1 * cos - x2 * sin
-        rot2 = x1 * sin + x2 * cos
-        out = Tensor(np.zeros_like(x.data))
-        out.data[..., 0::2] = rot1.data
-        out.data[..., 1::2] = rot2.data
+        cos = np.cos(angles)[None]                          # [1,T,half]
+        sin = np.sin(angles)[None]
+        x1 = x.data[..., 0::2]
+        x2 = x.data[..., 1::2]
+        out = np.empty_like(x.data)
+        out[..., 0::2] = x1 * cos - x2 * sin
+        out[..., 1::2] = x1 * sin + x2 * cos
+        out_t = Tensor(out, (x,), "rope")
 
         def _b():
             if x.requires_grad:
-                g = np.zeros_like(x.data)
-                g[..., 0::2] = rot1.grad
-                g[..., 1::2] = rot2.grad
-                x.grad += g
-        out._backward = _b
-        out._prev = [x]
-        return out
+                g = out_t.grad
+                g1, g2 = g[..., 0::2], g[..., 1::2]
+                dx = np.empty_like(x.data)
+                dx[..., 0::2] = g1 * cos + g2 * sin
+                dx[..., 1::2] = -g1 * sin + g2 * cos
+                x.grad += dx
+        out_t._backward = _b
+        return out_t
 
     def enable_gradient_checkpointing(self, enabled: bool = True) -> None:
         """开启/关闭梯度检查点 (INV-25)。"""
         self.gradient_checkpointing = bool(enabled)
 
+    @staticmethod
+    def _causal_bias(T: int) -> np.ndarray:
+        """因果掩码偏置 [T,T]: 上三角 -1e30 (经 softmax 后概率严格为 0)。"""
+        mask = np.triu(np.ones((T, T), bool), 1)
+        return np.where(mask, -1e30, 0.0)
+
+    def _bias(self, T: int) -> np.ndarray:
+        """因果偏置缓存 (同 T 复用, 免每层每步重建)。"""
+        cache = getattr(self, "_bias_cache", None)
+        if cache is None:
+            cache = self._bias_cache = {}
+        b = cache.get(T)
+        if b is None:
+            b = cache[T] = self._causal_bias(T)
+        return b
+
     def _layer_forward(self, x: Tensor, layer: int) -> Tensor:
-        """单层 DecoderBlock 前向 (供梯度检查点按层分段重算, INV-25)。"""
+        """单层 DecoderBlock 前向 (供梯度检查点按层分段重算, INV-25)。
+
+        v0.7.0: 注意力改为批量可微 GQA (全程 autograd, 无逐头 Python 循环)。
+        修复历史缺陷: 旧实现经 ``.data`` 取 raw numpy 后 ``Tensor(ctx)``
+        重建叶子, 切断了 attn_norm/q_proj/k_proj/v_proj 的梯度链 —
+        注意力参数从未收到梯度。
+        """
         c = self.cfg
         B, T = x.data.shape[0], x.data.shape[1]
         d, dh, n_h, n_kv = c.d_model, c.d_head, c.n_heads, c.n_kv_heads
@@ -112,24 +138,18 @@ class TinyTrainer:
         q = h.matmul(self.params[p + "q_proj"])
         k = h.matmul(self.params[p + "k_proj"])
         v = h.matmul(self.params[p + "v_proj"])
-        q = self._rope(q, pos, d).data.reshape(B, T, n_h, dh)
-        k = self._rope(Tensor(k.data), pos, n_kv * dh).data.reshape(B, T, n_kv, dh)
-        v = v.data.reshape(B, T, n_kv, dh)
-        # 注意力 (单头循环, 微型模型足够)
-        ctx = np.zeros((B, T, d))
+        # RoPE (单节点) + 头重排 (reshape/transpose 元操作)
+        q = self._rope(q, pos, d).reshape(B, T, n_h, dh).transpose((0, 2, 1, 3))
+        k = self._rope(k, pos, n_kv * dh).reshape(B, T, n_kv, dh).transpose((0, 2, 1, 3))
+        v = v.reshape(B, T, n_kv, dh).transpose((0, 2, 1, 3))
+        # GQA: kv 头扩展 (与推理端 np.repeat 同语义, INV-10)
+        k = k.repeat(c.n_repeats, axis=1)
+        v = v.repeat(c.n_repeats, axis=1)
+        # 批量因果注意力 (单节点自定义算子: BLAS 前向 + 标准解析反向)
         scale = 1.0 / dh ** 0.5
-        for b in range(B):
-            for head in range(n_h):
-                qq = q[b, :, head, :]      # [T,dh]
-                kvh = head // c.n_repeats   # GQA: 多个 q 头共享同一 kv 头
-                kk = k[b, :, kvh, :]
-                vv = v[b, :, kvh, :]
-                scores = (qq @ kk.T) * scale          # [T,T]
-                scores = np.where(np.triu(np.ones((T, T), bool), 1), -1e30, scores)
-                p_att = numeric.stable_softmax(scores, axis=-1)
-                ctx[b, :, head * dh:(head + 1) * dh] = p_att @ vv
-        ctx_t = Tensor(ctx)
-        o = ctx_t.matmul(self.params[p + "o_proj"])
+        ctx = Tensor.attention(q, k, v, scale, bias=self._bias(T))  # [B,H,T,dh]
+        ctx = ctx.transpose((0, 2, 1, 3)).reshape(B, T, d)
+        o = ctx.matmul(self.params[p + "o_proj"])
         x = x + o
         ms2 = (x * x).mean(axis=-1, keepdims=True)
         h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
