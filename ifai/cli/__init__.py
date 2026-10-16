@@ -47,11 +47,17 @@ def cmd_train(args):
     corpus = MICRO_CORPUS
     if args.corpus:
         corpus = open(args.corpus, encoding="utf-8").read()
-    cfg = ModelConfig(vocab_size=args.vocab, d_model=args.d_model,
+    # 先构造分词器再决定模型词表, 杜绝 vocab_size 软目标陷阱:
+    # Tokenizer.train 的 vocab_size 仅限制 merge 数, 基础字符数不设上限,
+    # 若语料实际字符/总词表数 > args.vocab, tok.encode 会产生 ≥ args.vocab 的 id,
+    # 而 ModelConfig(vocab_size=args.vocab) 的 embed 矩阵只有 args.vocab 行 → 越界。
+    # 故模型词表取 max(args.vocab, tok.vocab_size), 始终 ≥ 分词器实际词表。
+    tok = Tokenizer(vocab_size=args.vocab).train(corpus)
+    model_vocab = max(args.vocab, tok.vocab_size)
+    cfg = ModelConfig(vocab_size=model_vocab, d_model=args.d_model,
                       n_layers=args.layers, n_heads=args.heads,
                       n_kv_heads=args.kv_heads, ffn_mult=args.ffn_mult,
                       max_seq_len=args.seq_len)
-    tok = Tokenizer(vocab_size=args.vocab).train(corpus)
     tok.to_json(f"{args.out}/tokenizer.json")
     ids = tok.encode(corpus)
     trainer = TinyTrainer(cfg)
