@@ -204,6 +204,9 @@ function sampleNext(logits, sampling, rng) {
  *          命中 eos/stopId 时调用方不应把该 token 写入输出（本模块语义）。
  */
 function stopCheck(token, opts) {
+  if (typeof token !== 'number' || !Number.isFinite(token)) {
+    throw new Error('stopCheck: token 必须为有限数（得到 ' + typeof token + '）');
+  }
   opts = opts || {};
   const eosId = (opts.eosId === undefined || opts.eosId === null) ? null : opts.eosId;
   const stopIds = opts.stopIds || [];
