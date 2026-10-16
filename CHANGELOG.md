@@ -2,6 +2,26 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.4] — 2026-10-17
+
+### 新增 (Added) — 让 `config.activation` 真正生效 (补齐 gelu 激活)
+- `ModelConfig.activation` 字段承诺 `"swiglu" | "gelu"`, 但推理端/训练端此前
+  均硬编码 SwiGLU(silu) 忽略 `"gelu"` —— 字段名不副实。现补齐 GELU
+  (Hendrycks & Gimpel 2016 tanh-approx, GPT/LLaMA 同款):
+  - `core/ops.py::gelu` 纯 numpy 内核; 推理端 dense + MoE 两 FFN 分支按
+    `cfg.activation` 选 gelu / silu。
+  - `train/autodiff.py::Tensor.gelu` 可微算子 (前向同公式, 解析反向
+    `gelu'(x)=0.5(1+tanh u)+0.5x(1-tanh²u)·√(2/π)(1+0.134145x²)`);
+    训练端 `_layer_forward` FFN 段按 `cfg.activation` 选择。
+  - **默认 `"swiglu"` 路径数值完全不变** (训练/推理), 现有默认模型零影响;
+    gelu 路径为「门控用 GELU 的 gated-FFN」, 与 SwiGLU 对称、参数不变,
+    save→load 兼容性与 INV-13 参数量守恒不受影响。
+- **验证**: 新增 `tests/unit/l2/test_activation.py` 4 用例 — gelu 公式对照
+  (<1e-9) + 训练端 vs 推理端 (swiglu/gelu) save→load 前向一致性 ≤1e-9
+  (swiglu 回归) + 训练端 gelu 有限差分梯度校验 (<1e-5)。
+
+### 测试 (Tests) — 207 → 211 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.3] — 2026-10-17
 
 ### 修复 (Fixed) — CLI `train` 的 vocab_size 软目标陷阱 (真实健壮性缺陷)
