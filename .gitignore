@@ -3,3 +3,4 @@ node_modules/
 run-all-report.json
 *.log
 .DS_Store
+.workbuddy/
