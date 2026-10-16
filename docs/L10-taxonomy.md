@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 74 |
-| planned | 950 |
+| done | 85 |
+| planned | 939 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -410,22 +410,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F2-G2-O00` | 阶跃衰减 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O01` | 余弦退火 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O02` | Warmup | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O03` | 循环学习率 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F2-G2-O00` | 阶跃衰减 | L3 | done | scheduler-forge stepDecay(阶跃衰减) |
+| `L10-F2-G2-O01` | 余弦退火 | L3 | done | scheduler-forge cosineSchedule(余弦退火) |
+| `L10-F2-G2-O02` | Warmup | L3 | done | scheduler-forge linearWarmup |
+| `L10-F2-G2-O03` | 循环学习率 | L3 | done | scheduler-forge cosineWithRestarts(循环学习率) |
 | `L10-F2-G2-O04` | 自适应调度 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O05` | 指数衰减 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O06` | 余弦重启 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O07` | 单周期策略 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F2-G2-O05` | 指数衰减 | L3 | done | scheduler-forge exponentialDecay |
+| `L10-F2-G2-O06` | 余弦重启 | L3 | done | scheduler-forge cosineWithRestarts(余弦重启) |
+| `L10-F2-G2-O07` | 单周期策略 | L3 | done | scheduler-forge oneCycle(单周期策略) |
 | `L10-F2-G2-O08` | 余弦衰减 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F2-G2-O09` | 逆平方根 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F2-G2-O10` | 三角循环 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O11` | 1cycle | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F2-G2-O11` | 1cycle | L3 | done | scheduler-forge oneCycle |
 | `L10-F2-G2-O12` | 分层衰减 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F2-G2-O13` | 线性预热 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O14` | 余弦预热 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G2-O15` | 衰减到零 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F2-G2-O14` | 余弦预热 | L3 | done | scheduler-forge cosineSchedule(余弦预热) |
+| `L10-F2-G2-O15` | 衰减到零 | L3 | done | scheduler-forge polynomialDecay(衰减到零) |
 
 ### G3 · 约束与正则
 
@@ -1026,7 +1026,7 @@
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
 | `L10-F5-G7-O00` | 自回归生成 | L5 | done | sampling-forge 自回归生成 |
-| `L10-F5-G7-O01` | 扩散模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G7-O01` | 扩散模型 | L5 | done | diffusion-forge DDPM/DDIM(扩散模型) |
 | `L10-F5-G7-O02` | 流模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G7-O03` | 能量模型 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G7-O04` | 生成对抗 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

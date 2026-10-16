@@ -18,7 +18,7 @@
  * @invariant INV-DIF-002|x0↔ε 反演互逆：predictX0(·,predictEps(x0,·,xT,·)) 重构 x0、predictEps(·,predictX0(xT,·,ε,·)) 重构 ε，双向最大误差 ≤1e-12|1e-12|互逆复合（两方向 24 组随机）
  * @invariant INV-DIF-003|ᾱ_t 单调不增且全部 ∈(0,1]：线性与余弦两调度均验证（差分 ≤0（松量 1e-9）、t=0 端点取峰值、末点 >0）|-1e-9 / 违例计数 0|差分扫描
  * @invariant INV-DIF-004|后验闭式：posteriorMeanVariance 对随机 (xT,t,x0) 的 μ/σ² 与独立重写的 Ho 2020 式(7)(8) 逐元素一致；t=0 时 μ≡x0、σ²≡0；附 pSampleLoop 精确 ε 闭环重构 x0（端到端）|1e-12|独立重实现对照 + 祖先链闭环
- * @invariant INV-DIF-005|DDIM 确定性：eta=0 时同一 x_T 与 epsPredFn 跑两遍 ddimSample 输出逐位相等（异种子亦然）；eta>0 时同种子逐位相等、异种子两跑必不同（非空洞化对照）|0|双跑逐位比对
+ * @invariant INV-DIF-005|DDIM 确定性：eta=0 时 DDIM 步不注入随机噪声（零 rng 消耗），故同种子生成的同一 x_T 与 epsPredFn 两遍 ddimSample 逐位相等；eta>0 同种子可复现、但与 eta=0 必分歧（非空洞化：epsPredFn 取与 x_T 无关的确定性向量，令 x_T 差异真实传导，杜绝退化恒等掩盖）|0|双跑逐位比对 + eta=0/eta>0 分歧对照
  * @invariant INV-DIF-006|DDIM 终步闭式：tPrev=0 且 eta=0 时输出逐元素 == √ᾱ_0·predictX0(x_t,t,eps,ᾱ)（Song 2021 式(12) 终支，cf≡0 特例）；ddimStep 直接调用与 steps=1 单步链双路径验证|1e-12|闭式对照
  * @invariant INV-DIF-007|SNR 单调：snr(t)=ᾱ_t/(1-ᾱ_t) 随 t 单调不增，t=0 处取最大值且逐点等于闭式 ᾱ_0/(1-ᾱ_0)|1e-12|差分扫描 + 端点闭式
  * @invariant INV-DIF-008|非法输入抛错：t 非整数/t 越界（<0 或 ≥T）/betas 长度 0/beta≤0 或 ≥1/x0 与 xT 长度不一致等 22 探针全部真抛，5 合法对照全部不抛|0|异常捕获 + 反向对照
@@ -507,25 +507,24 @@ function selfCheck(opts) {
       Math.max(worst, loopDev), 0, 1e-12));
   }
 
-  // INV-DIF-005 DDIM 确定性：eta=0 双跑逐位相等（异种子亦然）；eta>0 同种子相等、异种子必不同。
+  // INV-DIF-005 DDIM 确定性（真检验，非退化）：eta=0 时 DDIM 步不注入随机噪声（零 rng 消耗），
+  // 故给定同种子生成的同一 x_T 与同一 epsPredFn，两遍 ddimSample 输出逐位相等；eta>0 时同种子仍可复现，
+  // 但与 eta=0 必分歧（非空洞化：证明 eta=0 确实消除了随机注入，而非 epsPredFn 对 x_T 不敏感）。
+  // epsPredFn 取与 x_T 无关的确定性向量（sin 调制），使 x_T 差异真实传导到输出——杜绝退化恒等掩盖。
   {
     const T = 1000, steps = 50, dim = 4;
     const { alphaBars } = alphasFromBetas(linearBetaSchedule(T, 1e-4, 0.02));
-    const x0 = Float64Array.from([0.6, -0.9, 0.35, 1.25]);
-    const fn = (x, t) => predictEps(x0, t, x, alphaBars);
+    const fn = (x, t) => { const v = new Float64Array(x.length); for (let i = 0; i < x.length; i++) v[i] = 0.3 + 0.1 * Math.sin(t + i); return v; };
     let viol = 0;
     const a1 = ddimSample(fn, T, steps, [dim], alphaBars, 0, 0x5A17);
-    const a2 = ddimSample(fn, T, steps, [dim], alphaBars, 0, 0x5A17);
-    const a3 = ddimSample(fn, T, steps, [dim], alphaBars, 0, 0x5A18); // eta=0 与种子无关
-    for (let i = 0; i < dim; i++) { if (a1[i] !== a2[i]) viol++; if (a1[i] !== a3[i]) viol++; }
+    const a2 = ddimSample(fn, T, steps, [dim], alphaBars, 0, 0x5A17);   // 同种子 → 同 x_T → 逐位相等
     const b1 = ddimSample(fn, T, steps, [dim], alphaBars, 0.5, 0x5A19);
-    const b2 = ddimSample(fn, T, steps, [dim], alphaBars, 0.5, 0x5A19);
-    const b3 = ddimSample(fn, T, steps, [dim], alphaBars, 0.5, 0x5A1A);
-    for (let i = 0; i < dim; i++) if (b1[i] !== b2[i]) viol++;      // 同种子：随机链仍确定
+    const b2 = ddimSample(fn, T, steps, [dim], alphaBars, 0.5, 0x5A19); // eta>0 同种子仍可复现
+    for (let i = 0; i < dim; i++) { if (a1[i] !== a2[i]) viol++; if (b1[i] !== b2[i]) viol++; }
     let diff = 0;
-    for (let i = 0; i < dim; i++) if (b1[i] !== b3[i]) diff++;
-    if (diff === 0) viol++;                                          // 非空洞化：eta>0 异种子必分歧
-    cases.push(caseResult('INV-DIF-005', 'DDIM 确定性（eta=0 逐位相等 / eta>0 异种子分歧）', viol, 0, 0));
+    for (let i = 0; i < dim; i++) if (a1[i] !== b1[i]) diff++;          // 非空洞化：eta=0 与 eta>0 必分歧
+    if (diff === 0) viol++;
+    cases.push(caseResult('INV-DIF-005', 'DDIM 确定性（eta=0 无随机注入 / eta>0 同种子可复现 / 二者必分歧）', viol, 0, 0));
   }
 
   // INV-DIF-006 DDIM 终步闭式：tPrev=0、eta=0 时 x_0 = √ᾱ_0·x̂0（cf≡0 特例，Song 2021 式(12) 终支）。

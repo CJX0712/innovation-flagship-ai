@@ -43,6 +43,27 @@ const BAD_INPUTS = {
     ['epsilonSchedule', [5, { mode: 'bogus' }]],
     ['polyakUpdate', [new Float64Array(4), new Float64Array(6), 0.1]],
     ['bellmanResidual', [null, null, 0.9]]
+  ],
+  ForgeScheduler: [
+    ['constantSchedule', [0]],
+    ['linearWarmup', [-1, 5]],
+    ['cosineSchedule', [1, 2, 1, 10]],
+    ['cosineSchedule', [1, 0.1, 5, 5]],
+    ['stepDecay', [1, 0.5, 0]],
+    ['polynomialDecay', [1, 0.1, 10, -1]],
+    ['oneCycle', [1, 10, 0.5, 0.3, 10]],
+    ['scheduleAt', [null, 0]]
+  ],
+  ForgeDiffusion: [
+    ['linearBetaSchedule', [0, 0.1, 0.2]],
+    ['linearBetaSchedule', [10, 1.5, 0.2]],
+    ['cosineBetaSchedule', [10, -1]],
+    ['alphasFromBetas', [[]]],
+    ['alphasFromBetas', [[1.5]]],
+    ['ddimStep', [[1, 2, 3], 0, 0, [0.9, 0.8, 0.7, 0.6, 0.5], 0.5]],
+    ['ddimStep', [[1, 2, 3], 2, 0, [0.9, 0.8, 0.7, 0.6, 0.5], 1.5]],
+    ['ddimSample', [null, 10, 5, [1, 1, 1, 1, 1], 0.0, 123]],
+    ['ddimSample', [(x, t) => [0], 10, 0, [1, 1, 1, 1, 1], 0.0, 123]]
   ]
 };
 
@@ -139,7 +160,7 @@ function globalNameFor(modPath) {
     'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling',
     'kv-cache-forge': 'ForgeKVCache', 'position-encoding-forge': 'ForgePosEnc', 'moe-forge': 'ForgeMoE',
     'quant-forge': 'ForgeQuant', 'speculative-forge': 'ForgeSpeculative', 'generation-forge': 'ForgeGeneration',
-    'dqn-forge': 'ForgeDQN'
+    'dqn-forge': 'ForgeDQN', 'scheduler-forge': 'ForgeScheduler', 'diffusion-forge': 'ForgeDiffusion'
   };
   return map[base] || null;
 }

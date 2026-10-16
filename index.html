@@ -79,6 +79,8 @@
   <script src="src/speculative-forge.js" onerror="window.__forgeLoadErrors['ForgeSpeculative']=true"></script>
   <script src="src/generation-forge.js" onerror="window.__forgeLoadErrors['ForgeGeneration']=true"></script>
   <script src="src/dqn-forge.js" onerror="window.__forgeLoadErrors['ForgeDQN']=true"></script>
+  <script src="src/scheduler-forge.js" onerror="window.__forgeLoadErrors['ForgeScheduler']=true"></script>
+  <script src="src/diffusion-forge.js" onerror="window.__forgeLoadErrors['ForgeDiffusion']=true"></script>
 
   <script>
   (function () {
@@ -109,7 +111,9 @@
       { key: 'ForgeQuant', label: 'quant-forge (L4 量化int8/int4/k-quants)' },
       { key: 'ForgeSpeculative', label: 'speculative-forge (L4 推测解码/分布等价)' },
       { key: 'ForgeGeneration', label: 'generation-forge (L4 端到端生成闭环)' },
-      { key: 'ForgeDQN', label: 'dqn-forge (L6 深度强化学习/DQN)' }
+      { key: 'ForgeDQN', label: 'dqn-forge (L6 深度强化学习/DQN)' },
+      { key: 'ForgeScheduler', label: 'scheduler-forge (L3 学习率调度器)' },
+      { key: 'ForgeDiffusion', label: 'diffusion-forge (L5 扩散模型 DDPM/DDIM)' }
     ];
 
     function row(pass, id, name, actual, tol) {

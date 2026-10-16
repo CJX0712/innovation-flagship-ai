@@ -58,6 +58,17 @@ const REUSE = {
   // F2 优化
   'L10-F2-G0-O06': 'optim-forge Adam',
   'L10-F2-G0-O07': 'optim-forge AdamW',
+  // F2 学习率调度（scheduler-forge）
+  'L10-F2-G2-O00': 'scheduler-forge stepDecay(阶跃衰减)',
+  'L10-F2-G2-O01': 'scheduler-forge cosineSchedule(余弦退火)',
+  'L10-F2-G2-O02': 'scheduler-forge linearWarmup',
+  'L10-F2-G2-O03': 'scheduler-forge cosineWithRestarts(循环学习率)',
+  'L10-F2-G2-O05': 'scheduler-forge exponentialDecay',
+  'L10-F2-G2-O06': 'scheduler-forge cosineWithRestarts(余弦重启)',
+  'L10-F2-G2-O07': 'scheduler-forge oneCycle(单周期策略)',
+  'L10-F2-G2-O11': 'scheduler-forge oneCycle',
+  'L10-F2-G2-O14': 'scheduler-forge cosineSchedule(余弦预热)',
+  'L10-F2-G2-O15': 'scheduler-forge polynomialDecay(衰减到零)',
   // F3 自动微分
   'L10-F3-G0-O07': 'autodiff-forge 雅可比',
   'L10-F3-G1-O00': 'autodiff-forge 反向累积',
@@ -107,6 +118,7 @@ const REUSE = {
   'L10-F4-G6-O14': 'quant-forge 量化反量化(往返/SNR)',
   'L10-F4-G6-O15': 'quant-forge 校准量化(absmax/affine)',
   'L10-F5-G7-O00': 'sampling-forge 自回归生成',
+  'L10-F5-G7-O01': 'diffusion-forge DDPM/DDIM(扩散模型)',
   // F6 强化学习
   'L10-F6-G3-O00': 'dqn-forge DQN更新(Mnih 2015)',
   'L10-F6-G3-O01': 'dqn-forge 经验回放(均匀采样环形缓冲)',

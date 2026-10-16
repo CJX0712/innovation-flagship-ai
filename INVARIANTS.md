@@ -169,6 +169,21 @@
 | INV-LAN-007 | MSE 梯度 = (2/n)(y−t) 与解析一致；MSE=mean((y−t)²) | 1e-12 | MSE 定义 |
 | INV-LAN-008 | CE = −log(softmax(l)[target]) 与独立计算一致；Swish(0)=0 | 1e-12 | CE 与 Swish 定义 |
 
+### `scheduler-forge.js`（INV-SCH-001..008，8 条，学习率调度器）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SCH-001 | 线性 warmup 闭式：t≤warmup 逐点等于 lrMax·(t+1)/warmup（t=0 非零，规避零学习率死区） | 0 | 逐点闭式复算 |
+| INV-SCH-002 | 余弦端点：cosineSchedule 在 t=warmup 恰为 lrMax、t=total−1 闭式误差 0、t=total 夹取为 lrMin | 0 | 端点解析值代入 |
+| INV-SCH-003 | 余弦 warmup 后单调不增（全差分 ≤ 0，且要求实质下降） | −1e-9 | 差分扫描 |
+| INV-SCH-004 | 阶跃边界：stepDecay 恰在 dropEvery 整数倍边界切换，与 lr·dropFactor^floor(t/dropEvery) 逐点相等 | 0 | 闭式复算 |
+| INV-SCH-005 | 线性衰减等差：相邻步差恒定且等于 (lrMin−lrMax)/(total−warmup)，终点为 lrMin | 1e-12 | 差分闭式 |
+| INV-SCH-006 | 余弦重启周期相位：任意 t 的 lr 等于「周期内相位」闭式复算（周期数/相位/端点三重校验） | 1e-12 | 闭式复算 |
+| INV-SCH-007 | oneCycle 三段：warmup 段线性等差、峰值为 lrMax 且出现在 pctStart 边界、终点 = lrMax/(div·100)、余弦段单调 | 1e-12 | 分段闭式 |
+| INV-SCH-008 | 非法输入全部真抛（lrMax≤0 / warmup<0 / total≤warmup / dropEvery≤0 / power<0 / t 非有限数 / 非函数 fn 等 26 探针）+ 合法调用不抛 | 0 | 异常捕获 + 反向对照 |
+
+> 阈值档位：闭式等价取 EXACT=0；单调取 MONO=−1e-9（要求实质非增，浮点容差）；等差/相位取 RESID=1e-12。所有断言含反空洞化项（如 INV-SCH-001 锁定 t=0 非零、INV-SCH-003 要求峰后确有下降、INV-SCH-007 峰值定位与触底前断言）。
+
 ---
 
 ## L4 — 注意力 / 位置编码
@@ -363,6 +378,21 @@
 | INV-SMP-007 | 确定性：同种子两次 sample 逐位相等；不同种子经验频率仍落在目标 ±0.05 内（违例=0） | 0 | sfc32 确定性 + 非塌缩 |
 | INV-SMP-008 | 批量一致：batchSample 第 i 行 == 同一 rng 种子派生对第 i 行单独 sample 的结果（不一致计数=0） | 0 | 逐行共享连续 rng 流 |
 
+### `diffusion-forge.js`（INV-DIF-001..008，8 条，扩散模型 DDPM/DDIM）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-DIF-001 | 前向加噪闭式：qSample == √ᾱ_t·x0+√(1−ᾱ_t)·ε（逐元素，实测 0）；N=200000 大样本 MC 下 E[x_t]≈√ᾱ_t·x0（容差=4σ/√N 向上取十进制档≈1e-2，实测 2.04e-3） | 1e-15 / 1e-2 | 逐元素闭式 + 大样本 MC |
+| INV-DIF-002 | x0↔ε 互逆复合：predictX0(predictEps(x0)) 重构 x0、predictEps(predictX0(ε)) 重构 ε，双向 24 组最大误差 ≤ 1e-12（实测 2.33e-15） | 1e-12 | 互逆复合 |
+| INV-DIF-003 | ᾱ_t 单调不增且全部 ∈(0,1]：线性与余弦两调度均验证（差分 ≤ 0、t=0 峰值、末点 > 0） | −1e-9 | 差分扫描 |
+| INV-DIF-004 | 后验闭式：posteriorMeanVariance 的 μ/σ² 与独立重写的 Ho 2020 式(7)(8) 逐元素一致（实测 0）；t=0 时 μ≡x0、σ²≡0 | 1e-12 | 独立重实现对照 |
+| INV-DIF-005 | **DDIM 确定性（真检验，非退化）**：eta=0 时 DDIM 步不注入随机噪声（零 rng 消耗），同种子生成的同一 x_T 与 epsPredFn 两遍 ddimSample 逐位相等；eta>0 同种子仍可复现、但与 eta=0 必分歧（epsPredFn 取与 x_T 无关的确定性向量，令 x_T 差异真实传导，杜绝退化恒等掩盖） | 0 | 双跑逐位比对 + eta=0/eta>0 分歧对照 |
+| INV-DIF-006 | DDIM 终步闭式：tPrev=0 且 eta=0 时输出逐元素 == √ᾱ_0·predictX0(x_t,t,ε)（Song 2021 式(12) 终支 cf≡0 特例，实测 0） | 1e-12 | 闭式对照 |
+| INV-DIF-007 | SNR 单调：snr(t)=ᾱ_t/(1−ᾱ_t) 随 t 单调不增，t=0 处取最大值且逐点等于 ᾱ_0/(1−ᾱ_0) | 1e-12 | 差分扫描 + 端点闭式 |
+| INV-DIF-008 | 非法输入全部真抛（t 非整数/t 越界/betas 长度 0/beta≤0 或 ≥1/形状非法等 24 探针）+ 5 合法对照全部不抛 | 0 | 异常捕获 + 反向对照 |
+
+> 阈值推导（INV-DIF-005）：原始模块自检曾用 `fn=(x,t)⇒predictEps(x0,t,x,ᾱ)` 的退化 epsPredFn，使 DDIM 首步即解出 x0、与 x_T 完全无关，"异种子亦相等"仅是恒等掩盖——该不变量空洞。已改为与 x_T 无关的确定性 epsPredFn，并新增"eta=0 与 eta>0 同种子必分歧"的非空洞化对照，确证 eta=0 确实消除了随机注入。修复后经 `tests/independent/INV-DIF-check.js` 独立复核：10 组皇冠不变量逐项独立重算全绿。
+
 ---
 
 ## L6 — 深度强化学习
@@ -390,13 +420,13 @@
 |----|--------|-----------|------|
 | L1 | 2 | 12 | 0 |
 | L2 | 4 | 28 | 0 |
-| L3 | 5 | 40 | 0 |
+| L3 | 6 | 48 | 0 |
 | L4 | 9 | 72 | 0 |
-| L5 | 5 | 40 | 0 |
+| L5 | 6 | 48 | 0 |
 | L6 | 1 | 8 | 0 |
-| **合计** | **26** | **200** | **0** |
+| **合计** | **28** | **216** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **200 条**。运行时 case 数为 **202**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **216 条**。运行时 case 数为 **218**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）。净 +2。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变。
 
@@ -405,8 +435,9 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 26 模块 · 202 用例 · 0 失败
+npm run verify             # 28 模块 · 218 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
+node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
 node tools/check-reuse.js  # 复用合规 0 ERROR
 node tools/verify-l10.js   # L10 1024 项 / done 74 / planned 950
 ```
