@@ -62,9 +62,19 @@ class TinyTrainer:
             self._P(p + "v_proj", (d, n_kv * c.d_head))
             self._P(p + "o_proj", (d, d))
             self._P(p + "ffn_norm", (d,))
-            self._P(p + "ffn_gate", (d, c.d_ff))
-            self._P(p + "ffn_up", (d, c.d_ff))
-            self._P(p + "ffn_down", (c.d_ff, d))
+            if c.use_moe:
+                # MoE/Switch 稀疏专家 (Fedus et al. 2022, INV-14): 每专家独立
+                # gate/up/down + 路由权重; 与推理端 Transformer._moe 同名同结构,
+                # 保证 save→load 后前向零偏差。
+                for e in range(c.n_experts):
+                    self._P(p + f"e{e}_gate", (d, c.d_ff))
+                    self._P(p + f"e{e}_up", (d, c.d_ff))
+                    self._P(p + f"e{e}_down", (c.d_ff, d))
+                self._P(p + "router", (d, c.n_experts))
+            else:
+                self._P(p + "ffn_gate", (d, c.d_ff))
+                self._P(p + "ffn_up", (d, c.d_ff))
+                self._P(p + "ffn_down", (c.d_ff, d))
 
     # ---------------- autograd 前向 ----------------
     def _rope(self, x: Tensor, pos: np.ndarray, dim: int) -> Tensor:
@@ -156,14 +166,48 @@ class TinyTrainer:
         x = x + o
         ms2 = (x * x).mean(axis=-1, keepdims=True)
         h2 = x / (ms2 + c.norm_eps).pow(0.5) * self.params[p + "ffn_norm"]
-        g = h2.matmul(self.params[p + "ffn_gate"])
-        u = h2.matmul(self.params[p + "ffn_up"])
-        # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
-        # 默认 "swiglu" 保持 silu 逻辑完全不变; "gelu" 走可微 gelu。
-        gate_act = g.gelu() if c.activation == "gelu" else g * g.sigmoid()
-        ff = (gate_act * u).matmul(self.params[p + "ffn_down"])
-        x = x + ff
+        if c.use_moe:
+            x = x + self._moe_forward(h2, layer)
+        else:
+            g = h2.matmul(self.params[p + "ffn_gate"])
+            u = h2.matmul(self.params[p + "ffn_up"])
+            # 按 activation 选择门控非线性 (INV: config.activation 真正生效)
+            # 默认 "swiglu" 保持 silu 逻辑完全不变; "gelu" 走可微 gelu。
+            gate_act = g.gelu() if c.activation == "gelu" else g * g.sigmoid()
+            ff = (gate_act * u).matmul(self.params[p + "ffn_down"])
+            x = x + ff
         return x
+
+    def _moe_forward(self, h2: "Tensor", layer: int) -> "Tensor":
+        """MoE 前向 (可微, 严格镜像推理端 ``Transformer._moe`` 以保证
+        train→inference save→load 零偏差, INV-14 路由守恒)。
+
+        零重写: Switch/Top-k MoE (Fedus et al. 2022); 仅对选中专家的
+        router 分数做 softmax ⇒ 路由概率和=1 (INV-14)。反向经 ``getitem``
+        高级索引散射回 ``router``, 经专家 matmul 回各专家权重。
+        """
+        c = self.cfg
+        B, T, d = h2.data.shape
+        E, K = c.n_experts, c.moe_topk
+        router = self.params[f"layer{layer}.router"]
+        router_logits = h2.matmul(router)                     # [B,T,E] Tensor
+        rl = router_logits.data
+        topk_idx = np.argsort(rl, axis=-1)[:, :, -K:]          # [B,T,K] 离散路由
+        # 可微 gather 选中专家的 router logits (反向经 getitem 散射回 router)
+        bi = np.arange(B)[:, None, None]
+        ti = np.arange(T)[None, :, None]
+        sel = router_logits[bi, ti, topk_idx]                  # [B,T,K] Tensor
+        w = sel.softmax(axis=-1)                              # [B,T,K] 概率和=1
+        out = Tensor.zeros(B, T, d)
+        for e in range(E):
+            gate = h2.matmul(self.params[f"layer{layer}.e{e}_gate"])
+            up = h2.matmul(self.params[f"layer{layer}.e{e}_up"])
+            gate_act = gate.gelu() if c.activation == "gelu" else gate * gate.sigmoid()
+            ex = (gate_act * up).matmul(self.params[f"layer{layer}.e{e}_down"])  # [B,T,d]
+            mask = (topk_idx == e)                            # [B,T,K] 离散
+            coeff = (w * Tensor(mask, requires_grad=False)).sum(axis=-1, keepdims=True)  # [B,T,1]
+            out = out + coeff * ex
+        return out
 
     def forward(self, ids: np.ndarray) -> Tensor:
         c = self.cfg

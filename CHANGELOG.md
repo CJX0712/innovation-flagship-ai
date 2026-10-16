@@ -2,6 +2,27 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.5] — 2026-10-17
+
+### 新增 (Added) — TinyTrainer 支持 MoE + 训练/推理 save→load 一致性矩阵 (补齐 MoE 轴)
+- **真缺口 (能力缺陷, 非测试缺口)**: `TinyTrainer._build` / `_layer_forward` 此前
+  仅建 dense FFN 参数 (`ffn_gate/up/down`), `use_moe=True` 模型**根本无法训练**
+  —— 推理端 `Transformer._moe` 存在但训练端无对应路径, train→inference 对 MoE
+  配置轴从未被测试触达。现补齐:
+  - `trainer.py::_build` 按 `cfg.use_moe` 分支建 `e{e}_gate/up/down` + `router`
+    (与推理端 `Transformer._init_params` 同名同结构, 保证 save→load 零偏差)。
+  - `trainer.py::_moe_forward` 可微 MoE 前向, **严格镜像** 推理端 `Transformer._moe`
+    (top-k 路由 → 仅对选中专家 router 分数 softmax ⇒ 概率和=1, INV-14); 反向经
+    `getitem` 高级索引散射回 `router`、经专家 matmul 回各专家权重。
+  - 激活选择 (`config.activation`) 在 MoE 路径同样生效 (gelu / silu), 与 dense 对称。
+- **验证**: 新增 `tests/unit/l4/test_moe_consistency.py` 3 用例 —
+  MoE 模型 trainer 前向 vs 推理端 save→load 对照 (swiglu / gelu) `max|diff| ≤ 1e-9`
+  + MoE router/专家参数一步 backward 梯度贯通 (非 None 且范数 > 0)。
+- 一致性矩阵现状: 注意力 (n_kv×scaling) / 激活 (swiglu|gelu) / **MoE** 三轴已覆盖;
+  int8 量化与 LoRA 尚未接入训练端, 列为后续增量。
+
+### 测试 (Tests) — 211 → 214 项, 覆盖率 87% 维持, selftest ALL GREEN
+
 ## [0.7.4] — 2026-10-17
 
 ### 新增 (Added) — 让 `config.activation` 真正生效 (补齐 gelu 激活)
