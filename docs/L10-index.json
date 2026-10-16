@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T20:27:42.756Z",
+  "generated_at": "2026-10-16T21:14:31.441Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 143,
-    "planned": 881
+    "done": 158,
+    "planned": 866
   },
   "leaves": [
     {
@@ -9297,8 +9297,8 @@
       "op": "O00",
       "name": "BFS",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graph-forge BFS 最短路(bfsShortest)"
     },
     {
       "id": "L10-F7-G2-O01",
@@ -9317,8 +9317,8 @@
       "op": "O02",
       "name": "Dijkstra",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graph-forge Dijkstra(dijkstra/dijkstraRef)"
     },
     {
       "id": "L10-F7-G2-O03",
@@ -9337,8 +9337,8 @@
       "op": "O04",
       "name": "最短路径",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graph-forge 最短路径(reconstructPath/bruteForceShortest)"
     },
     {
       "id": "L10-F7-G2-O05",
@@ -9457,8 +9457,8 @@
       "op": "O00",
       "name": "图卷积 GCN",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge 图卷积GCN(symNormalize/gcnLayer)"
     },
     {
       "id": "L10-F7-G3-O01",
@@ -9467,8 +9467,8 @@
       "op": "O01",
       "name": "GraphSAGE",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge GraphSAGE(sageAggregate mean/sum/max)"
     },
     {
       "id": "L10-F7-G3-O02",
@@ -9477,8 +9477,8 @@
       "op": "O02",
       "name": "注意力图网络 GAT",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge 注意力图网络GAT(gatAttention/gatLayer)"
     },
     {
       "id": "L10-F7-G3-O03",
@@ -9487,8 +9487,8 @@
       "op": "O03",
       "name": "消息传递",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge 消息传递MPNN(messagePass)"
     },
     {
       "id": "L10-F7-G3-O04",
@@ -9497,8 +9497,8 @@
       "op": "O04",
       "name": "节点分类",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge 节点分类(nodeClassify)"
     },
     {
       "id": "L10-F7-G3-O05",
@@ -9527,8 +9527,8 @@
       "op": "O07",
       "name": "图采样",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "gnn-forge 图采样(sampleNeighbors)"
     },
     {
       "id": "L10-F7-G3-O08",
@@ -9617,8 +9617,8 @@
       "op": "O00",
       "name": "稀疏矩阵乘",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 稀疏矩阵乘(spmv/spmm)"
     },
     {
       "id": "L10-F7-G4-O01",
@@ -9627,8 +9627,8 @@
       "op": "O01",
       "name": "稀疏格式转换",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 稀疏格式转换(denseToCOO/cooToCSR/csrToDense)"
     },
     {
       "id": "L10-F7-G4-O02",
@@ -9637,8 +9637,8 @@
       "op": "O02",
       "name": "压缩稀疏行",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 压缩稀疏行CSR(规范构建)"
     },
     {
       "id": "L10-F7-G4-O03",
@@ -9647,8 +9647,8 @@
       "op": "O03",
       "name": "压缩存储",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 压缩存储(nnzStats)"
     },
     {
       "id": "L10-F7-G4-O04",
@@ -9667,8 +9667,8 @@
       "op": "O05",
       "name": "剪枝",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 剪枝(magnitudePrune)"
     },
     {
       "id": "L10-F7-G4-O06",
@@ -9697,8 +9697,8 @@
       "op": "O08",
       "name": "稀疏向量",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "sparse-forge 稀疏向量(denseToSparseVec/sparseVecDot)"
     },
     {
       "id": "L10-F7-G4-O09",

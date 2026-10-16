@@ -100,6 +100,26 @@ const BAD_INPUTS = {
     ['buildHNSW', [null, {}]],
     ['buildIVFPQ', [[], 2, 4]],
     ['buildCoarseQuantizer', [[], 0]]
+  ],
+  ForgeGNN: [
+    ['symNormalize', [null]],
+    ['gcnLayer', [null, [], [], []]],
+    ['sageAggregate', [null, [], [], 'mean']],
+    ['sageAggregate', [[], [], [], 'bogus']],
+    ['gatLayer', [null, [], [], []]],
+    ['nodeClassify', [null, [], [], []]],
+    ['sampleNeighbors', [null, 2, () => 0.5]]
+  ],
+  ForgeSparse: [
+    ['denseToCOO', [null]],
+    ['cooToCSR', [null, 3]],
+    ['cooToCSR', [[[0, 0, 1]], 0]],
+    ['csrToDense', [null, 3]],
+    ['spmv', [null, []]],
+    ['magnitudePrune', [null, 0.5]],
+    ['magnitudePrune', [[], 1.5]],
+    ['sparseVecDot', [null, []]],
+    ['nnzStats', [null, 2, 2]]
   ]
 };
 
@@ -196,7 +216,7 @@ function globalNameFor(modPath) {
     'transformer-forge': 'ForgeTransformer', 'sampling-forge': 'ForgeSampling',
     'kv-cache-forge': 'ForgeKVCache', 'position-encoding-forge': 'ForgePosEnc', 'moe-forge': 'ForgeMoE',
     'quant-forge': 'ForgeQuant', 'speculative-forge': 'ForgeSpeculative', 'generation-forge': 'ForgeGeneration',
-    'dqn-forge': 'ForgeDQN', 'scheduler-forge': 'ForgeScheduler', 'diffusion-forge': 'ForgeDiffusion', 'td-forge': 'ForgeTD', 'policygrad-forge': 'ForgePolicyGrad', 'vi-forge': 'ForgeVI', 'retrieval-forge': 'ForgeRetrieval', 'ann-forge': 'ForgeANN'
+    'dqn-forge': 'ForgeDQN', 'scheduler-forge': 'ForgeScheduler', 'diffusion-forge': 'ForgeDiffusion', 'td-forge': 'ForgeTD', 'policygrad-forge': 'ForgePolicyGrad', 'vi-forge': 'ForgeVI', 'retrieval-forge': 'ForgeRetrieval', 'ann-forge': 'ForgeANN', 'gnn-forge': 'ForgeGNN', 'sparse-forge': 'ForgeSparse'
   };
   return map[base] || null;
 }

@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 143 |
-| planned | 881 |
+| done | 158 |
+| planned | 866 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -1260,11 +1260,11 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G2-O00` | BFS | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O00` | BFS | L7 | done | graph-forge BFS 最短路(bfsShortest) |
 | `L10-F7-G2-O01` | DFS | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O02` | Dijkstra | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O02` | Dijkstra | L7 | done | graph-forge Dijkstra(dijkstra/dijkstraRef) |
 | `L10-F7-G2-O03` | A* | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O04` | 最短路径 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O04` | 最短路径 | L7 | done | graph-forge 最短路径(reconstructPath/bruteForceShortest) |
 | `L10-F7-G2-O05` | PageRank | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G2-O06` | 连通分量 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G2-O07` | 最小生成树 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -1281,14 +1281,14 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G3-O00` | 图卷积 GCN | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G3-O01` | GraphSAGE | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G3-O02` | 注意力图网络 GAT | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G3-O03` | 消息传递 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G3-O04` | 节点分类 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G3-O00` | 图卷积 GCN | L7 | done | gnn-forge 图卷积GCN(symNormalize/gcnLayer) |
+| `L10-F7-G3-O01` | GraphSAGE | L7 | done | gnn-forge GraphSAGE(sageAggregate mean/sum/max) |
+| `L10-F7-G3-O02` | 注意力图网络 GAT | L7 | done | gnn-forge 注意力图网络GAT(gatAttention/gatLayer) |
+| `L10-F7-G3-O03` | 消息传递 | L7 | done | gnn-forge 消息传递MPNN(messagePass) |
+| `L10-F7-G3-O04` | 节点分类 | L7 | done | gnn-forge 节点分类(nodeClassify) |
 | `L10-F7-G3-O05` | 图池化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G3-O06` | 边预测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G3-O07` | 图采样 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G3-O07` | 图采样 | L7 | done | gnn-forge 图采样(sampleNeighbors) |
 | `L10-F7-G3-O08` | 图回归 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G3-O09` | 图自编码器 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G3-O10` | 图注意力池化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
@@ -1302,15 +1302,15 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G4-O00` | 稀疏矩阵乘 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G4-O01` | 稀疏格式转换 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G4-O02` | 压缩稀疏行 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G4-O03` | 压缩存储 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G4-O00` | 稀疏矩阵乘 | L7 | done | sparse-forge 稀疏矩阵乘(spmv/spmm) |
+| `L10-F7-G4-O01` | 稀疏格式转换 | L7 | done | sparse-forge 稀疏格式转换(denseToCOO/cooToCSR/csrToDense) |
+| `L10-F7-G4-O02` | 压缩稀疏行 | L7 | done | sparse-forge 压缩稀疏行CSR(规范构建) |
+| `L10-F7-G4-O03` | 压缩存储 | L7 | done | sparse-forge 压缩存储(nnzStats) |
 | `L10-F7-G4-O04` | 低秩压缩 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G4-O05` | 剪枝 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G4-O05` | 剪枝 | L7 | done | sparse-forge 剪枝(magnitudePrune) |
 | `L10-F7-G4-O06` | 稀疏注意力 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G4-O07` | 稀疏梯度 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G4-O08` | 稀疏向量 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G4-O08` | 稀疏向量 | L7 | done | sparse-forge 稀疏向量(denseToSparseVec/sparseVecDot) |
 | `L10-F7-G4-O09` | 稀疏卷积 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G4-O10` | 量化压缩 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G4-O11` | 哈夫曼编码 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

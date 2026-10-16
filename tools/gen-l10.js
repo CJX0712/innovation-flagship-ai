@@ -187,6 +187,24 @@ const REUSE = {
   'L10-F7-G1-O13': 'ann-forge 哈希索引(HashIndex)',
   'L10-F7-G1-O14': 'ann-forge 粗量化(buildCoarseQuantizer)',
   'L10-F7-G1-O15': 'ann-forge 细量化(buildFineQuantizer)',
+  // F7-G2 图搜索（graph-forge，既有模块信用映射）
+  'L10-F7-G2-O00': 'graph-forge BFS 最短路(bfsShortest)',
+  'L10-F7-G2-O02': 'graph-forge Dijkstra(dijkstra/dijkstraRef)',
+  'L10-F7-G2-O04': 'graph-forge 最短路径(reconstructPath/bruteForceShortest)',
+  // F7-G3 图神经网络（gnn-forge）
+  'L10-F7-G3-O00': 'gnn-forge 图卷积GCN(symNormalize/gcnLayer)',
+  'L10-F7-G3-O01': 'gnn-forge GraphSAGE(sageAggregate mean/sum/max)',
+  'L10-F7-G3-O02': 'gnn-forge 注意力图网络GAT(gatAttention/gatLayer)',
+  'L10-F7-G3-O03': 'gnn-forge 消息传递MPNN(messagePass)',
+  'L10-F7-G3-O04': 'gnn-forge 节点分类(nodeClassify)',
+  'L10-F7-G3-O07': 'gnn-forge 图采样(sampleNeighbors)',
+  // F7-G4 稀疏计算（sparse-forge）
+  'L10-F7-G4-O00': 'sparse-forge 稀疏矩阵乘(spmv/spmm)',
+  'L10-F7-G4-O01': 'sparse-forge 稀疏格式转换(denseToCOO/cooToCSR/csrToDense)',
+  'L10-F7-G4-O02': 'sparse-forge 压缩稀疏行CSR(规范构建)',
+  'L10-F7-G4-O03': 'sparse-forge 压缩存储(nnzStats)',
+  'L10-F7-G4-O05': 'sparse-forge 剪枝(magnitudePrune)',
+  'L10-F7-G4-O08': 'sparse-forge 稀疏向量(denseToSparseVec/sparseVecDot)',
 };
 
 const FAM = [
