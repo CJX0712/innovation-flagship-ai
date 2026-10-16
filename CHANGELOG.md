@@ -2,6 +2,15 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.2] — 2026-10-17
+
+### 工程 (CI) — 覆盖率 report-only job
+- `.github/workflows/ci.yml` 新增 `coverage` job (`continue-on-error: true`, 报告性质,
+  绝不影响主流程): `ubuntu-latest` + py3.13, `pytest -q --cov=ifai
+  --cov-report=term --cov-report=xml`, 上传 `coverage-report` (coverage.xml) artifact。
+  **report-only, 不设 fail 门禁** — 仅在 PR 可见覆盖率数字 (当前总体 ~87%),
+  与既有 `baseline` job 同属"报告型"管线, 互不阻塞 `test` job。
+
 ## [0.7.1] — 2026-10-17
 
 ### 修复 (Fixed) — 训练/推理 RoPE 分叉 (可复现性隐患)
