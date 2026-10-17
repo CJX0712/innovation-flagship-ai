@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 188 |
-| planned | 836 |
+| done | 214 |
+| planned | 810 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -983,22 +983,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F5-G5-O00` | Metropolis | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O01` | Metropolis-Hastings | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O02` | 吉布斯抽样 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O03` | NUTS | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O04` | 随机游走 Metropolis | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G5-O00` | Metropolis | L5 | done | mcmc-forge Metropolis |
+| `L10-F5-G5-O01` | Metropolis-Hastings | L5 | done | mcmc-forge Metropolis-Hastings(含非对称提议) |
+| `L10-F5-G5-O02` | 吉布斯抽样 | L5 | done | mcmc-forge 吉布斯抽样(Gibbs) |
+| `L10-F5-G5-O03` | NUTS | L5 | done | mcmc-forge NUTS(U-turn) |
+| `L10-F5-G5-O04` | 随机游走 Metropolis | L5 | done | mcmc-forge 随机游走 Metropolis+窗宽调优 |
 | `L10-F5-G5-O05` | 独立采样 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O06` | 退火采样 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G5-O06` | 退火采样 | L5 | done | mcmc-forge 模拟退火(几何降温+跨势垒) |
 | `L10-F5-G5-O07` | 并行回火 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G5-O08` | 可逆跳跃 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G5-O09` | 延迟拒绝 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F5-G5-O10` | 辅助变量 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O11` | 哈密顿更新 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G5-O11` | 哈密顿更新 | L5 | done | mcmc-forge 哈密顿更新 HMC(leapfrog) |
 | `L10-F5-G5-O12` | 黎曼流形 HMC | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O13` | 自适应步长 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O14` | 混合蒙特卡洛 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G5-O15` | 窗宽调优 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G5-O13` | 自适应步长 | L5 | done | mcmc-forge 自适应步长 dual-averaging |
+| `L10-F5-G5-O14` | 混合蒙特卡洛 | L5 | done | mcmc-forge 混合蒙特卡洛(随机轨迹长) |
+| `L10-F5-G5-O15` | 窗宽调优 | L5 | done | mcmc-forge 窗宽调优(Robbins-Monro/2.38) |
 
 ### G6 · 估计与检验
 
@@ -1323,22 +1323,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G5-O00` | JSON 序列化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O01` | 二进制序列化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O02` | 列式存储 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O03` | 内存映射 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O04` | 增量写入 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O05` | 校验持久化 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O06` | 版本化存储 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O07` | 快照 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O08` | 协议缓冲区 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O09` | 分区存储 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O10` | 对象存储 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O11` | 本地缓存 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O12` | 远端缓存 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O13` | 事务写入 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O14` | 灾难恢复 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G5-O15` | 数据校验和 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G5-O00` | JSON 序列化 | L7 | done | serialize-forge JSON 序列化(RFC8259/JCS) |
+| `L10-F7-G5-O01` | 二进制序列化 | L7 | done | serialize-forge 二进制序列化(TLV) |
+| `L10-F7-G5-O02` | 列式存储 | L7 | done | serialize-forge 列式存储(字典+位包) |
+| `L10-F7-G5-O03` | 内存映射 | L7 | done | serialize-forge 内存映射(缺页/LRU/脏页写回) |
+| `L10-F7-G5-O04` | 增量写入 | L7 | done | serialize-forge 增量写入(diff-apply) |
+| `L10-F7-G5-O05` | 校验持久化 | L7 | done | serialize-forge 校验持久化(CRC32/FNV1a64/SHA256) |
+| `L10-F7-G5-O06` | 版本化存储 | L7 | done | serialize-forge 版本化存储(不可变+回滚) |
+| `L10-F7-G5-O07` | 快照 | L7 | done | serialize-forge 快照(COW 深冻结) |
+| `L10-F7-G5-O08` | 协议缓冲区 | L7 | done | serialize-forge 协议缓冲区(protobuf varint+zigzag) |
+| `L10-F7-G5-O09` | 分区存储 | L7 | done | serialize-forge 分区存储(哈希/一致性环/范围) |
+| `L10-F7-G5-O10` | 对象存储 | L7 | done | serialize-forge 对象存储(sha 去重+版本) |
+| `L10-F7-G5-O11` | 本地缓存 | L7 | done | serialize-forge 本地缓存(LRU) |
+| `L10-F7-G5-O12` | 远端缓存 | L7 | done | serialize-forge 远端缓存(TTL+SWR) |
+| `L10-F7-G5-O13` | 事务写入 | L7 | done | serialize-forge 事务写入(WAL 先写日志) |
+| `L10-F7-G5-O14` | 灾难恢复 | L7 | done | serialize-forge 灾难恢复(备份+PITR) |
+| `L10-F7-G5-O15` | 数据校验和 | L7 | done | serialize-forge 数据校验和(块级定位) |
 
 ### G6 · 系统与部署
 

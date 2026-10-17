@@ -126,6 +126,17 @@ const REUSE = {
   'L10-F5-G2-O04': 'vi-forge 变分自编码器(vae)',
   'L10-F5-G2-O08': 'vi-forge 摊销变分推断(amortizedEncode)',
   'L10-F5-G2-O14': 'vi-forge ELBO优化(vae训练)',
+  // F5-G5 MCMC 进阶（mcmc-forge，覆盖 10/16 项）
+  'L10-F5-G5-O00': 'mcmc-forge Metropolis',
+  'L10-F5-G5-O01': 'mcmc-forge Metropolis-Hastings(含非对称提议)',
+  'L10-F5-G5-O02': 'mcmc-forge 吉布斯抽样(Gibbs)',
+  'L10-F5-G5-O03': 'mcmc-forge NUTS(U-turn)',
+  'L10-F5-G5-O04': 'mcmc-forge 随机游走 Metropolis+窗宽调优',
+  'L10-F5-G5-O06': 'mcmc-forge 模拟退火(几何降温+跨势垒)',
+  'L10-F5-G5-O11': 'mcmc-forge 哈密顿更新 HMC(leapfrog)',
+  'L10-F5-G5-O13': 'mcmc-forge 自适应步长 dual-averaging',
+  'L10-F5-G5-O14': 'mcmc-forge 混合蒙特卡洛(随机轨迹长)',
+  'L10-F5-G5-O15': 'mcmc-forge 窗宽调优(Robbins-Monro/2.38)',
   // F6 强化学习
   'L10-F6-G3-O00': 'dqn-forge DQN更新(Mnih 2015)',
   'L10-F6-G3-O01': 'dqn-forge 经验回放(均匀采样环形缓冲)',
@@ -239,6 +250,23 @@ const REUSE = {
   'L10-F7-G7-O09': 'eval-forge AUC评测(rocAuc Mann-Whitney)',
   'L10-F7-G7-O10': 'eval-forge 困惑度评测(perplexity)',
   'L10-F7-G7-O11': 'eval-forge BLEU评测(bleu n-gram+brevity penalty)',
+  // F7-G5 序列化与存储（serialize-forge，全 16 项）
+  'L10-F7-G5-O00': 'serialize-forge JSON 序列化(RFC8259/JCS)',
+  'L10-F7-G5-O01': 'serialize-forge 二进制序列化(TLV)',
+  'L10-F7-G5-O02': 'serialize-forge 列式存储(字典+位包)',
+  'L10-F7-G5-O03': 'serialize-forge 内存映射(缺页/LRU/脏页写回)',
+  'L10-F7-G5-O04': 'serialize-forge 增量写入(diff-apply)',
+  'L10-F7-G5-O05': 'serialize-forge 校验持久化(CRC32/FNV1a64/SHA256)',
+  'L10-F7-G5-O06': 'serialize-forge 版本化存储(不可变+回滚)',
+  'L10-F7-G5-O07': 'serialize-forge 快照(COW 深冻结)',
+  'L10-F7-G5-O08': 'serialize-forge 协议缓冲区(protobuf varint+zigzag)',
+  'L10-F7-G5-O09': 'serialize-forge 分区存储(哈希/一致性环/范围)',
+  'L10-F7-G5-O10': 'serialize-forge 对象存储(sha 去重+版本)',
+  'L10-F7-G5-O11': 'serialize-forge 本地缓存(LRU)',
+  'L10-F7-G5-O12': 'serialize-forge 远端缓存(TTL+SWR)',
+  'L10-F7-G5-O13': 'serialize-forge 事务写入(WAL 先写日志)',
+  'L10-F7-G5-O14': 'serialize-forge 灾难恢复(备份+PITR)',
+  'L10-F7-G5-O15': 'serialize-forge 数据校验和(块级定位)',
 };
 
 const FAM = [

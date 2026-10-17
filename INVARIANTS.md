@@ -395,6 +395,21 @@
 
 > 反空洞铁律落实（INV-VI-005）：原易退化为「同 seed 相等」的恒等掩盖——已新增「σ=0 与 σ>0 同种子必分歧」对照，确证采样式 z 的差异真实传导；并经 `tests/independent/vi-check.js` 独立复核：手搓高斯 KL 黄金参照、闭式 ELBO 分量、重参数化确定性三重逐项确认全绿。
 
+### `mcmc-forge.js`（INV-MC-001..008，8 条，L5 MCMC 采样 / Metropolis / MH / Gibbs / NUTS / HMC / 退火）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-MC-001 | 对称提议下 Metropolis ≡ Metropolis-Hastings：同 seed 同提议流两独立实现轨迹逐位相等；非对称提议下两链必分歧（证伪提议修正项生效）；SHA-256 FIPS 180-4 已知向量防护（'abc'/''） | 0 | 双独立实现 JSON 逐位比对 + 分歧断言 + 已知向量 |
+| INV-MC-002 | MH 细致平衡（离散两状态）：解析核 P=Q·α 满足 π_i·P_ij = π_j·P_ji（EXACT ≤1e-15，恒接受核同式违反 >0.1）；60000 步经验频率≈π（10σ）、经验转移频率≈解析 P（10σ） | 1e-15 | 解析细致平衡恒等式 + 经验转移矩阵 10σ 检验 + 恒接受证伪 |
+| INV-MC-003 | RWM 大样本矩收敛：N(3,2²) 目标 42000 步（烧除 2000）样本均值/方差 z 分数 ≤10（三种子）；KS 检验 vs 解析正态 D≤1.63/√ESS；最优窗宽 2.38 下接受率≈0.44±0.05；Robbins-Monro 调优收敛到 0.44±0.05；恒接受随机游走方差 >100（证伪） | 10σ | 手搓 ESS/KS + 解析矩 + 调优收敛 + 随机游走证伪 |
+| INV-MC-004 | Gibbs 条件矩：BVN(ρ=0.6) 62000 步，x|y 回归斜率≈0.6、残差方差≈0.64、边际方差≈1（均 10σ）；错误条件方差(1.0)链边际方差偏离 >0.3（证伪）；lag-1 自相关 <0.95（非平凡） | 10σ | 解析条件矩 + 回归估计 + 错误条件证伪 |
+| INV-MC-005 | leapfrog 结构性质：时间反演可逆 (x,p)→(x',p')→(x,-p) 误差 ≤1e-12；保体积（数值 Jacobian 行列式 ≈1，≤1e-6）；能量误差有界（L=8/40/160 最大 |ΔH| ≤ 0.05）而显式 Euler 同配置漂移（err(160) > 5·err(8)） | 1e-12 | 有限差分 Jacobian + 能量界 + Euler 对照 |
+| INV-MC-006 | NUTS 与混合 MC 效率：病态 2D 高斯（sd=[1,10]）上 NUTS ESS > 3×RWM ESS；U-turn 终止占比 >0.5；dual averaging 后接受率 ∈[0.5,0.95]；超大 eps(5.0) 接受率 <0.2（证伪）；混合 MC（随机轨迹长 U{1..8}）ESS > 2×RWM 且轨迹长频率≈均匀 | 0.05 | ESS 黄金对比 + U-turn 统计 + 轨迹长直方图 + 超大 eps 证伪 |
+| INV-MC-007 | dual averaging 自适应步长：目标接受率 0.65 收敛到 0.65±0.05、目标 0.9 收敛到 0.9±0.05；且 eps(0.9) < eps(0.65)（严格小 >2%，证伪调优响应目标） | 0.05 | Hoffman-Gelman 公式 + 双目标对照 |
+| INV-MC-008 | 退火：同 seed 全链逐位相等（EXACT）+ 异 seed 分歧；调度几何段严格递减、T∈[Tmin,T0]；退火 8 种子 ≥5/8 从局部模 -5 达全局模 +5 且末态平均对数密度高于冷链 +0.5；冷链 3 种子全链不越过 x≤1.5（困于局部模，证伪对照）；降温致锐（末段方差 < 首段方差/4） | 0 | 双跑逐位 + 调度结构 + 8 种子全局模统计 + 冷链对照 |
+
+> 反空洞铁律落实（INV-MC-002/003/005/008）：恒接受核必违反细致平衡（证伪"接受即正确"）、恒接受随机游走方差 >100（证伪收敛）、显式 Euler 漂移劣于 leapfrog（证伪积分器无关）、冷链困于局部模（证伪退火无效）。灵魂不变量 INV-MC-001/002/005 经手搓黄金参照（解析细致平衡 + 有限差分 Jacobian）Δ=0，并经 `tests/independent/mcmc-check.js` 独立复核（3 连跑确定性验证通过）。
+
 ---
 
 ## L6 — 深度强化学习
@@ -568,6 +583,21 @@
 
 > 反空洞铁律落实（INV-FLW-002/003/006）：最小割经**暴力枚举顶点子集**独立验证（非自证）、上界存在严格小实例（非平凡恒等）、社区发现断言 K5∪K5=2 与无边图 n（证伪单社区）。灵魂不变量 INV-FLW-002/004 经手搓黄金参照（暴力割枚举 + Kuhn 独立实现）Δ=0，并经 `tests/independent/flow-check.js` 复核（3 连跑逐位一致）。
 
+### `serialize-forge.js`（INV-SER-001..008，8 条，L7 序列化与存储 / 四编解码器 / 内存映射 / 增量·快照 / 版本·WAL·灾恢 / 分区·对象 / 缓存 / 校验和）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SER-001 | 四编解码器 roundtrip 保真与规范确定性：JSON(规范键序)/二进制(TLV)/列式(字典+位包)/protobuf(varint+zigzag) 对随机对象图（3 种子）decode 后 deepEqual EXACT；encodeJson 与 encodeBinary 键序无关（同值不同键序 → 字节级 EXACT 相等）；紧凑性：数值负载 binary ≤0.75·json、小整数 protobuf ≤0.6·binary；损坏流（魔数翻转/截断/超长 varint/尾随垃圾）必抛错 | 0 | deepEqual EXACT + 字节级对拍 + zigzag 已知向量 + 损坏必抛 |
+| INV-SER-002 | 列式 vs 行式无免费午餐：低基数列（每列 4 distinct）列式 ≤0.5·直存 且 ≤0.7·行式（字典+位包致胜）；高基数列（每列全 distinct int）列式 ≥1.15·直存（字典开销致亏）；两种负载 decode roundtrip EXACT 且同表编码字节确定 EXACT | 0 | 字典+位打包尺寸双向对比 + roundtrip + 确定性对拍 |
+| INV-SER-003 | 内存映射分页语义：脚本访问序列下 LRU 逐出序 EXACT；缺页计数 == 首次触页数 EXACT；脏页 flush 后 backing 与映射视图逐字节一致 EXACT 且 flush 前 backing 不含该写；越界读/写均抛错 | 0 | 页表 LRU 对拍 + 写回前后一致性 + OOB 证伪 |
+| INV-SER-004 | 增量编码与快照隔离：applyDelta(base, encodeDelta(base,target))==target EXACT（3 种子删/插/换段变异）；同输入 delta 操作序列与字节确定 EXACT；空变异仅剩单 copy 且 ≤16 字节；快照深冻结隔离——快照后写入不影响快照、restore 后状态==快照、版本历史不灭、快照对象 Object.isFrozen 且嵌套全冻 | 0 | diff-apply 对拍 + COW 隔离 + 深冻结 + 历史保全 |
+| INV-SER-005 | 版本化与事务持久性：版本 id 严格递增且旧版本内容不变 EXACT；WAL 交错事务（两事务+未提交+中止+同键覆写）恢复态 EXACT（仅已提交按 lsn 序）；每个截断前缀 p∈[0,N] 恢复态 == p 前最后提交态 EXACT（原子性+持久性全前缀证明）；抽去提交记录的日志中对应写入不可见（证伪）；灾恢 backup→restore EXACT、备份翻转一字节必抛、PITR 到任一提交点状态 EXACT | 0 | 两阶段恢复 + 全前缀崩溃模拟 + 备份双校验 + 提交抽离证伪 |
+| INV-SER-006 | 校验和家族：已知向量 EXACT（CRC32("123456789")=0xCBF43926、CRC32("")=0、FNV-1a-64("")=0xcbf29ce484222325、FNV-1a-64("a")=0xaf63dc4c8601ec8c、SHA256("abc")=ba7816bf…、SHA256("")=e3b0c442…）；单比特翻转雪崩均值 ≥0.3 且 ≤0.75；1000 随机输入无碰撞 EXACT；块级校验（16 块）定位损坏块 EXACT；记录级翻转仅污染对应记录 | 0 | 标准测试向量 + 雪崩统计 + 定位对拍 + 选择性污染 |
+| INV-SER-007 | 分区与对象存储：哈希分区确定（同 key 同分区，100 次 EXACT）且 8 桶近似均匀（最大桶偏差 ≤50%）；一致性哈希环（4 节点×50 虚节点）：同 key 同节点 EXACT、增加 1 节点移动键比例 ≤2/(n+1) 且 ≥0.02、删除 1 节点 ≤0.5；范围分区路由 EXACT；对象存储内容寻址去重、同键覆写产生新版本且旧版本内容 EXACT、head 元数据 EXACT、删除后 get 抛错、异内容 etag 必异 | 0 | 确定性+均匀性+移动界双向+去重与版本对拍 |
+| INV-SER-008 | 缓存语义：LRU（容量 3）脚本序列逐出序 EXACT、size≤capacity 恒成立 EXACT、hits+misses==gets EXACT、capacity=1 连续 put 必逐出前值（证伪）；TTL 可注入时钟：过期前 hit / 过期 miss EXACT、ttl=0 即 miss、stale-while-revalidate 过期仍返回旧值且置 revalidate、refresh 后新值生效 EXACT、过期项被惰性清除 | 0 | Map 插入序对拍 + 注入时钟 + SWR 语义 + 边界证伪 |
+
+> 反空洞铁律落实（INV-SER-002/003/005/008）：列式无免费午餐双向断言（低基数必赢、高基数必亏）、缺页计数必等于首次触页数、WAL 每个截断前缀必恢复到最后提交态（原子性+持久性全前缀证明而非单点自证）、capacity=1 连续 put 必逐出前值（证伪 LRU 空转）。灵魂不变量 INV-SER-001/003/005/006 经手搓黄金参照（独立 SHA-256 + 独立 LRU 仿真 + 独立 ARIES 重放 + 独立 CRC/FNV/雪崩统计）交叉验证，并经 `tests/independent/serialize-check.js` 独立复核（R1–R8 全绿）。
+
 ---
 
 ## 统计汇总
@@ -578,13 +608,14 @@
 | L2 | 4 | 28 | 0 |
 | L3 | 6 | 48 | 0 |
 | L4 | 9 | 72 | 0 |
-| L5 | 6 | 48 | 0 |
+| L5 | 7 | 56 | 0 |
 | L6 | 3 | 24 | 0 |
-| L7 | 8 | 64 | 0 |
-| **合计** | **38** | **296** | **0** |
+| L7 | 9 | 72 | 0 |
+| **合计** | **40** | **312** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **296 条**。运行时 case 数为 **303**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **312 条**。运行时 case 数为 **319**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）；ann-forge 13 个 case 对应 8 条 ID（O04/O06/O08/O09/O11 为覆盖用例，+5）。净 +7。
+> W17 新增 mcmc-forge（L5，8 条 ID / 8 个 case，1:1）与 serialize-forge（L7，8 条 ID / 8 个 case，1:1），合计 +16 ID / +16 case，净差不变。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变；retrieval-forge / ann-forge / gnn-forge / sparse-forge 声明 L7（F7 检索·图·系统族），W13 由 L5 规划位升格至 L7。
 
 ---
@@ -592,7 +623,7 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 38 模块 · 303 用例 · 0 失败
+npm run verify             # 40 模块 · 319 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
 node tests/independent/td-check.js          # INV-TD 表格RL 皇冠不变量独立复核
@@ -606,8 +637,10 @@ node tests/independent/graphalg-check.js  # INV-GA 图算法 皇冠不变量独�
 node tests/independent/serving-check.js   # INV-SV 推理服务 皇冠不变量独立复核
 node tests/independent/eval-check.js     # INV-EVL 评测指标 皇冠不变量独立复核
 node tests/independent/flow-check.js     # INV-FLW 网络流 皇冠不变量独立复核
+node tests/independent/mcmc-check.js     # INV-MC  MCMC 皇冠不变量独立复核（R1–R8 全绿）
+node tests/independent/serialize-check.js # INV-SER 序列化·存储 皇冠不变量独立复核（R1–R8 全绿）
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 188 / planned 836
+node tools/verify-l10.js   # L10 1024 项 / done 214 / planned 810
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

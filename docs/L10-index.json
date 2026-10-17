@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-17T16:59:02.655Z",
+  "generated_at": "2026-10-17T21:16:08.936Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 188,
-    "planned": 836
+    "done": 214,
+    "planned": 810
   },
   "leaves": [
     {
@@ -7217,8 +7217,8 @@
       "op": "O00",
       "name": "Metropolis",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge Metropolis"
     },
     {
       "id": "L10-F5-G5-O01",
@@ -7227,8 +7227,8 @@
       "op": "O01",
       "name": "Metropolis-Hastings",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge Metropolis-Hastings(含非对称提议)"
     },
     {
       "id": "L10-F5-G5-O02",
@@ -7237,8 +7237,8 @@
       "op": "O02",
       "name": "吉布斯抽样",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 吉布斯抽样(Gibbs)"
     },
     {
       "id": "L10-F5-G5-O03",
@@ -7247,8 +7247,8 @@
       "op": "O03",
       "name": "NUTS",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge NUTS(U-turn)"
     },
     {
       "id": "L10-F5-G5-O04",
@@ -7257,8 +7257,8 @@
       "op": "O04",
       "name": "随机游走 Metropolis",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 随机游走 Metropolis+窗宽调优"
     },
     {
       "id": "L10-F5-G5-O05",
@@ -7277,8 +7277,8 @@
       "op": "O06",
       "name": "退火采样",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 模拟退火(几何降温+跨势垒)"
     },
     {
       "id": "L10-F5-G5-O07",
@@ -7327,8 +7327,8 @@
       "op": "O11",
       "name": "哈密顿更新",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 哈密顿更新 HMC(leapfrog)"
     },
     {
       "id": "L10-F5-G5-O12",
@@ -7347,8 +7347,8 @@
       "op": "O13",
       "name": "自适应步长",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 自适应步长 dual-averaging"
     },
     {
       "id": "L10-F5-G5-O14",
@@ -7357,8 +7357,8 @@
       "op": "O14",
       "name": "混合蒙特卡洛",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 混合蒙特卡洛(随机轨迹长)"
     },
     {
       "id": "L10-F5-G5-O15",
@@ -7367,8 +7367,8 @@
       "op": "O15",
       "name": "窗宽调优",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "mcmc-forge 窗宽调优(Robbins-Monro/2.38)"
     },
     {
       "id": "L10-F5-G6-O00",
@@ -9777,8 +9777,8 @@
       "op": "O00",
       "name": "JSON 序列化",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge JSON 序列化(RFC8259/JCS)"
     },
     {
       "id": "L10-F7-G5-O01",
@@ -9787,8 +9787,8 @@
       "op": "O01",
       "name": "二进制序列化",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 二进制序列化(TLV)"
     },
     {
       "id": "L10-F7-G5-O02",
@@ -9797,8 +9797,8 @@
       "op": "O02",
       "name": "列式存储",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 列式存储(字典+位包)"
     },
     {
       "id": "L10-F7-G5-O03",
@@ -9807,8 +9807,8 @@
       "op": "O03",
       "name": "内存映射",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 内存映射(缺页/LRU/脏页写回)"
     },
     {
       "id": "L10-F7-G5-O04",
@@ -9817,8 +9817,8 @@
       "op": "O04",
       "name": "增量写入",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 增量写入(diff-apply)"
     },
     {
       "id": "L10-F7-G5-O05",
@@ -9827,8 +9827,8 @@
       "op": "O05",
       "name": "校验持久化",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 校验持久化(CRC32/FNV1a64/SHA256)"
     },
     {
       "id": "L10-F7-G5-O06",
@@ -9837,8 +9837,8 @@
       "op": "O06",
       "name": "版本化存储",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 版本化存储(不可变+回滚)"
     },
     {
       "id": "L10-F7-G5-O07",
@@ -9847,8 +9847,8 @@
       "op": "O07",
       "name": "快照",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 快照(COW 深冻结)"
     },
     {
       "id": "L10-F7-G5-O08",
@@ -9857,8 +9857,8 @@
       "op": "O08",
       "name": "协议缓冲区",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 协议缓冲区(protobuf varint+zigzag)"
     },
     {
       "id": "L10-F7-G5-O09",
@@ -9867,8 +9867,8 @@
       "op": "O09",
       "name": "分区存储",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 分区存储(哈希/一致性环/范围)"
     },
     {
       "id": "L10-F7-G5-O10",
@@ -9877,8 +9877,8 @@
       "op": "O10",
       "name": "对象存储",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 对象存储(sha 去重+版本)"
     },
     {
       "id": "L10-F7-G5-O11",
@@ -9887,8 +9887,8 @@
       "op": "O11",
       "name": "本地缓存",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 本地缓存(LRU)"
     },
     {
       "id": "L10-F7-G5-O12",
@@ -9897,8 +9897,8 @@
       "op": "O12",
       "name": "远端缓存",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 远端缓存(TTL+SWR)"
     },
     {
       "id": "L10-F7-G5-O13",
@@ -9907,8 +9907,8 @@
       "op": "O13",
       "name": "事务写入",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 事务写入(WAL 先写日志)"
     },
     {
       "id": "L10-F7-G5-O14",
@@ -9917,8 +9917,8 @@
       "op": "O14",
       "name": "灾难恢复",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 灾难恢复(备份+PITR)"
     },
     {
       "id": "L10-F7-G5-O15",
@@ -9927,8 +9927,8 @@
       "op": "O15",
       "name": "数据校验和",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serialize-forge 数据校验和(块级定位)"
     },
     {
       "id": "L10-F7-G6-O00",
