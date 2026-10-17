@@ -34,16 +34,16 @@
 | L7 | 多模态 / 生成模型 | 128 | 规划中 |
 | L8 | 大模型预训练 / 对齐 | 256 | 规划中 |
 | L9 | 推理优化 / 部署 | 512 | 规划中 |
-| L10 | 微指令级操作（最终层） | **1024** | **done 175 / planned 849** |
+| L10 | 微指令级操作（最终层） | **1024** | **done 188 / planned 836** |
 | **合计** | | **2046** | |
 
 - L1–L10 项数按 2·2ⁿ 增长（L1=2, L2=4, …, L10=1024），合计 ∑ = **2046**。
 - L10 的 1024 项微指令完整分类法见 [`docs/L10-index.json`](docs/L10-index.json) 与 [`docs/L10-taxonomy.md`](docs/L10-taxonomy.md)（8 族 / 64 组 / 每组 16 op）。
-- 当前已落码的 **36 个内核模块**（34 个 forge 内核 + 2 个 core 内核），覆盖了 L1–L7 的基础与核心算法，并直接支撑 L10 中 **175 项 done** 微指令（其余 849 项标记为 planned，等待后续波次）。
+- 当前已落码的 **38 个内核模块**（36 个 forge 内核 + 2 个 core 内核），覆盖了 L1–L7 的基础与核心算法，并直接支撑 L10 中 **188 项 done** 微指令（其余 836 项标记为 planned，等待后续波次）。
 
 ---
 
-## 三、模块清单（36 个模块 · 287 条不变量 · 0 失败）
+## 三、模块清单（38 个模块 · 303 条不变量 · 0 失败）
 
 所有模块均满足 `@forge-module` 统一契约：`selfCheck()` 返回 `forge-selfcheck/1.0` schema、代码 hash 幂等、不良输入抛错、CLI 退出码规范（0/1/2/3/4/66）。每条不变量都有 **≥1 条可被独立交叉验证的硬标准**（残差界 / 正交归一 / 梯度检验 / 闭式对照 / 参考重实现），阈值常量化于 `TOL`。
 
@@ -76,6 +76,8 @@
 | `src/sparse-forge.js` | L7 | INV-SPR-001..008 | 8 | CSR/COO 格式与 SpMV/SpMM(Saad SPARSKIT 1994 / scipy.sparse BSD) / 幅度剪枝 / 稀疏向量 |
 | `src/graphalg-forge.js` | L7 | INV-GA-001..008 | 8 | DFS / A* / PageRank(Page&Brin 1998) / 连通分量 / MST(Kruskal+Prim) / 拓扑排序 / SCC(Tarjan 1972) / 三角计数 / Brandes 中心性 |
 | `src/serving-forge.js` | L7 | INV-SV-001..008 | 8 | 推理批处理 / 算子融合 / 内核调度 / 内存池(vLLM PagedAttention SOSP 2023, Apache-2.0) / 流式管线 / 负载均衡 / 请求队列 / 令牌桶限流 |
+| `src/eval-forge.js` | L7 | INV-EVL-001..008 | 8 | precision / recall / F1 macro·micro / ROC AUC(Fawcett 2006 Mann-Whitney) / perplexity / BLEU(Papineni 2002) / p50·p95·p99 / 吞吐 / 一致性 |
+| `src/flow-forge.js` | L7 | INV-FLW-001..008 | 8 | 最大流 Edmonds-Karp+Dinic / **最大流=最小割** / 二分图匹配 Hopcroft-Karp / 标签传播社区 / Welsh-Powell 图着色 |
 | `src/prob-forge.js` | L5 | INV-PRB-001..008 | 8 | 高斯 / Bernoulli / KL 散度 / 逆 CDF 采样 |
 | `src/graph-forge.js` | L5 | INV-GRAPH-001..008 | 8 | BFS / Dijkstra（独立重实现校验） |
 | `src/rl-forge.js` | L5 | INV-RL-001..008 | 8 | 值迭代 / 贝尔曼最优性 / REINFORCE 策略梯度 |
@@ -100,7 +102,7 @@
 
 ### 命令行自检（Node 端）
 ```bash
-# 1) 聚合自检：36 模块 / 287 不变量，全部跑一遍
+# 1) 聚合自检：38 模块 / 303 不变量，全部跑一遍
 npm test                 # ≡ node run-all.js
 npm run selfcheck        # ≡ node run-all.js
 
@@ -169,13 +171,13 @@ innovation-flagship-ai/
 │   ├── attention-forge.js  rope-forge.js  transformer-forge.js
 │   ├── kv-cache-forge.js  position-encoding-forge.js  moe-forge.js
 │   ├── quant-forge.js  speculative-forge.js  generation-forge.js
-│   └── retrieval-forge.js  ann-forge.js  gnn-forge.js  sparse-forge.js  graphalg-forge.js  serving-forge.js  prob-forge.js  graph-forge.js
+│   └── retrieval-forge.js  ann-forge.js  gnn-forge.js  sparse-forge.js  graphalg-forge.js  serving-forge.js  eval-forge.js  flow-forge.js  prob-forge.js  graph-forge.js
 │   └── rl-forge.js  sampling-forge.js  dqn-forge.js  diffusion-forge.js  td-forge.js  policygrad-forge.js  vi-forge.js
 ├── tests/
 │   ├── harness.js          # @forge-module 契约自检器
 │   └── independent/        # 独立黄金参照复核（不采信模块自检）
 │       ├── INV-DQN-007-check.js  INV-DIF-check.js  td-check.js  retrieval-check.js  ann-check.js
-│       └── gnn-check.js  sparse-check.js  graphalg-check.js  serving-check.js
+│       └── gnn-check.js  sparse-check.js  graphalg-check.js  serving-check.js  eval-check.js  flow-check.js
 │       └── policygrad-check.js  vi-check.js
 ├── tools/
 │   ├── gen-l10.js          # L10 微指令分类法生成
@@ -206,14 +208,15 @@ innovation-flagship-ai/
 - ✅ **W13**：向量检索内核 retrieval-forge（余弦 / 内积 / L2 检索 / 穷举 top-k / int8 量化检索 / MIPS / RRF 融合 / 重排 / 阈值 / 批量 / ANN 调度，8 不变量全绿，INV-RT-002 穷举 top-k 经手搓 argsort 黄金参照复核）；ANN 索引内核 ann-forge（KD 树 / 球树 / LSH / Annoy / PQ / IVFPQ / ScaNN / HNSW / NSW / 粗·细量化，8 不变量全绿，灵魂不变量经手搓穷举黄金 top-k 交叉验证）——**开启 F7 检索·图·系统族前沿**，本波共 2 模块 / 16 不变量全绿，L10 done 116→143
 - ✅ **W14**：图神经网络内核 gnn-forge（GCN 对称归一化 / GraphSAGE mean·sum·max 聚合 / GAT 边注意力 / MPNN 消息传递 / 节点分类训练收敛 / 邻居采样，8 不变量全绿，INV-GNN-002 GCN 前向与 INV-GNN-004 GAT 注意力经手搓黄金参照 mismatch=0，INV-GNN-006 小图训练 acc=1.0 证伪平凡）；稀疏计算内核 sparse-forge（COO↔CSR↔稠密 往返 / 规范 CSR / SpMV / SpMM / 压缩统计 / 幅度剪枝 / 稀疏向量，8 不变量全绿，INV-SPR-002 SpMV 与 INV-SPR-001 往返经手搓稠密黄金参照 mismatch=0，乘法次数=nnz 证伪全扫）——**graph-forge 信用映射 F7-G2（BFS/Dijkstra/最短路径）**，本波共 2 新模块 + 1 信用 / 16 不变量全绿，L10 done 143→158
 - ✅ **W15**：图算法内核 graphalg-forge（DFS / A* 可采纳启发 / PageRank 幂迭代 / 连通分量 / MST Kruskal+Prim / 拓扑排序 Kahn / SCC Tarjan / 三角计数 / Brandes 中心性，8 不变量全绿，INV-GA-002 A*≡Dijkstra、INV-GA-006 Kruskal≡Prim、INV-GA-008 Brandes≡手搓逐对 BFS 均经手搓黄金参照 Δ=0，且不可采纳启发捕获严格次优证伪边界）；推理服务内核 serving-forge（批处理 ≡ 串行 / 算子融合 ≡ 串联且调用数减半 / 内核调度拓扑合法 / 内存池活跃块零重叠 / 流式分块 ≡ 全量 / 负载均衡 9:3 加权 / FIFO 与优先队列分歧 / 令牌桶窗口上界，8 不变量全绿，逻辑时钟保证确定性）——本波共 2 模块 / 16 不变量全绿，L10 done 158→175
-- 🔜 **W15+ 续**：F7-G2 余项（二分图匹配 / 最大流 / 社区发现 / 图着色）、F4-G5/G6 余项、F5 概率与生成余项（MCMC / 流模型）、F7-G5（序列化存储）/ F7-G7（评测指标）——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
+- ✅ **W16**：评测指标内核 eval-forge（precision / recall / F1 macro·micro / ROC AUC / perplexity / BLEU / p50·p95·p99 / 吞吐 / 一致性，8 不变量全绿，INV-EVL-003 AUC ≡ 手搓 Mann-Whitney 双路交叉 Δ=0 且随机打乱 ≈0.5、INV-EVL-005 BLEU ≡ 手搓 n-gram+brevity penalty Δ=0 且短候选 BP=0.223<1 证伪）；网络流内核 flow-forge（Edmonds-Karp + Dinic 双实现、**最大流=最小割**经暴力枚举 64 个子集验证、Hopcroft-Karp 二分匹配 ≡ 流归约、标签传播社区、Welsh-Powell 图着色，8 不变量全绿）——**F7-G2 组 16/16 全满**，本波共 2 模块 / 16 不变量全绿，L10 done 175→188
+- 🔜 **W16+ 续**：F7-G5（序列化存储：JSON / 二进制 / 列式 / 内存映射 / 哈夫曼 / RLE）、F4-G5/G6 余项、F5 概率与生成余项（MCMC / 流模型）、F7-G7 余项（漂移检测 / 公平性 / 可解释）——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
 
-**当前验证基线（W15 全波集成后本地复核）：**
-- `npm run verify` → **36 模块 · 通过 287 · 失败 0**
-- `npm run harness` → 36/36 模块满足 `@forge-module` 契约（含不良输入抛错登记）
+**当前验证基线（W16 全波集成后本地复核）：**
+- `npm run verify` → **38 模块 · 通过 303 · 失败 0**
+- `npm run harness` → 38/38 模块满足 `@forge-module` 契约（含不良输入抛错登记）
 - `npm run check:reuse` → 0 ERROR / 5 ADVISORY（X 级自研声明提示，不影响退出码）
-- `npm run l10` → 1024 项 / done 175 / planned 849 / ID 唯一 / 字段完整
-- `tests/independent/`（INV-DQN-007-check / INV-DIF-check / td-check / policygrad-check / vi-check / retrieval-check / ann-check / gnn-check / sparse-check / graphalg-check / serving-check）→ 11 套皇冠不变量独立复核全绿（新内核各 3 连跑确定性验证通过）
+- `npm run l10` → 1024 项 / done 188 / planned 836 / ID 唯一 / 字段完整
+- `tests/independent/`（INV-DQN-007-check / INV-DIF-check / td-check / policygrad-check / vi-check / retrieval-check / ann-check / gnn-check / sparse-check / graphalg-check / serving-check / eval-check / flow-check）→ 13 套皇冠不变量独立复核全绿（新内核各 3 连跑确定性验证通过）
 
 ---
 

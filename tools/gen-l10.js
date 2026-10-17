@@ -224,6 +224,21 @@ const REUSE = {
   'L10-F7-G6-O06': 'serving-forge 负载均衡(makeRoundRobin/makeWeightedRR)',
   'L10-F7-G6-O09': 'serving-forge 请求队列(FIFOQueue/PriorityQueue)',
   'L10-F7-G6-O12': 'serving-forge 限流(TokenBucket 逻辑时钟)',
+  // F7-G2 网络流与图划分余项（flow-forge）
+  'L10-F7-G2-O10': 'flow-forge 二分图匹配(bipartiteMatching Hopcroft-Karp)',
+  'L10-F7-G2-O11': 'flow-forge 最大流(edmondsKarp/dinicMaxFlow + minCut)',
+  'L10-F7-G2-O12': 'flow-forge 社区发现(labelPropagation)',
+  'L10-F7-G2-O14': 'flow-forge 图着色(greedyColoring Welsh-Powell)',
+  // F7-G7 评测指标（eval-forge）
+  'L10-F7-G7-O00': 'eval-forge 精度评测(precisionScore macro/micro)',
+  'L10-F7-G7-O01': 'eval-forge 延迟评测(latencyStats p50/p95/p99)',
+  'L10-F7-G7-O02': 'eval-forge 吞吐量评测(throughput)',
+  'L10-F7-G7-O03': 'eval-forge 召回率评测(recallScore)',
+  'L10-F7-G7-O04': 'eval-forge 一致性评测(consistencyRate)',
+  'L10-F7-G7-O08': 'eval-forge F1评测(f1Score)',
+  'L10-F7-G7-O09': 'eval-forge AUC评测(rocAuc Mann-Whitney)',
+  'L10-F7-G7-O10': 'eval-forge 困惑度评测(perplexity)',
+  'L10-F7-G7-O11': 'eval-forge BLEU评测(bleu n-gram+brevity penalty)',
 };
 
 const FAM = [

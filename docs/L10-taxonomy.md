@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 175 |
-| planned | 849 |
+| done | 188 |
+| planned | 836 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -1270,11 +1270,11 @@
 | `L10-F7-G2-O07` | 最小生成树 | L7 | done | graphalg-forge 最小生成树(kruskalMST/primMST) |
 | `L10-F7-G2-O08` | 拓扑排序 | L7 | done | graphalg-forge 拓扑排序(topoSort Kahn) |
 | `L10-F7-G2-O09` | 强连通分量 | L7 | done | graphalg-forge 强连通分量(sccTarjan) |
-| `L10-F7-G2-O10` | 二分图匹配 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O11` | 最大流 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O12` | 社区发现 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O10` | 二分图匹配 | L7 | done | flow-forge 二分图匹配(bipartiteMatching Hopcroft-Karp) |
+| `L10-F7-G2-O11` | 最大流 | L7 | done | flow-forge 最大流(edmondsKarp/dinicMaxFlow + minCut) |
+| `L10-F7-G2-O12` | 社区发现 | L7 | done | flow-forge 社区发现(labelPropagation) |
 | `L10-F7-G2-O13` | 三角计数 | L7 | done | graphalg-forge 三角计数(countTriangles) |
-| `L10-F7-G2-O14` | 图着色 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O14` | 图着色 | L7 | done | flow-forge 图着色(greedyColoring Welsh-Powell) |
 | `L10-F7-G2-O15` | 中心性度量 | L7 | done | graphalg-forge 中心性度量(centrality Brandes) |
 
 ### G3 · 图神经网络
@@ -1365,18 +1365,18 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G7-O00` | 精度评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O01` | 延迟评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O02` | 吞吐量评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O03` | 召回率评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O04` | 一致性评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G7-O00` | 精度评测 | L7 | done | eval-forge 精度评测(precisionScore macro/micro) |
+| `L10-F7-G7-O01` | 延迟评测 | L7 | done | eval-forge 延迟评测(latencyStats p50/p95/p99) |
+| `L10-F7-G7-O02` | 吞吐量评测 | L7 | done | eval-forge 吞吐量评测(throughput) |
+| `L10-F7-G7-O03` | 召回率评测 | L7 | done | eval-forge 召回率评测(recallScore) |
+| `L10-F7-G7-O04` | 一致性评测 | L7 | done | eval-forge 一致性评测(consistencyRate) |
 | `L10-F7-G7-O05` | 资源监控 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G7-O06` | 漂移检测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G7-O07` | 回归监控 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O08` | F1 评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O09` | AUC 评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O10` | 困惑度评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G7-O11` | BLEU 评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G7-O08` | F1 评测 | L7 | done | eval-forge F1评测(f1Score) |
+| `L10-F7-G7-O09` | AUC 评测 | L7 | done | eval-forge AUC评测(rocAuc Mann-Whitney) |
+| `L10-F7-G7-O10` | 困惑度评测 | L7 | done | eval-forge 困惑度评测(perplexity) |
+| `L10-F7-G7-O11` | BLEU 评测 | L7 | done | eval-forge BLEU评测(bleu n-gram+brevity penalty) |
 | `L10-F7-G7-O12` | 人工评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G7-O13` | 对抗评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G7-O14` | 公平性评测 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

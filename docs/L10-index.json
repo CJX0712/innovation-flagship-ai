@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-17T16:25:55.017Z",
+  "generated_at": "2026-10-17T16:59:02.655Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 175,
-    "planned": 849
+    "done": 188,
+    "planned": 836
   },
   "leaves": [
     {
@@ -9397,8 +9397,8 @@
       "op": "O10",
       "name": "二分图匹配",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "flow-forge 二分图匹配(bipartiteMatching Hopcroft-Karp)"
     },
     {
       "id": "L10-F7-G2-O11",
@@ -9407,8 +9407,8 @@
       "op": "O11",
       "name": "最大流",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "flow-forge 最大流(edmondsKarp/dinicMaxFlow + minCut)"
     },
     {
       "id": "L10-F7-G2-O12",
@@ -9417,8 +9417,8 @@
       "op": "O12",
       "name": "社区发现",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "flow-forge 社区发现(labelPropagation)"
     },
     {
       "id": "L10-F7-G2-O13",
@@ -9437,8 +9437,8 @@
       "op": "O14",
       "name": "图着色",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "flow-forge 图着色(greedyColoring Welsh-Powell)"
     },
     {
       "id": "L10-F7-G2-O15",
@@ -10097,8 +10097,8 @@
       "op": "O00",
       "name": "精度评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 精度评测(precisionScore macro/micro)"
     },
     {
       "id": "L10-F7-G7-O01",
@@ -10107,8 +10107,8 @@
       "op": "O01",
       "name": "延迟评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 延迟评测(latencyStats p50/p95/p99)"
     },
     {
       "id": "L10-F7-G7-O02",
@@ -10117,8 +10117,8 @@
       "op": "O02",
       "name": "吞吐量评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 吞吐量评测(throughput)"
     },
     {
       "id": "L10-F7-G7-O03",
@@ -10127,8 +10127,8 @@
       "op": "O03",
       "name": "召回率评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 召回率评测(recallScore)"
     },
     {
       "id": "L10-F7-G7-O04",
@@ -10137,8 +10137,8 @@
       "op": "O04",
       "name": "一致性评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 一致性评测(consistencyRate)"
     },
     {
       "id": "L10-F7-G7-O05",
@@ -10177,8 +10177,8 @@
       "op": "O08",
       "name": "F1 评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge F1评测(f1Score)"
     },
     {
       "id": "L10-F7-G7-O09",
@@ -10187,8 +10187,8 @@
       "op": "O09",
       "name": "AUC 评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge AUC评测(rocAuc Mann-Whitney)"
     },
     {
       "id": "L10-F7-G7-O10",
@@ -10197,8 +10197,8 @@
       "op": "O10",
       "name": "困惑度评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge 困惑度评测(perplexity)"
     },
     {
       "id": "L10-F7-G7-O11",
@@ -10207,8 +10207,8 @@
       "op": "O11",
       "name": "BLEU 评测",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "eval-forge BLEU评测(bleu n-gram+brevity penalty)"
     },
     {
       "id": "L10-F7-G7-O12",

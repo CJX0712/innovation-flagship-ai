@@ -90,6 +90,8 @@
   <script src="src/sparse-forge.js" onerror="window.__forgeLoadErrors['ForgeSparse']=true"></script>
   <script src="src/graphalg-forge.js" onerror="window.__forgeLoadErrors['ForgeGraphAlg']=true"></script>
   <script src="src/serving-forge.js" onerror="window.__forgeLoadErrors['ForgeServing']=true"></script>
+  <script src="src/eval-forge.js" onerror="window.__forgeLoadErrors['ForgeEval']=true"></script>
+  <script src="src/flow-forge.js" onerror="window.__forgeLoadErrors['ForgeFlow']=true"></script>
 
   <script>
   (function () {
@@ -114,6 +116,8 @@
       { key: 'ForgeSparse', label: 'sparse-forge (L7 稀疏计算/CSR/SpMV/SpMM/剪枝)' },
       { key: 'ForgeGraphAlg', label: 'graphalg-forge (L7 图算法/DFS/A*/PageRank/MST/SCC/中心性)' },
       { key: 'ForgeServing', label: 'serving-forge (L7 推理服务/批处理/融合/调度/内存池/限流)' },
+      { key: 'ForgeEval', label: 'eval-forge (L7 评测指标/precision/F1/AUC/困惑度/BLEU/p95)' },
+      { key: 'ForgeFlow', label: 'flow-forge (L7 网络流/最大流=最小割/二分匹配/社区发现/图着色)' },
       { key: 'ForgeProb', label: 'prob-forge (L5 概率分布/信息论)' },
       { key: 'ForgeGraph', label: 'graph-forge (L5 图算法/BFS/Dijkstra)' },
       { key: 'ForgeRL', label: 'rl-forge (L5 强化学习/值迭代/REINFORCE)' },
