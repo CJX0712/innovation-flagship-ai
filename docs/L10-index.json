@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-16T21:14:31.441Z",
+  "generated_at": "2026-10-17T16:25:55.017Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 158,
-    "planned": 866
+    "done": 175,
+    "planned": 849
   },
   "leaves": [
     {
@@ -9307,8 +9307,8 @@
       "op": "O01",
       "name": "DFS",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge DFS(dfsOrder)"
     },
     {
       "id": "L10-F7-G2-O02",
@@ -9327,8 +9327,8 @@
       "op": "O03",
       "name": "A*",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge A*(aStar 可采纳启发)"
     },
     {
       "id": "L10-F7-G2-O04",
@@ -9347,8 +9347,8 @@
       "op": "O05",
       "name": "PageRank",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge PageRank(pageRank 幂迭代)"
     },
     {
       "id": "L10-F7-G2-O06",
@@ -9357,8 +9357,8 @@
       "op": "O06",
       "name": "连通分量",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 连通分量(connectedComponents)"
     },
     {
       "id": "L10-F7-G2-O07",
@@ -9367,8 +9367,8 @@
       "op": "O07",
       "name": "最小生成树",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 最小生成树(kruskalMST/primMST)"
     },
     {
       "id": "L10-F7-G2-O08",
@@ -9377,8 +9377,8 @@
       "op": "O08",
       "name": "拓扑排序",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 拓扑排序(topoSort Kahn)"
     },
     {
       "id": "L10-F7-G2-O09",
@@ -9387,8 +9387,8 @@
       "op": "O09",
       "name": "强连通分量",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 强连通分量(sccTarjan)"
     },
     {
       "id": "L10-F7-G2-O10",
@@ -9427,8 +9427,8 @@
       "op": "O13",
       "name": "三角计数",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 三角计数(countTriangles)"
     },
     {
       "id": "L10-F7-G2-O14",
@@ -9447,8 +9447,8 @@
       "op": "O15",
       "name": "中心性度量",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "graphalg-forge 中心性度量(centrality Brandes)"
     },
     {
       "id": "L10-F7-G3-O00",
@@ -9937,8 +9937,8 @@
       "op": "O00",
       "name": "推理批处理",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 推理批处理(makeBatches/processBatch)"
     },
     {
       "id": "L10-F7-G6-O01",
@@ -9947,8 +9947,8 @@
       "op": "O01",
       "name": "算子融合",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 算子融合(fuseOps/applyOps)"
     },
     {
       "id": "L10-F7-G6-O02",
@@ -9957,8 +9957,8 @@
       "op": "O02",
       "name": "内核调度",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 内核调度(scheduleKernels DAG+优先级)"
     },
     {
       "id": "L10-F7-G6-O03",
@@ -9967,8 +9967,8 @@
       "op": "O03",
       "name": "内存池",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 内存池(MemoryPool free-list)"
     },
     {
       "id": "L10-F7-G6-O04",
@@ -9987,8 +9987,8 @@
       "op": "O05",
       "name": "流式管线",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 流式管线(streamProcess 分块等价)"
     },
     {
       "id": "L10-F7-G6-O06",
@@ -9997,8 +9997,8 @@
       "op": "O06",
       "name": "负载均衡",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 负载均衡(makeRoundRobin/makeWeightedRR)"
     },
     {
       "id": "L10-F7-G6-O07",
@@ -10027,8 +10027,8 @@
       "op": "O09",
       "name": "请求队列",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 请求队列(FIFOQueue/PriorityQueue)"
     },
     {
       "id": "L10-F7-G6-O10",
@@ -10057,8 +10057,8 @@
       "op": "O12",
       "name": "限流",
       "layer": "L7",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "serving-forge 限流(TokenBucket 逻辑时钟)"
     },
     {
       "id": "L10-F7-G6-O13",

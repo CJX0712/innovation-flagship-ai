@@ -508,6 +508,36 @@
 
 > 反空洞铁律落实（INV-SPR-002/005/006）：乘法次数=nnz 证伪"稠密全扫作弊"、稠密对照证伪压缩率声称、剪枝 keep=1.0 恒等对照。灵魂不变量 INV-SPR-001/002 经手搓稠密黄金参照 mismatch=0，并经 `tests/independent/sparse-check.js` 复核（3 连跑确定性验证通过）。
 
+### `graphalg-forge.js`（INV-GA-001..008，8 条，L7 图算法 / DFS / A* / PageRank / MST / SCC / 中心性）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-GA-001 | DFS 访问序 ≡ 手搓显式栈实现；且 DFS 序 ≠ BFS 序（证伪遍历混淆） | 0 | 手搓栈实现对照 + 遍历序分歧断言 |
+| INV-GA-002 | A*：h=0 时 dist ≡ 手搓 Dijkstra 黄金参照；可采纳 h>0 探索节点数严格少于 Dijkstra；不可采纳 h(×10) 允许次优（证伪边界） | 1e-15 | 手搓 Dijkstra 对照 + 探索计数 + 次优捕获 |
+| INV-GA-003 | PageRank：Σrank=1、残差<1e-10、≡ 30000 轮长迭代黄金参照；且排名 ≠ 均匀 1/n（证伪平凡） | 1e-10 | 闭式归一 + 长迭代对照 + 非均匀断言 |
+| INV-GA-004 | 连通分量 ≡ 手搓 Union-Find；SCC ≡ 手搓 Kosaraju 独立实现；同一有向图 SCC 数 ≠ 无向连通分量数（证伪混淆） | 0 | 手搓并查集/Kosaraju 双对照 |
+| INV-GA-005 | 拓扑排序：全边 pos[u]<pos[v]；升/降序两种合法实现序可不同但均合法（非唯一）；有环/自环必抛错 | 0 | 全边序验证 + 双合法序 + 环抛错 |
+| INV-GA-006 | MST：Kruskal ≡ Prim 总权；恰 n−1 边无环；任意换树边为非树边后总权 ≥ MST（证伪平凡最优） | 1e-15 | 双实现互校 + 并查集无环 + 割性质证书 |
+| INV-GA-007 | 三角计数：小图(n≤20) ≡ 手搓三重循环；排序法操作数 ≪ n³（性能真） | 0 | 手搓暴力对照 + 操作数比例 |
+| INV-GA-008 | Brandes 介数中心性 ≡ 手搓逐对 BFS 路径计数（唯一最短路图上逐位精确）；同 seed 全流水线逐位相等、异 seed 分歧 | 0 | 手搓逐对 BFS 对照 + 双跑/异种子 |
+
+> 反空洞铁律落实（INV-GA-002/003/005/006）：不可采纳启发必捕获次优、PageRank 必非均匀、拓扑排序非唯一且环必抛错、MST 换边必不优——证伪"恒等/平凡"掩盖。灵魂不变量 INV-GA-002/006/008 经手搓黄金参照 Δ=0，并经 `tests/independent/graphalg-check.js` 复核（3 连跑确定性验证通过）。
+
+### `serving-forge.js`（INV-SV-001..008，8 条，L7 推理服务 / 批处理 / 融合 / 调度 / 内存池 / 限流）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SV-001 | 批处理（含 padding）有效区输出 ≡ 逐条串行输出；批大小 1 与 N 单条输出一致（批无关性） | 1e-15 | 手搓串行黄金参照 + 批无关断言 |
+| INV-SV-002 | 算子融合 ≡ 未融合串联输出；且融合后 kernel 调用次数 < 未融合（性能真，非数值作弊） | 1e-15 | 数值等价 + 调用计数 |
+| INV-SV-003 | 内核调度序满足全部依赖 pos[u]<pos[v]；不同优先级权重产生不同合法序（非退化）；含环依赖必抛错 | 0 | 全边序验证 + 异权重分歧 + 环抛错 |
+| INV-SV-004 | 内存池：随机分配/释放序列下任意时刻活跃块区间两两不重叠；复用后 malloc 次数 < 请求块次数；池耗尽返回 null 而非越界 | 0 | 手搓区间扫描 + 复用计数 + 安全边界 |
+| INV-SV-005 | 流式管线：任意 chunkSize（含 1/不整除/超长）分块拼接 ≡ 全量结果 | 0 | 5 种 chunkSize 全量对照 |
+| INV-SV-006 | 负载均衡：等权 N 请求 M worker 承载差 ≤1；加权 w=[3,1] 承载比精确 9:3；加权序 ≠ 均权序（非退化） | 0 | 计数断言 + 加权比例 + 序分歧 |
+| INV-SV-007 | FIFO 出队序 ≡ 入队序；优先级队列 ≡ 手搓 (priority,seq) 排序参照；同一请求集两队列出队序必分歧 | 0 | 手搓参照 + 序分歧断言 |
+| INV-SV-008 | 令牌桶：固定请求序列+逻辑时钟下放行/拒绝序列两次运行逐位一致；窗口 [0,T] 放行数 ≤ capacity+rate·T；rate 减半必分歧 | 0 | 重放确定性 + 闭式上界 + 速率分歧 |
+
+> 反空洞铁律落实（INV-SV-002/003/006/008）：融合必减少调用数、调度异权重必异序、加权必异于均权、限流速率减半必变化——证伪"恒等/平凡"掩盖。所有时序基于**逻辑时钟**（非真实时间）保证确定性。灵魂不变量 INV-SV-001/004 经手搓黄金参照 mismatch=0，并经 `tests/independent/serving-check.js` 复核（3 连跑确定性验证通过）。
+
 ---
 
 ## 统计汇总
@@ -520,10 +550,10 @@
 | L4 | 9 | 72 | 0 |
 | L5 | 6 | 48 | 0 |
 | L6 | 3 | 24 | 0 |
-| L7 | 4 | 32 | 0 |
-| **合计** | **34** | **264** | **0** |
+| L7 | 6 | 48 | 0 |
+| **合计** | **36** | **280** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **264 条**。运行时 case 数为 **271**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **280 条**。运行时 case 数为 **287**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）；ann-forge 13 个 case 对应 8 条 ID（O04/O06/O08/O09/O11 为覆盖用例，+5）。净 +7。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变；retrieval-forge / ann-forge / gnn-forge / sparse-forge 声明 L7（F7 检索·图·系统族），W13 由 L5 规划位升格至 L7。
 
@@ -532,7 +562,7 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 34 模块 · 271 用例 · 0 失败
+npm run verify             # 36 模块 · 287 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
 node tests/independent/td-check.js          # INV-TD 表格RL 皇冠不变量独立复核
@@ -542,8 +572,10 @@ node tests/independent/retrieval-check.js  # INV-RT 向量检索 皇冠不变量
 node tests/independent/ann-check.js        # INV-ANN ANN索引 皇冠不变量独立复核
 node tests/independent/gnn-check.js        # INV-GNN 图神经网络 皇冠不变量独立复核
 node tests/independent/sparse-check.js     # INV-SPR 稀疏计算 皇冠不变量独立复核
+node tests/independent/graphalg-check.js  # INV-GA 图算法 皇冠不变量独立复核
+node tests/independent/serving-check.js   # INV-SV 推理服务 皇冠不变量独立复核
 node tools/check-reuse.js  # 复用合规 0 ERROR
-node tools/verify-l10.js   # L10 1024 项 / done 158 / planned 866
+node tools/verify-l10.js   # L10 1024 项 / done 175 / planned 849
 ```
 
 每条不变量均在对应模块的 `selfCheck()` 中以 `caseResult(...)` / `cases.push(...)` 注册，并在文件头 `@invariant ID|描述|容差|验证方法` 一行声明，供 `tests/harness.js` 与文档双重校验。

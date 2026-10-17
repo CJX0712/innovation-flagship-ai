@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 158 |
-| planned | 866 |
+| done | 175 |
+| planned | 849 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -1261,21 +1261,21 @@
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
 | `L10-F7-G2-O00` | BFS | L7 | done | graph-forge BFS 最短路(bfsShortest) |
-| `L10-F7-G2-O01` | DFS | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O01` | DFS | L7 | done | graphalg-forge DFS(dfsOrder) |
 | `L10-F7-G2-O02` | Dijkstra | L7 | done | graph-forge Dijkstra(dijkstra/dijkstraRef) |
-| `L10-F7-G2-O03` | A* | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O03` | A* | L7 | done | graphalg-forge A*(aStar 可采纳启发) |
 | `L10-F7-G2-O04` | 最短路径 | L7 | done | graph-forge 最短路径(reconstructPath/bruteForceShortest) |
-| `L10-F7-G2-O05` | PageRank | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O06` | 连通分量 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O07` | 最小生成树 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O08` | 拓扑排序 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O09` | 强连通分量 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O05` | PageRank | L7 | done | graphalg-forge PageRank(pageRank 幂迭代) |
+| `L10-F7-G2-O06` | 连通分量 | L7 | done | graphalg-forge 连通分量(connectedComponents) |
+| `L10-F7-G2-O07` | 最小生成树 | L7 | done | graphalg-forge 最小生成树(kruskalMST/primMST) |
+| `L10-F7-G2-O08` | 拓扑排序 | L7 | done | graphalg-forge 拓扑排序(topoSort Kahn) |
+| `L10-F7-G2-O09` | 强连通分量 | L7 | done | graphalg-forge 强连通分量(sccTarjan) |
 | `L10-F7-G2-O10` | 二分图匹配 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G2-O11` | 最大流 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G2-O12` | 社区发现 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O13` | 三角计数 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O13` | 三角计数 | L7 | done | graphalg-forge 三角计数(countTriangles) |
 | `L10-F7-G2-O14` | 图着色 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G2-O15` | 中心性度量 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G2-O15` | 中心性度量 | L7 | done | graphalg-forge 中心性度量(centrality Brandes) |
 
 ### G3 · 图神经网络
 
@@ -1344,19 +1344,19 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F7-G6-O00` | 推理批处理 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O01` | 算子融合 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O02` | 内核调度 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O03` | 内存池 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G6-O00` | 推理批处理 | L7 | done | serving-forge 推理批处理(makeBatches/processBatch) |
+| `L10-F7-G6-O01` | 算子融合 | L7 | done | serving-forge 算子融合(fuseOps/applyOps) |
+| `L10-F7-G6-O02` | 内核调度 | L7 | done | serving-forge 内核调度(scheduleKernels DAG+优先级) |
+| `L10-F7-G6-O03` | 内存池 | L7 | done | serving-forge 内存池(MemoryPool free-list) |
 | `L10-F7-G6-O04` | 零拷贝 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O05` | 流式管线 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O06` | 负载均衡 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G6-O05` | 流式管线 | L7 | done | serving-forge 流式管线(streamProcess 分块等价) |
+| `L10-F7-G6-O06` | 负载均衡 | L7 | done | serving-forge 负载均衡(makeRoundRobin/makeWeightedRR) |
 | `L10-F7-G6-O07` | 容错 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G6-O08` | 自动扩缩容 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O09` | 请求队列 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G6-O09` | 请求队列 | L7 | done | serving-forge 请求队列(FIFOQueue/PriorityQueue) |
 | `L10-F7-G6-O10` | 预热缓存 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G6-O11` | 降级策略 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F7-G6-O12` | 限流 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F7-G6-O12` | 限流 | L7 | done | serving-forge 限流(TokenBucket 逻辑时钟) |
 | `L10-F7-G6-O13` | 监控埋点 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G6-O14` | 灰度发布 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
 | `L10-F7-G6-O15` | 回滚 | L7 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |

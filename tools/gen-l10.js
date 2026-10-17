@@ -205,6 +205,25 @@ const REUSE = {
   'L10-F7-G4-O03': 'sparse-forge 压缩存储(nnzStats)',
   'L10-F7-G4-O05': 'sparse-forge 剪枝(magnitudePrune)',
   'L10-F7-G4-O08': 'sparse-forge 稀疏向量(denseToSparseVec/sparseVecDot)',
+  // F7-G2 图算法余项（graphalg-forge）
+  'L10-F7-G2-O01': 'graphalg-forge DFS(dfsOrder)',
+  'L10-F7-G2-O03': 'graphalg-forge A*(aStar 可采纳启发)',
+  'L10-F7-G2-O05': 'graphalg-forge PageRank(pageRank 幂迭代)',
+  'L10-F7-G2-O06': 'graphalg-forge 连通分量(connectedComponents)',
+  'L10-F7-G2-O07': 'graphalg-forge 最小生成树(kruskalMST/primMST)',
+  'L10-F7-G2-O08': 'graphalg-forge 拓扑排序(topoSort Kahn)',
+  'L10-F7-G2-O09': 'graphalg-forge 强连通分量(sccTarjan)',
+  'L10-F7-G2-O13': 'graphalg-forge 三角计数(countTriangles)',
+  'L10-F7-G2-O15': 'graphalg-forge 中心性度量(centrality Brandes)',
+  // F7-G6 推理服务（serving-forge）
+  'L10-F7-G6-O00': 'serving-forge 推理批处理(makeBatches/processBatch)',
+  'L10-F7-G6-O01': 'serving-forge 算子融合(fuseOps/applyOps)',
+  'L10-F7-G6-O02': 'serving-forge 内核调度(scheduleKernels DAG+优先级)',
+  'L10-F7-G6-O03': 'serving-forge 内存池(MemoryPool free-list)',
+  'L10-F7-G6-O05': 'serving-forge 流式管线(streamProcess 分块等价)',
+  'L10-F7-G6-O06': 'serving-forge 负载均衡(makeRoundRobin/makeWeightedRR)',
+  'L10-F7-G6-O09': 'serving-forge 请求队列(FIFOQueue/PriorityQueue)',
+  'L10-F7-G6-O12': 'serving-forge 限流(TokenBucket 逻辑时钟)',
 };
 
 const FAM = [
