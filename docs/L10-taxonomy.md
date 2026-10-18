@@ -5,8 +5,8 @@
 
 | 状态 | 数量 |
 | --- | --- |
-| done | 214 |
-| planned | 810 |
+| done | 246 |
+| planned | 778 |
 | **合计** | **1024** |
 
 ## 全景映射
@@ -389,22 +389,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F2-G1-O00` | 牛顿法 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O01` | 高斯牛顿 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O02` | L-BFGS | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O03` | DFP | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O04` | 共轭梯度法 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O05` | 信赖域 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O06` | 拟牛顿更新 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O07` | 海森近似 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O08` | 阻尼牛顿 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O09` | OWL-QN | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O10` | 有限记忆 BFGS | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O11` | 拟牛顿校正 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O12` | 线搜索 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O13` | 强 Wolfe 条件 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O14` | 无 Hessian 牛顿 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F2-G1-O15` | 曲率条件 | L3 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F2-G1-O00` | 牛顿法 | L3 | done | secondorder-forge 牛顿法(newton) |
+| `L10-F2-G1-O01` | 高斯牛顿 | L3 | done | secondorder-forge 高斯牛顿(gaussNewton) |
+| `L10-F2-G1-O02` | L-BFGS | L3 | done | secondorder-forge L-BFGS(lbfgs) |
+| `L10-F2-G1-O03` | DFP | L3 | done | secondorder-forge DFP(quasiNewtonUpdateDFP) |
+| `L10-F2-G1-O04` | 共轭梯度法 | L3 | done | secondorder-forge 共轭梯度(cg) |
+| `L10-F2-G1-O05` | 信赖域 | L3 | done | secondorder-forge 信赖域(trustRegion dogleg) |
+| `L10-F2-G1-O06` | 拟牛顿更新 | L3 | done | secondorder-forge 拟牛顿更新(quasiNewtonUpdateBFGS) |
+| `L10-F2-G1-O07` | 海森近似 | L3 | done | secondorder-forge 海森近似(hessianApprox) |
+| `L10-F2-G1-O08` | 阻尼牛顿 | L3 | done | secondorder-forge 阻尼牛顿(dampedNewton) |
+| `L10-F2-G1-O09` | OWL-QN | L3 | done | secondorder-forge OWL-QN(owlqn) |
+| `L10-F2-G1-O10` | 有限记忆 BFGS | L3 | done | secondorder-forge 有限记忆 BFGS(lbfgs 双循环递归) |
+| `L10-F2-G1-O11` | 拟牛顿校正 | L3 | done | secondorder-forge 拟牛顿校正 SR1(sr1Update) |
+| `L10-F2-G1-O12` | 线搜索 | L3 | done | secondorder-forge 线搜索 Armijo(lineSearch) |
+| `L10-F2-G1-O13` | 强 Wolfe 条件 | L3 | done | secondorder-forge 强 Wolfe(strongWolfe) |
+| `L10-F2-G1-O14` | 无 Hessian 牛顿 | L3 | done | secondorder-forge 无 Hessian 牛顿(hessianFree) |
+| `L10-F2-G1-O15` | 曲率条件 | L3 | done | secondorder-forge 曲率条件(curvatureCondition) |
 
 ### G2 · 学习率调度
 
@@ -1004,22 +1004,22 @@
 
 | 微指令 ID | 名称 | 层 | 状态 | @reuse 顶级参照 |
 | --- | --- | --- | --- | --- |
-| `L10-F5-G6-O00` | 最大似然估计 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O01` | 最大后验估计 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O02` | 矩估计 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O03` | 贝叶斯估计 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O04` | KS 检验 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O05` | 卡方检验 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O06` | Bootstrap | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O07` | 交叉验证似然 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O08` | 矩方法 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O09` | 拟似然 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O10` | 稳健估计 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O11` | 经验似然 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O12` | 假设检验 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O13` | 置信区间 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O14` | 似然比检验 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
-| `L10-F5-G6-O15` | 拟合优度 | L5 | planned | 规划：W3-W7 后续实现（含 @reuse 顶级参照） |
+| `L10-F5-G6-O00` | 最大似然估计 | L5 | done | estimate-forge 最大似然估计(mle) |
+| `L10-F5-G6-O01` | 最大后验估计 | L5 | done | estimate-forge 最大后验估计(mapEstimate) |
+| `L10-F5-G6-O02` | 矩估计 | L5 | done | estimate-forge 矩估计(methodOfMoments) |
+| `L10-F5-G6-O03` | 贝叶斯估计 | L5 | done | estimate-forge 贝叶斯估计(bayesEstimate) |
+| `L10-F5-G6-O04` | KS 检验 | L5 | done | estimate-forge KS检验(ksTest) |
+| `L10-F5-G6-O05` | 卡方检验 | L5 | done | estimate-forge 卡方检验(chiSquareTest/chiSquareIndependence) |
+| `L10-F5-G6-O06` | Bootstrap | L5 | done | estimate-forge Bootstrap(bootstrap/percentileCI) |
+| `L10-F5-G6-O07` | 交叉验证似然 | L5 | done | estimate-forge 交叉验证似然(cvLikelihood) |
+| `L10-F5-G6-O08` | 矩方法 | L5 | done | estimate-forge 矩方法(momentMethod) |
+| `L10-F5-G6-O09` | 拟似然 | L5 | done | estimate-forge 拟似然(quasiLikelihood) |
+| `L10-F5-G6-O10` | 稳健估计 | L5 | done | estimate-forge 稳健估计(robustEstimate Huber M) |
+| `L10-F5-G6-O11` | 经验似然 | L5 | done | estimate-forge 经验似然(empiricalLikelihood) |
+| `L10-F5-G6-O12` | 假设检验 | L5 | done | estimate-forge 假设检验(hypothesisTest Welch) |
+| `L10-F5-G6-O13` | 置信区间 | L5 | done | estimate-forge 置信区间(confidenceInterval 正态/t/Wilson) |
+| `L10-F5-G6-O14` | 似然比检验 | L5 | done | estimate-forge 似然比检验(likelihoodRatioTest) |
+| `L10-F5-G6-O15` | 拟合优度 | L5 | done | estimate-forge 拟合优度(goodnessOfFit) |
 
 ### G7 · 生成模型
 

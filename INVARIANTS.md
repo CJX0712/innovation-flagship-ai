@@ -184,6 +184,21 @@
 
 > 阈值档位：闭式等价取 EXACT=0；单调取 MONO=−1e-9（要求实质非增，浮点容差）；等差/相位取 RESID=1e-12。所有断言含反空洞化项（如 INV-SCH-001 锁定 t=0 非零、INV-SCH-003 要求峰后确有下降、INV-SCH-007 峰值定位与触底前断言）。
 
+### `secondorder-forge.js`（INV-SO-001..008，8 条，L3 二阶优化 / 拟牛顿 / 信赖域 / 高斯牛顿）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-SO-001 | 牛顿法二次收敛：对凸二次 f=½xᵀAx−bᵀx（A 对称正定），牛顿步 x₁=x₀−A⁻¹(Ax₀−b) 恰为极小点 x*=A⁻¹b，单步残差 ‖Ax₁−b‖ ≤ 1e-12·‖b‖（对拍高斯消元直接解）；一维 x₁=x₀−f'/f'' 为解析极小 EXACT | 1e-12 | 二次 1 步收敛解析对照 |
+| INV-SO-002 | 共轭梯度(CG) 对 SPD 线性系统：Ax=b 在 ≤n 次迭代内残差 ‖Ax−b‖ ≤ 1e-10·‖b‖ 且与直接解一致；CG 下降方向 dₖ 满足 gₖᵀdₖ<0（下降性恒成立） | 1e-10 | CG vs 直接解对拍 + 下降性 |
+| INV-SO-003 | BFGS/L-BFGS 收敛与正定性：终态 f≤初态 f、终止 ‖∇f‖ 单调不增；终止逆 Hessian 恒对称正定（手搓 2×2 特征分解证 λmin>0）；被接受步长满足曲率条件 yₖᵀsₖ>0（负曲率步跳过，证伪 SPD 崩塌） | 1e-10 | 收敛 + SPD 最小特征值 + 曲率条件 |
+| INV-SO-004 | 强 Wolfe 线搜索：返回 α 必满足 Armijo f(x+αd)≤f₀+c₁αg₀ᵀd 且 abs(∇f(x+αd)ᵀd)≤c₂·abs(g₀ᵀd)；独立黄金分割局部极小与 Wolfe 返回点 f 值差 ≤1e-3；非下降方向(g₀ᵀd≥0)返回 α=0（证伪） | 1e-3 | Wolfe 三条件 + 黄金分割对拍 + 非下降方向证伪 |
+| INV-SO-005 | 信赖域 dogleg 不劣于柯西点：m(s*)≤m(p_c)（差 ≤1e-12）；解恒在信赖域内 ‖s*‖≤Δ EXACT（经数值边界护持）；半径自适应（ρ≥0.75 扩张、ρ<0.25 收缩）；对纯二次收敛到解析极小 | 1e-12 | dogleg vs 柯西点双向 + 信赖域约束 + 半径自适应 |
+| INV-SO-006 | 高斯牛顿 == 牛顿（线性残差）：R(x)=Ax−b 时高斯牛顿步与牛顿步 EXACT 相等（差 ≤1e-12）；非线性最小二乘每步残差范数 ‖R‖ 不增（独立重算） | 1e-12 | GN==牛顿解析对照 + 残差非增 |
+| INV-SO-007 | 阻尼牛顿与 Hessian-free：加 λI 使 (H+λI) 恒 SPD（λmin>0）且 ∇fᵀd<0（下降，证伪退化解）；HF 对二次 d 与精确牛顿步 EXACT 相等（‖d−A⁻¹b‖≤1e-12）；非二次 d 满足 gᵀd<0 | 1e-12 | 阻尼 SPD + HF==精确牛顿 + 下降性 |
+| INV-SO-008 | 拟牛顿校正对称性与割线：BFGS 逆更新与 DFP 恒对称 EXACT；BFGS 逆更新满足割线 H₊y=s（‖H₊y−s‖≤1e-12）；SR1 满足秩1 公式 EXACT；yᵀs>0 保 SPD、yᵀs≤0 跳过（证伪负曲率） | 1e-12 | 对称性 + 割线方程 + SR1 秩1公式 + 曲率护持 |
+
+> 反空洞铁律落实（INV-SO-004/005）：非下降方向强 Wolfe 返回 α=0（证伪"总有步长"）、dogleg 经数值边界护持确保 ‖s*‖≤Δ 恒成立。灵魂不变量 INV-SO-001..008 经 `tests/independent/secondorder-check.js` 独立复核 8/8 通过（`node tests/independent/secondorder-check.js`，exit 0）。
+
 ---
 
 ## L4 — 注意力 / 位置编码
@@ -410,6 +425,21 @@
 
 > 反空洞铁律落实（INV-MC-002/003/005/008）：恒接受核必违反细致平衡（证伪"接受即正确"）、恒接受随机游走方差 >100（证伪收敛）、显式 Euler 漂移劣于 leapfrog（证伪积分器无关）、冷链困于局部模（证伪退火无效）。灵魂不变量 INV-MC-001/002/005 经手搓黄金参照（解析细致平衡 + 有限差分 Jacobian）Δ=0，并经 `tests/independent/mcmc-check.js` 独立复核（3 连跑确定性验证通过）。
 
+### `estimate-forge.js`（INV-EST-001..008，8 条，L5 参数估计 / 假设检验 / 拟合优度 / 区间 / 似然）
+
+| ID | 不变量 | 容差 | 验证方法 |
+|----|--------|------|----------|
+| INV-EST-001 | MLE 与矩估计闭式 EXACT + 牛顿收敛：正态 μ̂=x̄、σ̂²=1/n Σ(x−x̄)² 与直接计算 EXACT；伯努利 p̂=x̄、泊松 λ̂=x̄ EXACT；MLE-Newton ≤25 步得分 ‖∂ℓ/∂θ‖≤1e-9；矩估计与 MLE 在对称族一致 | 1e-12 | 闭式对拍 + 牛顿得分收敛 + 一致性 |
+| INV-EST-002 | MAP 与贝叶斯共轭 EXACT：正态-正态后验均值 (τ₀μ₀+nτx̄)/(τ₀+nτ) 与解析 EXACT；平坦先验(τ₀→0) MAP 退化为 MLE EXACT；后验均值 == MAP（正态共轭众数=均值） | 1e-12 | 共轭公式对拍 + 退化证伪 + 众数=均值 |
+| INV-EST-003 | KS 检验 D 与手算 EXACT（固定 11 点小样本）；渐近 p 随 D 严格单调且 D=0→p=1、D 极大→p→0（K(x)=1−2Σ(−1)^{k-1}e^{−2k²x²} 自洽）；功效 N(3,1) 拒绝率 >90%、N(0,1) 拒绝率 <15% | 1e-9 | D 手算对拍 + 单调边界 + 功效双向 |
+| INV-EST-004 | 卡方检验：拟合优度 χ²=Σ(O−E)²/E 与手算 EXACT（固定 8 类频数）；p 与 χ²(k) CDF 一致；2×2 独立性 χ² 与解析对照且 df=1 EXACT；功效 观察=期望×2 拒绝率 >90%；df=类别数−1−估计参数数 EXACT | 1e-9 | 统计手算 + CDF 对拍 + 功效 + 自由度 |
+| INV-EST-005 | Bootstrap 非参数：B=2000 均值 SE_boot 与解析 SE/√n 相对误差 ≤15%；百分位 95% CI 中心 ≈ 样本均值（abs(中心−x̄)≤2·SE）；bootstrap 均值 ≈ 原始均值 | 1e-6 | SE 对照 + CI 中心 + 均值一致 |
+| INV-EST-006 | 置信区间覆盖：正态/t/Wilson 95% CI 重复抽样覆盖真值率 ∈[0.92,0.98]（蒙特卡洛 2000 次，固定种子）；t CI 与解析一致；Wilson 上下界与手算 EXACT | 1e-2 | 蒙特卡洛覆盖 + 解析公式 + 边界 |
+| INV-EST-007 | Welch t 检验：t 统计量与手算 EXACT；学生 t CDF 对照（CDF(0;df)=0.5 EXACT、单调递增）；I 类错误率 ∈[0.03,0.07]（α=0.05，2000 次）；效应量 d=0.8 功效 >0.8 | 1e-9 | t 公式 + t CDF + 错误率双向 |
+| INV-EST-008 | 似然比/LRT + 拟似然/稳健/经验似然：LRT 2(ℓ₁−ℓ₀) 中位 p ∈[0.4,0.6]（H₀ 下 2000 次，df=2，χ²(2) 对照）；拟似然对 Poisson 退化为 MLE(mean=x̄) EXACT 且 φ≈1；Huber 对污染离群降权（abs(Huber−真值)<abs(均值−真值)）；经验似然极大点 EXACT 在样本均值（−2logR(x̄)=0）且偏离 >0.5 后 −2logR>0.5（证伪恒零退化解） | 1e-9 | LRT χ² 对照 + QL 退化 + Huber 降权 + EL 极大点双向 |
+
+> 反空洞铁律落实（INV-EST-003/006/007/008）：KS 双向功效（N(3,1) 高拒、N(0,1) 低拒，证伪单侧偏倚）、CI 覆盖双向边界 [0.92,0.98]（证伪过窄/过宽）、I 类错误 ∈[0.03,0.07]（证伪膨胀/失效）、经验似然偏离均值后 −2logR>0.5（证伪极大点恒零退化）。灵魂不变量 INV-EST-001..008 经 `tests/independent/estimate-check.js` 独立复核 8/8 通过（`node tests/independent/estimate-check.js`，exit 0）。
+
 ---
 
 ## L6 — 深度强化学习
@@ -606,16 +636,17 @@
 |----|--------|-----------|------|
 | L1 | 2 | 12 | 0 |
 | L2 | 4 | 28 | 0 |
-| L3 | 6 | 48 | 0 |
+| L3 | 7 | 56 | 0 |
 | L4 | 9 | 72 | 0 |
-| L5 | 7 | 56 | 0 |
+| L5 | 8 | 64 | 0 |
 | L6 | 3 | 24 | 0 |
 | L7 | 9 | 72 | 0 |
-| **合计** | **40** | **312** | **0** |
+| **合计** | **42** | **328** | **0** |
 
-> 注：本表按**不变量 ID 数**统计，合计 **312 条**。运行时 case 数为 **319**（`npm run verify` 实测），差异来自多条子用例：
+> 注：本表按**不变量 ID 数**统计，合计 **328 条**。运行时 case 数为 **335**（`npm run verify` 实测），差异来自多条子用例：
 > core-numeric 11 个 case 对应 8 条 ID（INV-NUM-002/006 含 a/b/c 子用例，+3）；core-verify 2 个 case 对应 4 条 ID（INV-VER-001/003 为不计数探针，−2）；quant-forge 9 个 case 对应 8 条 ID（INV-QNT-008b 为 pack 往返辅助用例，+1）；ann-forge 13 个 case 对应 8 条 ID（O04/O06/O08/O09/O11 为覆盖用例，+5）。净 +7。
 > W17 新增 mcmc-forge（L5，8 条 ID / 8 个 case，1:1）与 serialize-forge（L7，8 条 ID / 8 个 case，1:1），合计 +16 ID / +16 case，净差不变。
+> W18 新增 secondorder-forge（L3，8 条 ID / 8 个 case，1:1）与 estimate-forge（L5，8 条 ID / 8 个 case，1:1），合计 +16 ID / +16 case，净差不变。
 > 分层归属以源码 `selfCheck` 声明的 `layer` 为准；`attn-forge.js` 声明 L4，但本表沿其文档归位列于 L3 段，总数不变；retrieval-forge / ann-forge / gnn-forge / sparse-forge 声明 L7（F7 检索·图·系统族），W13 由 L5 规划位升格至 L7。
 
 ---
@@ -623,7 +654,7 @@
 ## 如何复现
 
 ```bash
-npm run verify             # 40 模块 · 319 用例 · 0 失败
+npm run verify             # 42 模块 · 335 用例 · 0 失败
 node tests/independent/INV-DQN-007-check.js  # INV-DQN-007 三重独立复核（手搓黄金参照）
 node tests/independent/INV-DIF-check.js      # INV-DIF 皇冠不变量逐项独立重算
 node tests/independent/td-check.js          # INV-TD 表格RL 皇冠不变量独立复核
@@ -639,6 +670,9 @@ node tests/independent/eval-check.js     # INV-EVL 评测指标 皇冠不变量�
 node tests/independent/flow-check.js     # INV-FLW 网络流 皇冠不变量独立复核
 node tests/independent/mcmc-check.js     # INV-MC  MCMC 皇冠不变量独立复核（R1–R8 全绿）
 node tests/independent/serialize-check.js # INV-SER 序列化·存储 皇冠不变量独立复核（R1–R8 全绿）
+node tests/independent/secondorder-check.js # INV-SO 二阶·拟牛顿 皇冠不变量独立复核（R1–R8 全绿）
+node tests/independent/estimate-check.js  # INV-EST 估计·检验 皇冠不变量独立复核（R1–R8 全绿）
+node tools/verify-l10.js   # L10 1024 项 / done 246 / planned 778
 node tools/check-reuse.js  # 复用合规 0 ERROR
 node tools/verify-l10.js   # L10 1024 项 / done 214 / planned 810
 ```

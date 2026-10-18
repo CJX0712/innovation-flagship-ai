@@ -1,13 +1,13 @@
 {
   "schema": "forge-l10/1.0",
-  "generated_at": "2026-10-17T21:16:08.936Z",
+  "generated_at": "2026-10-18T15:07:43.748Z",
   "total": 1024,
   "families": 8,
   "groups": 64,
   "ops_per_group": 16,
   "by_status": {
-    "done": 214,
-    "planned": 810
+    "done": 246,
+    "planned": 778
   },
   "leaves": [
     {
@@ -2737,8 +2737,8 @@
       "op": "O00",
       "name": "牛顿法",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 牛顿法(newton)"
     },
     {
       "id": "L10-F2-G1-O01",
@@ -2747,8 +2747,8 @@
       "op": "O01",
       "name": "高斯牛顿",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 高斯牛顿(gaussNewton)"
     },
     {
       "id": "L10-F2-G1-O02",
@@ -2757,8 +2757,8 @@
       "op": "O02",
       "name": "L-BFGS",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge L-BFGS(lbfgs)"
     },
     {
       "id": "L10-F2-G1-O03",
@@ -2767,8 +2767,8 @@
       "op": "O03",
       "name": "DFP",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge DFP(quasiNewtonUpdateDFP)"
     },
     {
       "id": "L10-F2-G1-O04",
@@ -2777,8 +2777,8 @@
       "op": "O04",
       "name": "共轭梯度法",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 共轭梯度(cg)"
     },
     {
       "id": "L10-F2-G1-O05",
@@ -2787,8 +2787,8 @@
       "op": "O05",
       "name": "信赖域",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 信赖域(trustRegion dogleg)"
     },
     {
       "id": "L10-F2-G1-O06",
@@ -2797,8 +2797,8 @@
       "op": "O06",
       "name": "拟牛顿更新",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 拟牛顿更新(quasiNewtonUpdateBFGS)"
     },
     {
       "id": "L10-F2-G1-O07",
@@ -2807,8 +2807,8 @@
       "op": "O07",
       "name": "海森近似",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 海森近似(hessianApprox)"
     },
     {
       "id": "L10-F2-G1-O08",
@@ -2817,8 +2817,8 @@
       "op": "O08",
       "name": "阻尼牛顿",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 阻尼牛顿(dampedNewton)"
     },
     {
       "id": "L10-F2-G1-O09",
@@ -2827,8 +2827,8 @@
       "op": "O09",
       "name": "OWL-QN",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge OWL-QN(owlqn)"
     },
     {
       "id": "L10-F2-G1-O10",
@@ -2837,8 +2837,8 @@
       "op": "O10",
       "name": "有限记忆 BFGS",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 有限记忆 BFGS(lbfgs 双循环递归)"
     },
     {
       "id": "L10-F2-G1-O11",
@@ -2847,8 +2847,8 @@
       "op": "O11",
       "name": "拟牛顿校正",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 拟牛顿校正 SR1(sr1Update)"
     },
     {
       "id": "L10-F2-G1-O12",
@@ -2857,8 +2857,8 @@
       "op": "O12",
       "name": "线搜索",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 线搜索 Armijo(lineSearch)"
     },
     {
       "id": "L10-F2-G1-O13",
@@ -2867,8 +2867,8 @@
       "op": "O13",
       "name": "强 Wolfe 条件",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 强 Wolfe(strongWolfe)"
     },
     {
       "id": "L10-F2-G1-O14",
@@ -2877,8 +2877,8 @@
       "op": "O14",
       "name": "无 Hessian 牛顿",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 无 Hessian 牛顿(hessianFree)"
     },
     {
       "id": "L10-F2-G1-O15",
@@ -2887,8 +2887,8 @@
       "op": "O15",
       "name": "曲率条件",
       "layer": "L3",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "secondorder-forge 曲率条件(curvatureCondition)"
     },
     {
       "id": "L10-F2-G2-O00",
@@ -7377,8 +7377,8 @@
       "op": "O00",
       "name": "最大似然估计",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 最大似然估计(mle)"
     },
     {
       "id": "L10-F5-G6-O01",
@@ -7387,8 +7387,8 @@
       "op": "O01",
       "name": "最大后验估计",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 最大后验估计(mapEstimate)"
     },
     {
       "id": "L10-F5-G6-O02",
@@ -7397,8 +7397,8 @@
       "op": "O02",
       "name": "矩估计",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 矩估计(methodOfMoments)"
     },
     {
       "id": "L10-F5-G6-O03",
@@ -7407,8 +7407,8 @@
       "op": "O03",
       "name": "贝叶斯估计",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 贝叶斯估计(bayesEstimate)"
     },
     {
       "id": "L10-F5-G6-O04",
@@ -7417,8 +7417,8 @@
       "op": "O04",
       "name": "KS 检验",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge KS检验(ksTest)"
     },
     {
       "id": "L10-F5-G6-O05",
@@ -7427,8 +7427,8 @@
       "op": "O05",
       "name": "卡方检验",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 卡方检验(chiSquareTest/chiSquareIndependence)"
     },
     {
       "id": "L10-F5-G6-O06",
@@ -7437,8 +7437,8 @@
       "op": "O06",
       "name": "Bootstrap",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge Bootstrap(bootstrap/percentileCI)"
     },
     {
       "id": "L10-F5-G6-O07",
@@ -7447,8 +7447,8 @@
       "op": "O07",
       "name": "交叉验证似然",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 交叉验证似然(cvLikelihood)"
     },
     {
       "id": "L10-F5-G6-O08",
@@ -7457,8 +7457,8 @@
       "op": "O08",
       "name": "矩方法",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 矩方法(momentMethod)"
     },
     {
       "id": "L10-F5-G6-O09",
@@ -7467,8 +7467,8 @@
       "op": "O09",
       "name": "拟似然",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 拟似然(quasiLikelihood)"
     },
     {
       "id": "L10-F5-G6-O10",
@@ -7477,8 +7477,8 @@
       "op": "O10",
       "name": "稳健估计",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 稳健估计(robustEstimate Huber M)"
     },
     {
       "id": "L10-F5-G6-O11",
@@ -7487,8 +7487,8 @@
       "op": "O11",
       "name": "经验似然",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 经验似然(empiricalLikelihood)"
     },
     {
       "id": "L10-F5-G6-O12",
@@ -7497,8 +7497,8 @@
       "op": "O12",
       "name": "假设检验",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 假设检验(hypothesisTest Welch)"
     },
     {
       "id": "L10-F5-G6-O13",
@@ -7507,8 +7507,8 @@
       "op": "O13",
       "name": "置信区间",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 置信区间(confidenceInterval 正态/t/Wilson)"
     },
     {
       "id": "L10-F5-G6-O14",
@@ -7517,8 +7517,8 @@
       "op": "O14",
       "name": "似然比检验",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 似然比检验(likelihoodRatioTest)"
     },
     {
       "id": "L10-F5-G6-O15",
@@ -7527,8 +7527,8 @@
       "op": "O15",
       "name": "拟合优度",
       "layer": "L5",
-      "status": "planned",
-      "reuse": "规划：W3-W7 后续实现（含 @reuse 顶级参照）"
+      "status": "done",
+      "reuse": "estimate-forge 拟合优度(goodnessOfFit)"
     },
     {
       "id": "L10-F5-G7-O00",

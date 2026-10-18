@@ -43,7 +43,7 @@
 
 ---
 
-## 三、模块清单（40 个模块 · 319 条不变量 · 0 失败）
+## 三、模块清单（42 个模块 · 335 条不变量 · 0 失败）
 
 所有模块均满足 `@forge-module` 统一契约：`selfCheck()` 返回 `forge-selfcheck/1.0` schema、代码 hash 幂等、不良输入抛错、CLI 退出码规范（0/1/2/3/4/66）。每条不变量都有 **≥1 条可被独立交叉验证的硬标准**（残差界 / 正交归一 / 梯度检验 / 闭式对照 / 参考重实现），阈值常量化于 `TOL`。
 
@@ -89,6 +89,8 @@
 | `src/vi-forge.js` | L5 | INV-VI-001..008 | 8 | Kingma&Welling 2013 VAE / Rezende 2014 重参数化 / Jordan 1999 变分推断 |
 | `src/mcmc-forge.js` | L5 | INV-MC-001..008 | 8 | Metropolis / Metropolis-Hastings（含非对称提议修正）/ Gibbs / NUTS(U-turn + 双平均) / 随机游走 Metropolis + 窗宽调优 / HMC(leapfrog) / 自适应步长(dual averaging) / 混合蒙特卡洛 / 模拟退火（Hoffman&Gelman 2014、Neal 2011、Kirkpatrick 1983、Roberts&Rosenthal 2001） |
 | `src/serialize-forge.js` | L7 | INV-SER-001..008 | 8 | 规范 JSON(RFC 8259/JCS) / 二进制 TLV / 列式(字典+位包) / protobuf(varint+zigzag) / 分页内存映射 / 增量 diff-apply / COW 快照 / WAL 事务(ARIES) / 一致性哈希环 / 对象存储(Git 式去重) / LRU·TTL 缓存 / CRC32·FNV-1a-64·SHA-256（Parquet、RFC 8785、Mohan 1992、Karger 1997、Git 对象模型） |
+| `src/secondorder-forge.js` | L3 | INV-SO-001..008 | 8 | 牛顿法 / 高斯牛顿 / BFGS / DFP / 共轭梯度 / 信赖域(dogleg) / 阻尼牛顿 / OWL-QN / L-BFGS(双循环递归) / SR1 校正 / Armijo 线搜索 / 强 Wolfe 条件 / Hessian-free 牛顿 / 曲率条件（Nocedal&Wright 2006、Liu&Nocedal 1989、Fletcher 1987、Wolfe 1969、Steihaug 1983、Andrew&Gao 2007） |
+| `src/estimate-forge.js` | L5 | INV-EST-001..008 | 8 | MLE / MAP / 矩估计 / 矩方法 / 贝叶斯估计 / KS 检验 / 卡方检验(拟合优度+独立性) / Bootstrap / 交叉验证似然 / 拟似然 / 稳健估计(Huber M) / 经验似然 / Welch t 检验 / 置信区间(正态·t·Wilson) / 似然比检验 / 拟合优度（Casella&Berger 2002、Kolmogorov 1933、Pearson 1900、Efron 1979、Welch 1947、Huber 1964、Owen 2001、Brown 2001） |
 
 > 注：`attn-forge.js`（L4，INV-ATTN-*）为经典注意力模块的零重写迁移包装；`attention-forge.js`（L4，INV-ATT-*）为新写的多头 / GQA / 因果注意力。两者并存、互不冲突。
 
@@ -212,14 +214,15 @@ innovation-flagship-ai/
 - ✅ **W15**：图算法内核 graphalg-forge（DFS / A* 可采纳启发 / PageRank 幂迭代 / 连通分量 / MST Kruskal+Prim / 拓扑排序 Kahn / SCC Tarjan / 三角计数 / Brandes 中心性，8 不变量全绿，INV-GA-002 A*≡Dijkstra、INV-GA-006 Kruskal≡Prim、INV-GA-008 Brandes≡手搓逐对 BFS 均经手搓黄金参照 Δ=0，且不可采纳启发捕获严格次优证伪边界）；推理服务内核 serving-forge（批处理 ≡ 串行 / 算子融合 ≡ 串联且调用数减半 / 内核调度拓扑合法 / 内存池活跃块零重叠 / 流式分块 ≡ 全量 / 负载均衡 9:3 加权 / FIFO 与优先队列分歧 / 令牌桶窗口上界，8 不变量全绿，逻辑时钟保证确定性）——本波共 2 模块 / 16 不变量全绿，L10 done 158→175
 - ✅ **W16**：评测指标内核 eval-forge（precision / recall / F1 macro·micro / ROC AUC / perplexity / BLEU / p50·p95·p99 / 吞吐 / 一致性，8 不变量全绿，INV-EVL-003 AUC ≡ 手搓 Mann-Whitney 双路交叉 Δ=0 且随机打乱 ≈0.5、INV-EVL-005 BLEU ≡ 手搓 n-gram+brevity penalty Δ=0 且短候选 BP=0.223<1 证伪）；网络流内核 flow-forge（Edmonds-Karp + Dinic 双实现、**最大流=最小割**经暴力枚举 64 个子集验证、Hopcroft-Karp 二分匹配 ≡ 流归约、标签传播社区、Welsh-Powell 图着色，8 不变量全绿）——**F7-G2 组 16/16 全满**，本波共 2 模块 / 16 不变量全绿，L10 done 175→188
 - ✅ **W17**：MCMC 采样内核 mcmc-forge（F5-G5，Metropolis / Metropolis-Hastings 含非对称提议 / Gibbs / NUTS(U-turn+双平均) / 随机游走 Metropolis + 窗宽调优 / HMC(leapfrog) / 自适应步长(dual averaging) / 混合蒙特卡洛 / 模拟退火，8 不变量全绿，INV-MC-002 细致平衡解析恒等式 EXACT≤1e-15、INV-MC-003 大样本矩收敛 10σ + 手搓 KS 检验、INV-MC-005 leapfrog 可逆/保体积、INV-MC-006 NUTS ESS>3×RWM、INV-MC-008 退火 8 种子 ≥5/8 跨势垒 + 冷链困陷证伪）；序列化与存储内核 serialize-forge（F7-G5 全 16 项：四编解码器 / 分页内存映射 / 增量·快照 / 版本·WAL·灾恢 / 分区·对象 / 缓存 / 校验和，8 不变量全绿，INV-SER-002 列式无免费午餐双向、INV-SER-003 缺页计数 EXACT、INV-SER-005 WAL 全前缀崩溃恢复 EXACT、INV-SER-006 标准测试向量 + 雪崩 + 块级定位）——本波共 2 模块 / 16 不变量全绿，L10 done 188→214
-- 🔜 **W17+ 续**：F4-G5/G6 余项、F5 概率与生成余项（流模型）、F7-G4 稀疏与压缩余项、F7-G7 余项（漂移检测 / 公平性 / 可解释）——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
+- ✅ **W18**：二阶与拟牛顿优化内核 secondorder-forge（F2-G1 全 16 项：牛顿法 / 高斯牛顿 / BFGS / DFP / 共轭梯度 / 信赖域(dogleg) / 阻尼牛顿 / OWL-QN / L-BFGS 双循环递归 / SR1 校正 / Armijo 线搜索 / 强 Wolfe 条件 / Hessian-free 牛顿 / 曲率条件，8 不变量全绿，INV-SO-001 牛顿对二次 1 步收敛残差≤1e-12、INV-SO-003 BFGS 逆更新割线方程 H₊y=s + 曲率 yᵀs>0 护 SPD、INV-SO-004 强 Wolfe Armijo+曲率成立且非下降方向返回 0 证伪、INV-SO-005 dogleg 不劣于柯西点、INV-SO-006 高斯牛顿 ≡ 牛顿(线性残差)、INV-SO-007 阻尼牛顿(H+λI)恒 SPD 且下降 + Hessian-free ≡ 精确牛顿(二次)、INV-SO-008 SR1 秩1 公式 EXACT + 负曲率跳过护 SPD）；估计与检验内核 estimate-forge（F5-G6 全 16 项：MLE / MAP / 矩估计 / 矩方法 / 贝叶斯估计 / KS 检验 / 卡方检验 / Bootstrap / 交叉验证似然 / 拟似然 / 稳健估计(Huber M) / 经验似然 / Welch t 检验 / 置信区间 / 似然比检验 / 拟合优度，8 不变量全绿，INV-EST-001 MLE 闭式 EXACT + Newton 得分≤1e-9、INV-EST-002 共轭后验均值 EXACT + 平坦先验退化为 MLE、INV-EST-003 KS D 手算 EXACT + 功效>0.9/非功效<0.15 双向、INV-EST-004 卡方手算 EXACT + 独立性 df=1 + 功效>0.9、INV-EST-005 Bootstrap SE 与解析误差≤15%、INV-EST-006 正态/t/Wilson 三族 CI 覆盖∈[0.92,0.98]、INV-EST-007 学生 t CDF(0)=0.5 + I 类错误∈[0.03,0.07] + 功效>0.8、INV-EST-008 Wilks LRT(χ²(2)) 中位 p∈[0.4,0.6] + Huber 离群降权 + 经验似然极大点在样本均值 EXACT）——本波共 2 模块 / 16 不变量全绿，L10 done 214→246
+- 🔜 **W19 续**：F2-G0/G3~G7 优化余项、F5 概率与生成余项（流模型 / G0 分布 / G1 采样）、F7-G4 稀疏与压缩余项、F7-G7 余项（漂移检测 / 公平性 / 可解释）——按十层架构逐波推进，最终填满 L10 的 1024 项微指令。
 
-**当前验证基线（W17 全波集成后本地复核）：**
-- `npm run verify` → **40 模块 · 通过 319 · 失败 0**
-- `npm run harness` → 40/40 模块满足 `@forge-module` 契约（含不良输入抛错登记）
-- `npm run check:reuse` → 0 ERROR / 27 ADVISORY（X 级 / 字段数提示，不影响退出码）
-- `npm run l10` → 1024 项 / done 214 / planned 810 / ID 唯一 / 字段完整
-- `tests/independent/`（INV-DQN-007-check / INV-DIF-check / td-check / policygrad-check / vi-check / retrieval-check / ann-check / gnn-check / sparse-check / graphalg-check / serving-check / eval-check / flow-check / mcmc-check / serialize-check）→ 15 套皇冠不变量独立复核全绿（新内核各 3 连跑确定性验证通过）
+**当前验证基线（W18 全波集成后本地复核）：**
+- `npm run verify` → **42 模块 · 通过 335 · 失败 0**
+- `npm run harness` → 42/42 模块满足 `@forge-module` 契约（含不良输入抛错登记）
+- `npm run check:reuse` → 0 ERROR / 29 ADVISORY（X 级 / 字段数提示，不影响退出码）
+- `npm run l10` → 1024 项 / done 246 / planned 778 / ID 唯一 / 字段完整
+- `tests/independent/`（INV-DQN-007-check / INV-DIF-check / td-check / policygrad-check / vi-check / retrieval-check / ann-check / gnn-check / sparse-check / graphalg-check / serving-check / eval-check / flow-check / mcmc-check / serialize-check / secondorder-check / estimate-check）→ 17 套皇冠不变量独立复核全绿（新内核各 3 连跑确定性验证通过）
 
 ---
 
