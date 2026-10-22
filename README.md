@@ -1,5 +1,9 @@
 # 创新旗舰 AI · ifai
 
+> **从零造 AI，并造尺子证明它没骗你** · 一套开源的"AI 验伪"方法与实物
+> 舰队总览：[apex-flagship](https://github.com/CJX0712/apex-flagship) · 作者：晨星
+
+
 > **世界顶级 · 零依赖 · 可运行 · 可复现 · 可验证** 的旗舰级 AI 系统参考实现。
 > 作者：**晨星 (Morningstar)** · GitHub [@CJX0712](https://github.com/CJX0712)
 
