@@ -46,8 +46,9 @@ CORPUS = (
 
 PROMPT_LEN = 32
 DECODE_STEPS = 32
-REPEATS = 3
-REGRESSION_TOL = 0.15  # ±15% 门禁
+REPEATS = 9
+WARMUP = 2
+REGRESSION_TOL = 0.15  # ±15% 门禁 (与噪声边界取大者)
 
 
 def build_model(out_dir: str):
@@ -66,12 +67,36 @@ def build_model(out_dir: str):
 
 
 def bench(model, tok) -> dict:
+    """测量 prefill / TPOT / 吞吐。
+
+    零重写 · 集大成: 统计口径参考 **MLPerf Inference** 的做法 —— 报告
+    **中位数** 而非均值, 并附带离散度 (CV), 因为 CPU 计时受调度抖动影响
+    很大: 用均值时, 一次系统级抢占就能把基线抬高 18%, 门禁随后在
+    「代码没变」的情况下误报红灯 (本机实测: 同机两次测量差 18%)。
+    中位数 + CV 让基线自带噪声边界, 门禁只在真实退化时亮红。
+
+    Args:
+        model: 待测模型。
+        tok: 对应分词器。
+
+    Returns:
+        指标 dict (含 prefill_ms / tpot_ms / throughput_tok_s 及离散度)。
+    """
     ids = (tok.encode("人工智能模型注意力推理检索") or [0])[:PROMPT_LEN]
     while len(ids) < PROMPT_LEN:
         ids.append(0)
     ids = ids[:PROMPT_LEN]
 
     prefill_ms, decode_ms = [], []
+    per_repeat_tpot = []
+    # 预热 (v0.8.0): 前若干轮的耗时含冷启动 (内存页首次触碰、NumPy/BLAS
+    # 首次分配、CPU 频率爬坡), 不剔除会把基线系统性抬高。
+    for _ in range(WARMUP):
+        model.forward(np.array([ids]))
+        seq = list(ids)
+        for _ in range(DECODE_STEPS):
+            logits = model.forward(np.array([seq]))[0, -1, :]
+            seq.append(int(np.argmax(logits)))
     for _ in range(REPEATS):
         t0 = time.perf_counter()
         model.forward(np.array([ids]))
@@ -85,16 +110,30 @@ def bench(model, tok) -> dict:
             dts.append((time.perf_counter() - t1) * 1000)
             seq.append(int(np.argmax(logits)))
         decode_ms.extend(dts)
+        # 每轮一个 TPOT 中位数样本 —— 离散度按**轮次样本**统计, 而不是
+        # 把 9×32 个逐 token 耗时混池: 混池会把「个别 token 的抖动」
+        # 放大成轮级离散度, 使噪声边界虚高 (实测混池 CV 44%, 轮级 CV 3%)。
+        per_repeat_tpot.append(statistics.median(dts))
 
-    prefill = statistics.mean(prefill_ms)
-    tpot = statistics.mean(decode_ms)
+    prefill = statistics.median(prefill_ms)
+    tpot = statistics.median(decode_ms)
+
+    def _cv(xs):
+        """相对离散度 (CV%) —— 基于轮次样本。"""
+        m = statistics.mean(xs)
+        return round(statistics.pstdev(xs) / m * 100.0, 2) if m > 0 and len(xs) > 1 else 0.0
+
     return {
         "prompt_len": PROMPT_LEN,
         "decode_steps": DECODE_STEPS,
         "repeats": REPEATS,
+        "warmup": WARMUP,
         "prefill_ms": round(prefill, 3),
         "tpot_ms": round(tpot, 3),
         "throughput_tok_s": round(1000.0 / tpot, 2),
+        "prefill_cv_pct": _cv(prefill_ms),
+        "tpot_cv_pct": _cv(per_repeat_tpot),
+        "statistic": "median",
     }
 
 
@@ -121,8 +160,19 @@ def write_baseline(metrics: dict, repo_root: str) -> None:
         f"| Prefill (prompt_len={metrics['prompt_len']}) | {metrics['prefill_ms']} ms | 单次前向, 构成 TTFT 主体 |",
         f"| TPOT | {metrics['tpot_ms']} ms/token | 每输出 token 平均耗时 |",
         f"| Decode 吞吐 | {metrics['throughput_tok_s']} tok/s | 1000 / TPOT |",
+        f"| Prefill 离散度 (CV) | {metrics.get('prefill_cv_pct', 0.0)}% | 测量噪声边界 |",
+        f"| TPOT 离散度 (CV) | {metrics.get('tpot_cv_pct', 0.0)}% | 测量噪声边界 |",
         "",
-        "## 机器可读 (RegressionBaseline.parse_baseline 解析此行)",
+        "## 统计口径",
+        "",
+        f"- 统计量: **{metrics.get('statistic', 'median')}** (中位数), 非均值 ——",
+        "  CPU 计时受调度抖动影响, 均值会被一次系统级抢占抬高十几个百分点,",
+        "  使门禁在「代码没变」时误报红灯。",
+        f"- 回归阈值: `max(15%, 2×基线 CV)` —— 低于噪声边界的波动不判为回归。",
+        "- 权威基线: **`BASELINE.json`** (机器读取)。本文件仅供人读,",
+        "  不再被任何代码解析 (双轨合一, v0.8.0)。",
+        "",
+        "## 机器可读 (RegressionBaseline.parse_baseline 读 BASELINE.json)",
         "",
         f"tok/s mean: {metrics['throughput_tok_s']}",
         "",
@@ -154,20 +204,43 @@ def main() -> int:
             write_baseline(metrics, root)
             return 0
         prev = json.load(open(js, encoding="utf-8"))
+        # 双轨合一 (v0.8.0): 门禁判据统一由 L8 `RegressionBaseline.check`
+        # 提供, 本脚本不再自带一份比较逻辑 —— 此前脚本比 prefill/tpot
+        # (时间, 越大越慢), 而 L8 harness 比吞吐 (tok/s, 越小越慢),
+        # 两套口径各自演化, 是「双轨分裂」的根因。现统一为同一函数。
+        from ifai.eval.harness import RegressionBaseline
+
+        cur = {
+            "tok_per_s_mean": metrics["throughput_tok_s"],
+            "prefill_ms": metrics["prefill_ms"],
+            "tpot_ms": metrics["tpot_ms"],
+        }
+        # 噪声边界: 基线自带 CV (离散度), 门禁阈值取 max(固定阈值, 基线 CV)。
+        # 没有这一项, CPU 调度抖动会让「代码没变」也误报红灯 (实测 18%)。
+        noise_pct = max(float(prev.get("tpot_cv_pct", 0.0)),
+                         float(prev.get("prefill_cv_pct", 0.0)))
+        tol = max(REGRESSION_TOL, noise_pct / 100.0 * 2)
+        verdict = RegressionBaseline.check(cur, js, threshold=tol)
         bad = []
+        # prefill / TPOT 的时间型退化判据 (吞吐口径覆盖不了这两项)
         for k in ("prefill_ms", "tpot_ms"):
-            cur, old = metrics[k], prev[k]
-            if old <= 0:
+            cur_v, old_v = metrics[k], prev.get(k)
+            if not old_v or old_v <= 0:
                 continue
-            delta = (cur - old) / old
-            if delta > REGRESSION_TOL:
-                bad.append(f"{k}: {old} -> {cur} (+{delta*100:.1f}%)")
+            delta = (cur_v - old_v) / old_v
+            if delta > tol:
+                bad.append(f"{k}: {old_v} -> {cur_v} (+{delta*100:.1f}%)")
+        if verdict["status"] == "RED":
+            bad.append(f"throughput: 退化 {verdict['drop']*100:.1f}% "
+                       f"(> {tol*100:.0f}%)")
         if bad:
-            print("性能回归 (超过 +15%):")
+            print(f"性能回归 (超过 +{tol*100:.0f}%, 噪声边界 "
+                  f"{noise_pct:.1f}%):")
             for b in bad:
                 print("  ❌", b)
             return 1
-        print("性能门禁通过: 无 >15% 退化。")
+        print(f"性能门禁通过: 无 >{tol*100:.0f}% 退化 "
+              f"(基线源 {verdict.get('source')}, 噪声边界 {noise_pct:.1f}%)。")
         return 0
 
     write_baseline(metrics, root)

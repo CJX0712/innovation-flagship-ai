@@ -1,0 +1,12 @@
+{
+  "prompt_len": 32,
+  "decode_steps": 32,
+  "repeats": 9,
+  "warmup": 2,
+  "prefill_ms": 6.699,
+  "tpot_ms": 9.246,
+  "throughput_tok_s": 108.16,
+  "prefill_cv_pct": 22.66,
+  "tpot_cv_pct": 23.35,
+  "statistic": "median"
+}

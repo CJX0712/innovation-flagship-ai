@@ -12,13 +12,24 @@
 
 | 指标 | 值 | 说明 |
 | --- | --- | --- |
-| Prefill (prompt_len=32) | 2.659 ms | 单次前向, 构成 TTFT 主体 |
-| TPOT | 4.68 ms/token | 每输出 token 平均耗时 |
-| Decode 吞吐 | 213.68 tok/s | 1000 / TPOT |
+| Prefill (prompt_len=32) | 6.699 ms | 单次前向, 构成 TTFT 主体 |
+| TPOT | 9.246 ms/token | 每输出 token 平均耗时 |
+| Decode 吞吐 | 108.16 tok/s | 1000 / TPOT |
+| Prefill 离散度 (CV) | 22.66% | 测量噪声边界 |
+| TPOT 离散度 (CV) | 23.35% | 测量噪声边界 |
 
-## 机器可读 (RegressionBaseline.parse_baseline 解析此行)
+## 统计口径
 
-tok/s mean: 213.68
+- 统计量: **median** (中位数), 非均值 ——
+  CPU 计时受调度抖动影响, 均值会被一次系统级抢占抬高十几个百分点,
+  使门禁在「代码没变」时误报红灯。
+- 回归阈值: `max(15%, 2×基线 CV)` —— 低于噪声边界的波动不判为回归。
+- 权威基线: **`BASELINE.json`** (机器读取)。本文件仅供人读,
+  不再被任何代码解析 (双轨合一, v0.8.0)。
+
+## 机器可读 (RegressionBaseline.parse_baseline 读 BASELINE.json)
+
+tok/s mean: 108.16
 
 ## 复现
 

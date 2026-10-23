@@ -2,6 +2,116 @@
 
 遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.0] — 2026-10-24
+
+### 新增 (Added) — L10 微指令 ISA 从「文档」落到「可执行」
+
+- **`ifai/l10/` 新增 L10 层**: 32 家族 × 32 成员 = **1024 条可执行微指令**,
+  每条都是**真实可调用的函数** (不是文档字符串), 门禁对每一条跑真实输入并断言。
+  - **零重写 · 集大成**: ISA **移植自同门旗舰 [`tianji-ai`](https://github.com/CJX0712/tianji-ai)**
+    (MIT, 作者同为晨星, 该实现已在 tianji-ai 通过 1024/1024 门禁) —— **只改依赖指向,
+    不重写任何算子**:
+    - `l2norm` / `spectral_norm` / `newton_schulz` → 本仓 L0 `ifai.core.ops`
+      (本次一并补入, 避免移植后出现「无消费方的死代码」—— 那正是 v0.7.13 审计
+      批过的「模块存在但从未接线」同型缺口);
+    - `logsumexp` / `softmax` → 本仓 L0/L1 `ifai.core.numeric`
+      (本仓已有 INV-08 / INV-09 黄金测试)。
+  - **超越点 (相对移植源)**: 新增 `ifai/l10/_properties.py` 数学性质断言层 ——
+    移植源的门禁只断言「不抛异常 + 输出有限」, 本层为 **390 条**微指令追加
+    **数学不变量**: softmax 归一性 (INV-09) / L2 严格单位范数 / KL 非负 /
+    熵上界 / Flash ≡ 朴素 (INV-02) / Newton-Schulz 奇异值带 (Muon 公开验收标准,
+    Keller Jordan 2024) / 幂迭代谱范数精确性 / Top-K 掩码个数 / RoPE 保范数 /
+    损失非负 / 指标区间 …。**26 条因语义特殊显式豁免并逐条注明理由** ——
+    豁免清单被门禁上报, 杜绝「悄悄关掉断言」。
+  - `FAMILY_KIND` 区分 `core` (成员语义独立, 15 族) 与 `sweep` (参数扫描,
+    17 族) —— 不把「凑数」伪装成「独立算子」。
+  - **CLI 入口**: `ifai microisa [--list | --family <名> | --run <指令>]`。
+  - **门禁脚本**: `scripts/check_l10.py` (已接入 `ifai selftest` 与 CI)。
+  - **黄金测试**: `tests/unit/l10/test_l10_microisa.py` (20 项: 数量不变量 /
+    可执行性 / 性质断言 / 豁免纪律 / L0 同源性)。
+
+### 修复 (Fixed) — 服务层三条「模块存在但从未接线」的缺口
+
+承接 v0.7.13 全栈审计遗留的 G1/G2/G3, 本轮全部闭合 (详见
+`tests/unit/l7/test_v080_wiring.py`, 25 项):
+
+- **G1 · SSE 流式真实落地** (原为「假绿」):
+  - 根因: `serve/api.py` 的 `stream` 参数**被静默忽略** —— `_gen_tokens`
+    接收该形参却从不使用, HTTP 层无条件返回 `application/json` 整体响应。
+    INV-37 因此只比对了内部生成器, **没有验证真实传输形态**, 流式能力从未可达。
+  - 修复: 新增 `ifai/serve/sse.py` —— 按 WHATWG HTML Living Standard 的
+    SSE 规范实现 (`text/event-stream` / `data:` 事件 / 空行分隔 / `[DONE]` 收尾),
+    分块形状复用 OpenAI `stream=true` 的 `chat.completion.chunk` 线上格式,
+    LangChain / OpenAI SDK 零改动可消费。HTTP 层改用 **chunked transfer
+    encoding + 逐块 flush** (否则整响应被缓冲, 流式退化为非流式) 并带
+    `X-Accel-Buffering: no` (禁用反向代理缓冲 —— 现场最常见的坑)。
+  - 验证: 真实 HTTP 端到端 —— 从 SSE 字节流解出的 content **逐字等于**
+    非流式 `choices[0].message.content`。
+- **G2 · 护栏接入请求路径**:
+  - 根因: `serve/guardrail.py` 426 行在服务路径**完全不可达** —— 「L7 有护栏」
+    是空头支票, 只有测试在用。
+  - 修复: `OpenAIServer` 支持注入 `Guardrail`; 输入检查接在生成前、输出检查
+    接在生成后, 命中即返回 **OpenAI 风格错误体**
+    (`{"error": {message, type, param, code}}`), 现有 SDK 的错误处理零改动生效。
+    CLI: `ifai serve --guardrail`。
+- **G3 · L3 五大件接入用户入口**:
+  - 根因: PagedKV / 连续批处理 / 分块 prefill / 投机解码在服务路径上**从未被调用**,
+    服务一直用朴素全量前向 (每生成一个 token 重算整个序列, O(T²) 总开销)。
+  - 修复: 新增 `ifai/engine/session.py::EngineSession` —— 持有 KV 缓存会话的
+    服务侧生成器, 支持 `naive` / `paged` / `chunked` / `speculative` 四后端 +
+    连续批处理。**四者输出逐 token 相同** (加速不得改变结果), 这是接线的
+    安全前提。CLI: `ifai serve --backend paged`。
+
+### 修复 (Fixed) — 回归门禁双轨合一 (G4)
+
+- 根因: `scripts/gen_baseline.py` 的机器比较读 **BASELINE.json**, 而
+  `ifai/eval/harness.py::RegressionBaseline.parse_baseline` 却去**解析
+  BASELINE.md 的人类可读行** (`tok/s mean: …`) —— 同一份基线两套读法,
+  改一份漏一份: MD 行格式一变, harness 静默返回 `NO_BASELINE`, 门禁形同虚设
+  且不报错; 且两者口径相反 (脚本比时间「越大越慢」, harness 比吞吐「越小越慢」)。
+- 修复: **BASELINE.json 为唯一权威源**, MD 降级为纯人类可读产物;
+  `gen_baseline.py --check` 与 harness **共用同一个判据函数**, 不再各自演化。
+- **顺带修好门禁自身的假红**: 基准测量原先用均值且无预热, CPU 调度抖动
+  一次就能把基线抬高 18%, 导致「代码没变」也误报红灯。改为
+  **预热 2 轮 + 中位数 (MLPerf 口径) + 9 轮重复**, 离散度按**轮次样本**统计
+  (混池 288 个逐 token 耗时会把个别抖动放大成轮级离散度)。基线自带
+  **CV 噪声边界**, 门禁阈值取 `max(15%, 2×基线CV)` —— 低于噪声边界的波动
+  不判为回归, 真实退化仍亮红。
+
+### 修复 (Fixed) — 版本号三处不一致
+
+- `ifai/__init__.py` 写 `0.6.1` 而 `pyproject.toml` 写 `0.7.14`, CHANGELOG
+  又写 `0.7.14` —— 「我们发布了 vX」这句话本身没有依据。现统一为 `0.8.0`,
+  并新增 `tests/unit/l9/test_version.py` 锁死 `__version__` ≡ `pyproject` ≡ CHANGELOG。
+
+### 修复 (Fixed) — 谱范数默认迭代数不足
+
+- 本仓 L0 `spectral_norm` 默认 16 步幂迭代, 实测相对误差 ~2.2e-5, **不满足
+  L10 门禁的 1e-6 精度要求** (移植后才暴露)。实测: 16 步 2.2e-5 / 32 步 3e-9 /
+  **64 步 1e-15 (机器精度)** / 128 步不再改善。默认改为 64 —— 精度已封顶,
+  再多迭代纯属浪费 FLOP。
+
+### 文档 (Documentation)
+
+- README: 徽章与「核心特性」补 L10 ISA / 真 SSE / 护栏接入 / 引擎后端;
+  十层架构表补 L10 行; 快速开始补 `ifai microisa` 与 `ifai serve --backend/--guardrail`;
+  测试章节补四道审计门禁; 项目结构补 `l10/` 与 `engine/session.py`;
+  路线图勾选 v0.8.0 四项。
+- `docs/MICRO_INSTRUCTIONS.md`: 说明与 L10 可执行 ISA 的**互补关系**
+  (前者是源码派生文档, 后者是运行时可执行注册表)。
+
+### 验证 (Verification)
+
+| 门禁 | 结果 |
+|---|---|
+| 全量测试 `pytest -q` | **313 passed** (原 270, 净 +43) |
+| L10 微指令门禁 | **1024/1024** (冒烟+有限性) · **390/390** 数学性质断言 · 26 条显式豁免 |
+| 分层依赖 (INV-41) | ✅ 52 文件零反向依赖 |
+| 零重写出处 (INV-42) | ✅ 76 处出处标记 (门槛 ≥25) |
+| 文档完备 (R-X-03) | ✅ 内部链接全有效 + 关键章节齐全 |
+| SSE 端到端 | 真 HTTP `text/event-stream`, 流式 content 逐字 == 非流式 |
+| L3 四后端 | naive / paged / chunked / speculative 输出逐 token 一致 |
+
 ## [0.7.14] — 2026-10-17
 
 ### 修复 (Fixed) — 产品入口接线: L5/L6 卖点从"测试专属"变为用户真实可达

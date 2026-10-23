@@ -124,10 +124,26 @@ def cmd_chat(args):
 
 
 def cmd_serve(args):
+    """启动 OpenAI 兼容服务 (L7)。
+
+    v0.8.0 新增:
+      - ``--backend`` 选择 L3 推理后端 (naive / paged / chunked / speculative),
+        四者输出逐 token 相同, 差异在性能特征;
+      - ``--guardrail`` 开启输入/输出护栏 (INV-38), 命中返回 OpenAI 风格
+        错误体; 此前护栏仅测试可达, 服务路径完全不过护栏。
+    """
     from ..serve.api import OpenAIServer, serve as run_server
     model, tok = _load(args.model)
-    srv = OpenAIServer(model, tok, seed=args.seed)
-    print(f"服务启动于 http://{args.host}:{args.port} (Ctrl+C 退出)")
+    guard = None
+    if getattr(args, "guardrail", False):
+        from ..serve.guardrail import default_guardrail
+        guard = default_guardrail()
+    srv = OpenAIServer(model, tok, seed=args.seed,
+                       guardrail=guard,
+                       engine_backend=getattr(args, "backend", "naive"))
+    print(f"服务启动于 http://{args.host}:{args.port} "
+          f"(后端 {srv.engine_backend}, 护栏 {'开' if guard else '关'}) "
+          f"(Ctrl+C 退出)")
     run_server(srv, args.host, args.port)
 
 
@@ -209,6 +225,72 @@ def cmd_version(_):
     print(f"ifai {__version__} · by 晨星 (Morningstar) / CJX0712")
 
 
+def cmd_microisa(args):
+    """L10 微指令层 —— 1024 条可执行微指令的浏览与自检入口。
+
+    零重写: L10 ISA 移植自同门旗舰 `tianji-ai` (MIT, 作者晨星), 本仓在
+    移植之上追加了数学性质断言层 (softmax 归一性 / L2 严格单位范数 /
+    KL 非负 / Flash≡朴素 / NS 奇异值带 / Top-K 掩码个数 / RoPE 保范数 …)。
+
+    子命令:
+        --list              列出 32 个家族及其语义类型
+        --family <名称>     列出某家族的 32 条成员
+        --run <指令名>      执行单条微指令并打印输出
+        (默认)              跑全量 1024 条门禁
+    """
+    from ..l10 import FAMILIES, FAMILY_KIND, MICROOPS, run_all
+
+    if args.list:
+        print(f"L10 微指令 ISA: {len(MICROOPS)} 条 / {len(FAMILIES)} 家族")
+        for fam in sorted(FAMILIES):
+            kind = FAMILY_KIND.get(fam, "?")
+            label = "独立算子" if kind == "core" else "参数扫描"
+            print(f"  {fam:<8} [{label}] {len(FAMILIES[fam])} 条")
+        return
+
+    if args.family:
+        fam = args.family
+        if fam not in FAMILIES:
+            print(f"[失败] 未知家族: {fam}")
+            print(f"可用: {', '.join(sorted(FAMILIES))}")
+            sys.exit(2)
+        kind = FAMILY_KIND.get(fam, "?")
+        print(f"{fam} ({kind}, {len(FAMILIES[fam])} 条):")
+        for name in FAMILIES[fam]:
+            print(f"  {fam}.{name}")
+        return
+
+    if args.run:
+        key = args.run
+        if key not in MICROOPS:
+            print(f"[失败] 未知微指令: {key}")
+            sys.exit(2)
+        op = MICROOPS[key]
+        g = np.random.default_rng(args.seed)
+        x = g.standard_normal((4, 8))
+        y = g.standard_normal((4, 8))
+        out = op.fn(x) if op.arity == 1 else op.fn(x, y)
+        arr = np.asarray(out)
+        print(f"{key}  [家族 {op.family} · arity={op.arity}]")
+        print(f"  输出形状: {tuple(arr.shape)}  dtype: {arr.dtype}")
+        flat = arr.reshape(-1)
+        preview = flat[:8] if flat.size else arr
+        print(f"  前 8 个值: {np.round(preview, 6)}")
+        return
+
+    report = run_all(seed=args.seed)
+    props = report["properties"]
+    print(f"L10 门禁: 冒烟+有限性 {report['ok']}/{report['total']} · "
+          f"数学性质 {props['passed']}/{props['checked']} "
+          f"(豁免 {props['skipped']} 条)")
+    if report["failed"]:
+        print(f"失败 {len(report['failed'])} 条:")
+        for name, detail in report["failed"][:20]:
+            print(f"  ❌ {name}: {detail}")
+        sys.exit(1)
+    print("L10 全绿 ✅ 1024/1024 (32 家族 × 32 成员)")
+
+
 def cmd_doctor(_):
     import numpy as np
     print("Python:", sys.version.split()[0])
@@ -234,6 +316,7 @@ def cmd_selftest(args):
         ("分层审计 (INV-41)", "scripts/check_layering.py"),
         ("零重写出处审计 (INV-42)", "scripts/audit_no_reinvention.py"),
         ("文档完备审计 (R-X-03)", "scripts/check_docs.py"),
+        ("L10 微指令门禁 (1024 条)", "scripts/check_l10.py"),
     ]
     all_ok = True
     print("=== ifai selftest (零重写自验证) ===")
@@ -321,6 +404,7 @@ def main():
                      ("chat", cmd_chat), ("serve", cmd_serve), ("eval", cmd_eval),
                      ("search", cmd_search), ("index", cmd_index), ("agent", cmd_agent),
                      ("tokenize", cmd_tokenize), ("version", cmd_version),
+                     ("microisa", cmd_microisa),
                      ("doctor", cmd_doctor), ("selftest", cmd_selftest)]:
         p = sub.add_parser(name)
         p.set_defaults(func=fn)
@@ -328,6 +412,13 @@ def main():
                                         help="额外运行 pytest 黄金测试")
     sub.choices["selftest"].add_argument("--inv", default=None, dest="inv",
                                         help="单查一条不变量, 如 --inv INV-17")
+    sub.choices["microisa"].add_argument("--list", action="store_true",
+                                        help="列出 32 个微指令家族")
+    sub.choices["microisa"].add_argument("--family", default=None,
+                                        help="列出某家族的成员")
+    sub.choices["microisa"].add_argument("--run", default=None,
+                                        help="执行单条微指令并打印输出")
+    sub.choices["microisa"].add_argument("--seed", type=int, default=0)
     # 通用参数
     for name in ["train"]:
         sub.choices[name].add_argument("--seed", type=int, default=0)
@@ -355,6 +446,11 @@ def main():
     sub.choices["demo"].add_argument("--prompt", default="人工智能")
     sub.choices["serve"].add_argument("--host", default="127.0.0.1")
     sub.choices["serve"].add_argument("--port", type=int, default=8000)
+    sub.choices["serve"].add_argument("--backend", default="naive",
+                                      choices=["naive", "paged", "chunked", "speculative"],
+                                      help="L3 推理后端 (输出逐 token 一致)")
+    sub.choices["serve"].add_argument("--guardrail", action="store_true",
+                                      help="启用输入/输出护栏 (INV-38)")
     sub.choices["search"].add_argument("--query", default="注意力")
     sub.choices["search"].add_argument("--top-k", type=int, default=5, dest="top_k")
     sub.choices["search"].add_argument("--index", default=None, dest="index",

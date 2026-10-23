@@ -29,5 +29,9 @@ venv/
 
 # 基准生成的中间产物（机器相关, 不入库）
 _baseline_model/
-BASELINE.json
+
+# 注意: BASELINE.json **入库** —— v0.8.0 起它是回归门禁的**单一权威源**
+# (L8 RegressionBaseline 与 scripts/gen_baseline.py --check 共用同一判据)。
+# 若不入库, 干净克隆的 CI 上门禁无源可比, 会退化成「首次生成即跳过」。
+# BASELINE.md 同样入库 (人读视图)。
 

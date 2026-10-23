@@ -45,6 +45,9 @@ jobs:
       - name: Docs check (R-X-03)
         run: python scripts/check_docs.py
 
+      - name: L10 micro-instruction gate (1024 executable micro-ops)
+        run: python scripts/check_l10.py
+
   baseline:
     name: performance baseline (report-only)
     runs-on: ubuntu-latest

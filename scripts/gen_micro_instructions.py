@@ -3,15 +3,25 @@
 
 零重写 · 集大成原则要求系统可被完整验证。本脚本对 ``ifai/`` 全部源码做 AST
 静态扫描, 并对 ``scripts/`` 下的横切审计脚本做同样扫描 (**X 横切层**), 把
-每一层 (L0–L9 与 X) 的操作分解为「微指令级」条目:
+每一层 (L0–L10 与 X) 的操作分解为「微指令级」条目:
 
 - **功能级微指令 (MI)**: 每个函数 / 方法 = 一条操作, 含层、模块、签名、
   用途 (docstring 首行)、引用的 INV 编号、复用的世界顶级来源标记。
 - **步骤级微指令**: 每个函数体内的顶层语句 = 一条更细的操作步骤, 进一步
   把算法拆解到可被逐条核验的粒度。
 
-目标: 全栈微指令条目数 >= 1024 (项目当前核心关注点)。生成结果写入
-``docs/MICRO_INSTRUCTIONS.md`` (纯源码派生, 可复现、可验证)。
+与 ``ifai/l10/`` 可执行 ISA 的关系 (v0.8.0)
+--------------------------------------------
+两者**互补, 不重复**:
+
+- 本文件产出**源码派生文档** —— 描述「代码写了什么」(每个函数被拆成多少条
+  语句、引用了哪些 INV);
+- ``ifai/l10/`` 产出**运行时可执行注册表** —— 描述「代码能做什么, 且每条
+  都被真实执行并断言了什么」(1024 条微指令 + 390 条数学性质断言)。
+
+即: 本文件是**静态视图**, L10 是**动态视图**。
+
+生成结果写入 ``docs/MICRO_INSTRUCTIONS.md`` (纯源码派生, 可复现、可验证)。
 
 X 横切层是 INV-41 (分层依赖单向) 与 INV-42 (零重写审计) 的落点: 这两条不
 变量的实现本身就是 ``scripts/`` 下的静态审计脚本, 因此必须与十层一同登记,
@@ -38,9 +48,11 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PACKAGE_RANK = {
     "core": 0, "rng": 1, "models": 2, "engine": 3, "train": 4,
     "retrieval": 5, "agent": 6, "serve": 7, "eval": 8, "cli": 9, "sdk": 9,
+    "l10": 10,
 }
 # X 横切层: 不落在任何单一「层内模块」上的审计/门禁 (INV-41 / INV-42)
-CROSS_LAYER = 10
+# 层号 11 —— L10 (微指令 ISA) 已占 10, X 层顺延。
+CROSS_LAYER = 11
 
 LAYER_NAMES = {
     0: "L0 算子/内核 (Operator/Kernel)",
@@ -53,6 +65,7 @@ LAYER_NAMES = {
     7: "L7 服务/编排 (Service/Orchestration)",
     8: "L8 评估/对齐 (Evaluation/Alignment)",
     9: "L9 应用/接口 (Application/Interface)",
+    10: "L10 微指令 ISA (Micro-Instruction ISA)",
     CROSS_LAYER: "X 横切审计 (Cross-cutting Audits)",
 }
 

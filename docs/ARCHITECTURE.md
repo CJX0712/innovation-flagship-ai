@@ -245,6 +245,19 @@ flowchart TB
 | **关键不变量** | R-L9-01..05；链路打印覆盖 L0→L9（US-01） |
 | **复用的顶级成果** | Click/argparse 风格 CLI 约定；llama.cpp 风格开箱即用体验（ggerganov 2023）；OpenAI Python SDK 调用形态 |
 
+### L10 — 微指令 ISA 层（`ifai/l10/`）
+
+| 项 | 内容 |
+| --- | --- |
+| **职责** | 32 家族 × 32 成员 = **1024 条可执行微指令**（每条是真实可调用的函数，不是文档字符串）+ **390 条数学性质断言**（softmax 归一性 / L2 严格单位范数 / KL 非负 / Flash ≡ 朴素 / NS 奇异值带 / Top-K 掩码个数 / RoPE 保范数…）+ 26 条显式豁免并逐条注明理由 |
+| **输入** | 确定性采样输入（固定种子，跨进程可复现） |
+| **输出** | 逐条执行报告（总/通过/失败明细）+ 豁免清单 |
+| **依赖** | L0（`core.ops` / `core.numeric`）—— **移植后本仓 L0 是唯一依赖源**，不存两套同义实现 |
+| **关键不变量** | ISA 数量不变量（1024/32/32）；可执行性（1024/1024）；可证性（390/390）；确定性（同种子两次逐条一致） |
+| **复用的顶级成果** | ISA 移植自同门旗舰 `tianji-ai`（MIT，作者同一人，已在其仓通过 1024/1024 门禁）；四变体执行模型参考同门旗舰 `flagship-ai` 的 L10-microisa；Newton-Schulz 正交化 (Keller Jordan 2024, Muon)；SSE 协议按 WHATWG HTML Living Standard |
+
+**详见** [`design/L10_microisa.md`](design/L10_microisa.md)。
+
 ### X — 横切工程（`ifai/common/`、`scripts/`、`tests/`）
 
 | 项 | 内容 |
@@ -537,8 +550,9 @@ innovation-flagship-ai/
 | `scripts/audit_no_reinvention.py` | 零重写审计：解析 `CITATION.md`，校验 L0–L9 每层 citation 条目齐全且指向真实文件，**0 缺失**（INV-42） | 145 |
 | `scripts/check_layering.py` | AST 扫描全仓 import，校验层级矩阵，**0 反向 import**（INV-41） | 135 |
 | `scripts/check_docs.py` | 文档检查：必备文件存在、内部链接有效、必含章节齐全 | 115 |
+| `scripts/check_l10.py` | **L10 微指令门禁**：1024 条逐条执行 + 390 条数学性质断言 + 26 条显式豁免上报（v0.8.0） | 130 |
 | `scripts/download_gsm8k.py` | 可选：下载 GSM8K 全量（遵循原许可），并对齐格式 | 90 |
-| `scripts/gen_baseline.py` | 生成/更新 `BASELINE.md`（JSON+MD） | 85 |
+| `scripts/gen_baseline.py` | 生成/更新权威基线 `BASELINE.json` + 人读 `BASELINE.md`（中位数口径 + 预热 + CV 噪声边界，v0.8.0 双轨合一） | 175 |
 | `scripts/train_assets.py` | 训练并导出微型权重/tokenizer（离线，≤60s） | 125 |
 | `scripts/smoke.sh` / `scripts/smoke.ps1` | 端到端冒烟脚本（`pip install -e .` → `ifai demo` → `selftest`） | 50 / 50 |
 
