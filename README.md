@@ -17,7 +17,7 @@
 `ifai` 是一套**纯 NumPy（仅 `numpy>=1.24` 硬依赖）**实现的旗舰 AI 全栈：从算子内核、
 Transformer 架构、推理引擎、训练/微调、检索/记忆、智能体，到 OpenAI 兼容服务与评测对齐。
 遵循 **「零重写 · 集大成」** 原则——每一层都建立在全球公认的最强成果之上（FlashAttention、
-RoPE、GQA、SwiGLU、MoE、PagedAttention/vLLM、连续批处理、投机解码、BM25、HNSW、RRF、
+RoPE、GQA、SwiGLU、MoE、PagedAttention/vLLM、连续批处理、投机解码、BM25、HNSW、RRF、**QFR**、**MMR**、
 ReAct/Reflexion、MemGPT、LoRA、AdamW、nanogpt 训练循环……），并通过 **42 条不变量（INV）**
 与 **60 项需求** 进行可验证对照。
 
@@ -34,7 +34,7 @@ ReAct/Reflexion、MemGPT、LoRA、AdamW、nanogpt 训练循环……），并通
 - 🔬 **42 条可验证不变量**：数值/算法/系统层均有「解析对照」黄金测试（梯度 vs 有限差分、FlashAttention vs 朴素、困惑度 vs 手工公式、连续批处理 vs 串行……）。
 - 🚀 **前沿推理技术**：PagedAttention 分页 KV 缓存、连续批处理（Orca）、投机解码、GQA、RoPE(NTK)。
 - 🤖 **完整智能体**：ReAct + Reflexion + MemGPT 式记忆 + AST 白名单安全沙箱。
-- 🔎 **检索增强**：BM25 + 稠密向量 + HNSW 近邻 + RRF 融合 + Cross-Encoder 重排。
+- 🔎 **检索增强**：BM25 + 稠密向量 + HNSW 近邻 + RRF 融合 + **QFR 时序感知融合（RRF 严格超集）** + **MMR 多样性重排** + Cross-Encoder 重排。
 - 🌐 **OpenAI 兼容服务**：`/v1/models`、`/v1/completions`、`/v1/chat/completions`，生态零改动接入；
   **`stream=true` 返回真 SSE**（`text/event-stream` + delta 分块 + `[DONE]` 收尾）。
 - 🛡️ **护栏接入请求路径**：输入/输出双向拦截，命中返回 OpenAI 风格错误体（不是「有护栏模块
@@ -54,7 +54,9 @@ ReAct/Reflexion、MemGPT、LoRA、AdamW、nanogpt 训练循环……），并通
 | **L2** | 模型架构 | Transformer + RMSNorm + RoPE(NTK) + GQA + SwiGLU + MoE + 权重绑定 | `models/` |
 | **L3** | 推理引擎 | PagedAttention(vLLM) + 连续批处理(Orca) + 投机解码 + 采样 + **服务侧会话 `EngineSession`** | `engine/` |
 | **L4** | 训练 / 微调 | AdamW + 余弦退火 + LoRA + MoE 训练 + QAT(Jacob 2018) + SwiGLU/gelu + nanogpt 循环 + 手写反向模式自动微分 | `train/` |
-| **L5** | 检索 / 记忆 | BM25 + 稠密索引 + HNSW + RRF + Cross-Encoder 重排 | `retrieval/` |
+| **L5** | 检索 / 记忆 | BM25 + 稠密索引 + HNSW + RRF + **QFR** + **MMR** + Cross-Encoder 重排 | `retrieval/` |
+
+> **QFR（Qiming Fusion Rank）** —— 本项目的原创算法贡献：在 RRF（Cormack et al. 2009）之上引入**通道可靠性先验**与**事实时序衰减**，用纯数学替代 Hindsight 的 LLM reflect 合成（800–3000ms → **0ms**，0 额外 token），把 91.4% 级多通道召回质量压进实时对话延迟预算。作为 RRF 的**严格超集**：权重全 1 且关时序时与 `rrf.py` 逐位相等（≤1e-12，INV-43）。
 | **L6** | 智能体 | ReAct(Yao) + Reflexion(Shinn) + MemGPT(Packer) + AST 安全沙箱 | `agent/` |
 | **L7** | 服务 / 编排 | OpenAI REST 兼容 + **真 SSE 流式** + **护栏接入** | `serve/` |
 | **L8** | 评估 / 对齐 | 困惑度(Jelinek) + 吞吐基准(MLPerf 法, 中位数口径) + **单一权威基线** | `eval/` |
@@ -168,7 +170,7 @@ ifai/
 ├── models/     L2 架构 (transformer/tokenizer/config)
 ├── engine/     L3 推理 (kvcache/sampler/scheduler/speculative/prefill/session)
 ├── train/      L4 训练 (autodiff/optim/lora/trainer)
-├── retrieval/  L5 检索 (bm25/dense/hnsw/rrf/rerank)
+├── retrieval/  L5 检索 (bm25/dense/hnsw/rrf/**qfr**/**mmr**/rerank)
 ├── agent/      L6 智能体 (tools/sandbox/memory/react)
 ├── serve/      L7 服务 (OpenAI 兼容 / SSE / 护栏)
 ├── eval/       L8 评测 (perplexity/benchmark/harness)

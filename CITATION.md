@@ -21,6 +21,7 @@
 - **推理系统**：Kwon et al. 2023 (PagedAttention/vLLM); Yu et al. 2022 (Orca 连续批处理); Leviathan et al. 2023 / Chen et al. 2023 (投机解码 Medusa/EAGLE).
 - **训练**：Loshchilov & Hutter 2019 (AdamW); Kingma & Ba 2015 (Adam); Hu et al. 2022 (LoRA); Karpathy (nanogpt 极简训练循环); Griewank & Walther 2008 (反向模式自动微分).
 - **检索**：Robertson & Zaragoza 2009 (BM25); Malkov & Yashunin 2018 (HNSW); Cormack et al. 2009 (RRF); Nogueira & Cho 2019 (Cross-Encoder 重排).
+- **检索（续）**：Carbonell & Goldstein 1998 (MMR 多样性重排); Karpukhin et al. 2020 (DPR 双塔); Zep/Graphiti 2024–2026 (bi-temporal 事实有效期); Letta/MemGPT — Packer et al. 2023 (arXiv:2310.08560, OS 分层记忆); Hindsight — Vectorize.io 2026 (MIT, LongMemEval 91.4%, 多策略并行检索 + reflect 合成).
 - **智能体**：Yao et al. 2022 (ReAct); Shinn et al. 2023 (Reflexion); Packer et al. 2023 (MemGPT 记忆).
 - **评测**：Jelinek et al. 1977 (困惑度); MLPerf (吞吐/延迟基准方法论); Cobbe et al. 2021 (GSM8K).
 - **分词**：Sennrich et al. 2016 (BPE); Radford et al. 2019 (byte-level BPE).

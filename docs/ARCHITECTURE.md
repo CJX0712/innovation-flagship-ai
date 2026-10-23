@@ -194,12 +194,12 @@ flowchart TB
 
 | 项 | 内容 |
 | --- | --- |
-| **职责** | 分块策略（固定/递归字符/重叠窗口）、BM25 稀疏检索、微型双塔稠密 encoder、HNSW 近似最近邻、Flat 暴力索引（作为 ANNS 真值）、RRF 融合、Cross-Encoder 风格重排、情景记忆（append-only + 时间衰减）与语义记忆（去重归并）、索引持久化与增量更新 |
+| **职责** | 分块策略（固定/递归字符/重叠窗口）、BM25 稀疏检索、微型双塔稠密 encoder、HNSW 近似最近邻、Flat 暴力索引（作为 ANNS 真值）、RRF 融合、**QFR 时序感知融合（RRF 的严格超集）**、**MMR 多样性重排**、Cross-Encoder 风格重排、情景记忆（append-only + 时间衰减）与语义记忆（去重归并）、索引持久化与增量更新 |
 | **输入** | 文档集合 / 文件路径 / 查询串 |
 | **输出** | `Hit(chunk_id, score, text, meta)` 排序列表；`Index` 对象 |
 | **依赖** | L0, L1, L2（双塔复用 L2 的 Transformer 编码器 + L0 内核）；common |
-| **关键不变量** | INV-27, INV-28, INV-29, INV-30, INV-31, INV-32 |
-| **复用的顶级成果** | Okapi BM25（Robertson et al. 1994）；HNSW（Malkov & Yashunin 2018）；RRF（Cormack et al. 2009）；MonoBERT / Cross-Encoder 重排（Nogueira & Cho 2019）；DPR 双塔（Karpukhin et al. 2020）；MemGPT 分层记忆（Packer et al. 2023） |
+| **关键不变量** | INV-27, INV-28, INV-29, INV-30, INV-31, INV-32, **INV-43, INV-44, INV-45, INV-46, INV-47, INV-48, INV-49, INV-50** |
+| **复用的顶级成果** | Okapi BM25（Robertson et al. 1994）；HNSW（Malkov & Yashunin 2018）；RRF（Cormack et al. 2009）；**QFR（本项目在 RRF 上的原创扩展，见 `docs/PRIOR_ART.md` 5-6）**；**MMR（Carbonell & Goldstein 1998）**；MonoBERT / Cross-Encoder 重排（Nogueira & Cho 2019）；DPR 双塔（Karpukhin et al. 2020）；MemGPT 分层记忆（Packer et al. 2023）；**Zep/Graphiti bi-temporal（事实有效期）**；**Hindsight（Vectorize.io 2026，多策略并行检索 + reflect 合成）** |
 
 ### L6 — 智能体层（`ifai/l6_agent/`）
 
